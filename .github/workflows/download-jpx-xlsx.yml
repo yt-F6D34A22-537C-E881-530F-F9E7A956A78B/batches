@@ -75,7 +75,8 @@ jobs:
 
       - name: Cleanup old backups (older than 3 days)
         run: |
-          find backup -type f \( -name "data_j.xls.*" -o -name "data_j.xlsx.*" \) -mtime +3 -exec rm {} \;
+          find backup -type f \( -name "data_j.xls.*" -o -name "data_j.xlsx.*" \) -mtime +3 -print -delete
+          git add -u backup
 
       - name: Commit & Push
         run: |
