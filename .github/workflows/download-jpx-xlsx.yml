@@ -58,10 +58,9 @@ jobs:
         run: |
           curl -L "${{ steps.scrape.outputs.url }}" -o data_j.xls
 
-      - name: Convert XLS → XLSX (temporary name)
+      - name: Convert XLS → XLSX (keep name as data_j.xlsx)
         run: |
           libreoffice --headless --convert-to xlsx data_j.xls --outdir .
-          mv data_j.xlsx data_j.xlsx
 
       - name: Backup files (JST timestamp)
         run: |
