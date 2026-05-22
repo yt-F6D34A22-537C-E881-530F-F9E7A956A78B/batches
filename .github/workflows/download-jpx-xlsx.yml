@@ -20,7 +20,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libreoffice python3 python3-pip
-          pip3 install requests beautifulsoup4 lxml
+          pip3 install requests beautifulsoup4 lxml pytz
 
       - name: Scrape JPX page to get data_j.xls URL
         id: scrape
@@ -73,15 +73,39 @@ jobs:
         run: |
           rm data_j.xls
 
-      - name: Cleanup old backups (older than 3 days)
+      - name: Cleanup old backups (older than 3 days, based on filename timestamp)
+        shell: python
         run: |
-          find backup -type f \( -name "data_j.xls.*" -o -name "data_j.xlsx.*" \) -mtime +3 -print -delete
-          git add -u backup
+          import os
+          import re
+          from datetime import datetime, timedelta
+          import pytz
+          import subprocess
+
+          backup_dir = "backup"
+          pattern = re.compile(r"(data_j\.(xls|xlsx))\.(\d{8}_\d{6})$")
+
+          tz = pytz.timezone("Asia/Tokyo")
+          now = datetime.now(tz)
+
+          for fname in os.listdir(backup_dir):
+              m = pattern.match(fname)
+              if not m:
+                  continue
+
+              timestamp_str = m.group(3)
+              dt = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+              dt = tz.localize(dt)
+
+              if now - dt > timedelta(days=3):
+                  full_path = os.path.join(backup_dir, fname)
+                  print(f"Deleting old backup: {full_path}")
+                  subprocess.run(["git", "rm", full_path], check=False)
 
       - name: Commit & Push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add data_j.xlsx backup/
-          git commit -m "Auto-update JPX data_j.xlsx + backup (JST timestamp)" || echo "No changes to commit"
+          git add data_j.xlsx backup/ || true
+          git commit -m "Auto-update JPX data_j.xlsx + backup (JST timestamp, filename-based cleanup)" || echo "No changes to commit"
           git push
