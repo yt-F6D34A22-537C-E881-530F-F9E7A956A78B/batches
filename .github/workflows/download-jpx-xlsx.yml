@@ -1,8 +1,8 @@
-name: JPX data_j.xls fetch & convert (scraping)
+name: JPX data_j.xls fetch & convert (scraping + backup)
 
 on:
   schedule:
-    - cron: "0 1 * * *"   # 毎日 10:00 JST（1:00 UTC）
+    - cron: "0 18 * * *"   # JST 3:00（UTC 18:00）
   workflow_dispatch:
 
 permissions:
@@ -51,7 +51,7 @@ jobs:
           if link.startswith("/"):
               link = root + link
 
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"url={link}\n")
 
       - name: Download data_j.xls
@@ -63,10 +63,21 @@ jobs:
           libreoffice --headless --convert-to xlsx data_j.xls --outdir .
           mv data_j.xlsx data_j_test.xlsx
 
+      - name: Backup original and converted files
+        run: |
+          mkdir -p backup
+          TS=$(date +"%Y%m%d_%H%M%S")
+          cp data_j.xls backup/data_j.xls.$TS
+          cp data_j_test.xlsx backup/data_j_test.xlsx.$TS
+
+      - name: Cleanup old backups (older than 3 days)
+        run: |
+          find backup -type f \( -name "data_j.xls.*" -o -name "data_j_test.xlsx.*" \) -mtime +3 -exec rm {} \;
+
       - name: Commit & Push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add data_j.xls data_j_test.xlsx
-          git commit -m "Auto-update JPX data_j.xls → data_j_test1.xlsx (temporary)" || echo "No changes to commit"
+          git add data_j.xls data_j_test.xlsx backup/
+          git commit -m "Auto-update JPX data_j + backup" || echo "No changes to commit"
           git push
