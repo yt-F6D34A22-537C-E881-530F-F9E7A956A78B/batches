@@ -29,6 +29,7 @@ jobs:
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+import os
 
 url = "https://www.jpx.co.jp/markets/statistics-equities/misc/01.html"
 
@@ -50,7 +51,9 @@ if not link:
 if link.startswith("/"):
     link = root + link
 
-print(f"::set-output name=url::{link}")
+# GitHub Actions の新しい出力方式（GITHUB_OUTPUT）を使用
+with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+    f.write(f"url={link}\n")
 EOF
 
       - name: Download data_j.xls
