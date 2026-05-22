@@ -30,18 +30,14 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
-# JPX ページ
 url = "https://www.jpx.co.jp/markets/statistics-equities/misc/01.html"
 
-# ルート URL を自動抽出（ハードコーディング回避）
 parsed = urlparse(url)
 root = f"{parsed.scheme}://{parsed.netloc}"
 
-# HTML 取得
 html = requests.get(url).text
 soup = BeautifulSoup(html, "lxml")
 
-# data_j.xls を含むリンクを探索
 link = None
 for a in soup.find_all("a", href=True):
     if "data_j.xls" in a["href"]:
@@ -51,7 +47,6 @@ for a in soup.find_all("a", href=True):
 if not link:
     raise Exception("data_j.xls のリンクが見つかりませんでした")
 
-# 絶対 URL 化
 if link.startswith("/"):
     link = root + link
 
@@ -62,14 +57,15 @@ EOF
         run: |
           curl -L "${{ steps.scrape.outputs.url }}" -o data_j.xls
 
-      - name: Convert XLS → XLSX
+      - name: Convert XLS → XLSX (temporary name)
         run: |
           libreoffice --headless --convert-to xlsx data_j.xls --outdir .
+          mv data_j.xlsx data_j_test.xlsx
 
       - name: Commit & Push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add data_j.xls data_j.xlsx
-          git commit -m "Auto-update JPX data_j.xls → xlsx" || echo "No changes to commit"
+          git add data_j.xls data_j_test.xlsx
+          git commit -m "Auto-update JPX data_j.xls → data_j_test.xlsx (temporary)" || echo "No changes to commit"
           git push
