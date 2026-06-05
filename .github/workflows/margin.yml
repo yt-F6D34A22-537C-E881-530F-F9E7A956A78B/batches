@@ -1,8 +1,8 @@
-name: Margin Info Fetch (taisyaku.jp + Rakuten)
+name: Margin Info Fetch (taisyaku.jp + Rakuten + JPX)
 
 on:
   schedule:
-    - cron: "0 18 * * *"   # JST 3:00（UTC 18:00）
+    - cron: "0 18 * * *"
   workflow_dispatch:
 
 permissions:
@@ -20,7 +20,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip
-          pip3 install requests pandas beautifulsoup4 lxml
+          pip3 install requests pandas beautifulsoup4 lxml pdfplumber
 
       - name: Run margin-info scraper
         shell: python
@@ -29,6 +29,7 @@ jobs:
           import pandas as pd
           import json
           import re
+          import pdfplumber
           from bs4 import BeautifulSoup
 
           UA = {"User-Agent": "Mozilla/5.0"}
@@ -41,12 +42,12 @@ jobs:
               base + "meigara.csv",
               encoding="shift_jis",
               dtype=str,
-              skiprows=1  # 1行目はタイトル
+              skiprows=1
           )
           meigara_df.columns = meigara_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
 
           # ============================
-          # 2. zandaka.csv（信用残）
+          # 2. zandaka.csv（制度信用残）
           # ============================
           zandaka_df = pd.read_csv(
               base + "zandaka.csv",
@@ -55,18 +56,16 @@ jobs:
           )
           zandaka_df.columns = zandaka_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
 
-          # ★ 信用残列の厳密検出
+          # 制度信用残の列名検出（厳密）
           buy_col = None
           sell_col = None
 
-          # 完全一致を優先
           for col in zandaka_df.columns:
               if col == "制度信用・買残高株数":
                   buy_col = col
               if col == "制度信用・売残高株数":
                   sell_col = col
 
-          # 見つからなければ意味一致で検出
           if buy_col is None:
               for col in zandaka_df.columns:
                   if "制度信用" in col and "買残高株数" in col:
@@ -91,7 +90,7 @@ jobs:
               dtype=str,
               skiprows=4
           )
-          sei_df = sei_df.iloc[:-3]  # 末尾3行削除
+          sei_df = sei_df.iloc[:-3]
           sei_df.columns = sei_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
 
           # ============================
@@ -105,7 +104,7 @@ jobs:
                   taisyaku_set.add(code)
 
           # ============================
-          # 5. 信用残（買残・売残）
+          # 5. JSF 制度信用残
           # ============================
           zandaka_map = {}
           for _, row in zandaka_df.iterrows():
@@ -127,7 +126,7 @@ jobs:
               regulation_map.setdefault(code, []).append(reason)
 
           # ============================
-          # 7. 楽天 一般信用（売り建て）
+          # 7. 楽天 一般信用
           # ============================
           rakuten_url = "https://www.rakuten-sec.co.jp/web/market/search/general_margin/"
           html = requests.get(rakuten_url, headers=UA).text
@@ -147,18 +146,79 @@ jobs:
                       }
 
           # ============================
-          # 8. margin.json 統合
+          # 8. JPX 週末信用残（PDF パース）
+          # ============================
+          jpx_base = "https://www.jpx.co.jp/markets/statistics-equities/margin/"
+          jpx_html = requests.get(jpx_base, headers=UA).text
+          jpx_soup = BeautifulSoup(jpx_html, "lxml")
+
+          pdf_links = [
+              a["href"] for a in jpx_soup.find_all("a", href=True)
+              if "syumatsu" in a["href"] and a["href"].endswith(".pdf")
+          ]
+
+          if not pdf_links:
+              raise Exception("JPX 週末信用残 PDF が見つかりません")
+
+          latest_pdf = "https://www.jpx.co.jp" + pdf_links[0]
+
+          pdf_data = requests.get(latest_pdf, headers=UA).content
+          with open("jpx.pdf", "wb") as f:
+              f.write(pdf_data)
+
+          jpx_map = {}
+
+          with pdfplumber.open("jpx.pdf") as pdf:
+              for page in pdf.pages:
+                  table = page.extract_table()
+                  if not table:
+                      continue
+
+                  for row in table:
+                      if not row or len(row) < 4:
+                          continue
+
+                      code = row[0]
+                      if not re.fullmatch(r"\d{4}", str(code)):
+                          continue
+
+                      try:
+                          buy = int(row[2].replace(",", ""))
+                      except:
+                          buy = None
+
+                      try:
+                          sell = int(row[3].replace(",", ""))
+                      except:
+                          sell = None
+
+                      ratio = None
+                      if buy and sell and sell != 0:
+                          ratio = round(buy / sell, 2)
+
+                      jpx_map[code] = {
+                          "buy": buy,
+                          "sell": sell,
+                          "ratio": ratio
+                      }
+
+          # ============================
+          # 9. margin.json 統合
           # ============================
           margin = {}
-          all_codes = set(zandaka_map.keys()) | set(taisyaku_set)
+          all_codes = set(zandaka_map.keys()) | set(taisyaku_set) | set(jpx_map.keys())
 
           for code in sorted(all_codes):
-              buy  = zandaka_map.get(code, {}).get("buy")
-              sell = zandaka_map.get(code, {}).get("sell")
+              jsf_buy  = zandaka_map.get(code, {}).get("buy")
+              jsf_sell = zandaka_map.get(code, {}).get("sell")
+
+              jpx_buy  = jpx_map.get(code, {}).get("buy")
+              jpx_sell = jpx_map.get(code, {}).get("sell")
+              jpx_ratio = jpx_map.get(code, {}).get("ratio")
 
               ratio = None
-              if buy is not None and sell is not None and sell != 0:
-                  ratio = round(buy / sell, 2)
+              if jsf_buy and jsf_sell and jsf_sell != 0:
+                  ratio = round(jsf_buy / jsf_sell, 2)
 
               margin[code] = {
                   "貸借銘柄": code in taisyaku_set,
@@ -168,9 +228,12 @@ jobs:
                       "在庫区分": None,
                       "在庫数量": None
                   }),
-                  "信用買い残": buy,
-                  "信用売り残": sell,
+                  "信用買い残": jsf_buy,
+                  "信用売り残": jsf_sell,
                   "信用倍率": ratio,
+                  "JPX信用買残": jpx_buy,
+                  "JPX信用売残": jpx_sell,
+                  "JPX信用倍率": jpx_ratio,
                   "残高種別": "latest",
                   "規制": regulation_map.get(code, [])
               }
