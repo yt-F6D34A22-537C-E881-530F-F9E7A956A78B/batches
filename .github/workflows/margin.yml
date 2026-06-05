@@ -97,34 +97,34 @@ jobs:
           jpx_page = "https://www.jpx.co.jp/markets/statistics-equities/margin/05.html"
           jpx_html = requests.get(jpx_page, headers=UA).text
           jpx_soup = BeautifulSoup(jpx_html, "lxml")
-
+          
           pdf_links = []
           for a in jpx_soup.find_all("a", href=True):
               href = a["href"]
               if href.endswith(".pdf") and "syumatsu" in href:
                   pdf_links.append("https://www.jpx.co.jp" + href)
-
+          
           latest_pdf = sorted(pdf_links)[-1]
-
+          
           pdf_data = requests.get(latest_pdf, headers=UA).content
           with open("jpx.pdf", "wb") as f:
               f.write(pdf_data)
-
+          
           # ============================
-          # JPX PDF パース（ブロック方式）
+          # JPX PDF パース（ETF 対応ブロック方式）
           # ============================
           jpx_map = {}
-
+          
           with pdfplumber.open("jpx.pdf") as pdf:
               full_text = ""
               for page in pdf.pages:
                   t = page.extract_text()
                   if t:
                       full_text += "\n" + t
-
+          
           # 5桁コードでブロックに分割
           blocks = re.split(r"(?=\d{5}\s+JP\d{10})", full_text)
-
+          
           def parse_num(s):
               s = s.replace(",", "").replace(" ", "")
               if s in ("", "▲"):
@@ -132,34 +132,51 @@ jobs:
               if s.startswith("▲"):
                   return -int(s[1:])
               return int(s)
-
+          
           for block in blocks:
               # 銘柄コード
               m = re.search(r"(\d{5})\s+JP\d{10}", block)
               if not m:
                   continue
-
+          
               code5 = m.group(1)
               code4 = code5[:4]
-
+          
               # ISIN の後ろだけを切り出す（ここが重要）
               after_isin = re.split(r"JP\d{10}", block)[1]
-
+          
               # 数字だけ抽出（銘柄コード・ISIN を除外）
               nums = re.findall(r"[▲\-]?\s*[\d,]+", after_isin)
-              nums = [n.replace(" ", "").replace(",", "") for n in nums]
-
-              # 最低4つ必要（売残・売残前週比・買残・買残前週比）
-              if len(nums) < 4:
-                  continue
-
-              sell = parse_num(nums[0])
-              sell_diff = parse_num(nums[1])
-              buy = parse_num(nums[2])
-              buy_diff = parse_num(nums[3])
-
+              nums = [parse_num(n) for n in nums]
+          
+              # ETF（制度＋一般）かどうか判定
+              if len(nums) >= 8:
+                  # 制度
+                  sell_sys = nums[0]
+                  sell_sys_diff = nums[1]
+                  buy_sys = nums[2]
+                  buy_sys_diff = nums[3]
+          
+                  # 一般
+                  sell_gen = nums[4]
+                  sell_gen_diff = nums[5]
+                  buy_gen = nums[6]
+                  buy_gen_diff = nums[7]
+          
+                  sell = sell_sys + sell_gen
+                  sell_diff = sell_sys_diff + sell_gen_diff
+                  buy = buy_sys + buy_gen
+                  buy_diff = buy_sys_diff + buy_gen_diff
+          
+              else:
+                  # 通常銘柄（制度のみ）
+                  sell = nums[0]
+                  sell_diff = nums[1]
+                  buy = nums[2]
+                  buy_diff = nums[3]
+          
               ratio = round(buy / sell, 2) if sell != 0 else None
-
+          
               jpx_map[code4] = {
                   "buy": buy,
                   "buy_diff": buy_diff,
