@@ -111,50 +111,57 @@ jobs:
               f.write(pdf_data)
 
           # ============================
-          # JPX PDF パース（売残・売残前週比・買残・買残前週比）
+          # JPX PDF パース（ブロック方式）
           # ============================
           jpx_map = {}
 
-          # ▲ と数字の間にスペースが入るケースに対応
-          pattern = re.compile(
-              r"(\d{5})\s+JP\d{10}\s+([\d,]+)\s+([▲\-\d,\s]+)\s+([\d,]+)\s+([▲\-\d,\s]+)"
-          )
+          with pdfplumber.open("jpx.pdf") as pdf:
+              full_text = ""
+              for page in pdf.pages:
+                  t = page.extract_text()
+                  if t:
+                      full_text += "\n" + t
 
-          def parse_diff(s):
+          # 5桁コードでブロックに分割
+          blocks = re.split(r"(?=\d{5}\s+JP\d{10})", full_text)
+
+          def parse_num(s):
               s = s.replace(",", "").replace(" ", "")
-              if s in ("▲", "-", ""):
+              if s in ("", "▲"):
                   return 0
               if s.startswith("▲"):
                   return -int(s[1:])
               return int(s)
 
-          with pdfplumber.open("jpx.pdf") as pdf:
-              for page in pdf.pages:
-                  text = page.extract_text()
-                  if not text:
-                      continue
+          for block in blocks:
+              m = re.search(r"(\d{5})\s+JP\d{10}", block)
+              if not m:
+                  continue
 
-                  for line in text.split("\n"):
-                      m = pattern.search(line)
-                      if m:
-                          code5 = m.group(1)
-                          code4 = code5[:4]
+              code5 = m.group(1)
+              code4 = code5[:4]
 
-                          sell = int(m.group(2).replace(",", ""))
-                          sell_diff = parse_diff(m.group(3))
+              # ブロック内の数字を全部抜く
+              nums = re.findall(r"[▲\-]?\s*[\d,]+", block)
+              nums = [n.replace(" ", "").replace(",", "") for n in nums]
 
-                          buy = int(m.group(4).replace(",", ""))
-                          buy_diff = parse_diff(m.group(5))
+              if len(nums) < 4:
+                  continue
 
-                          ratio = round(buy / sell, 2) if sell != 0 else None
+              sell = parse_num(nums[0])
+              sell_diff = parse_num(nums[1])
+              buy = parse_num(nums[2])
+              buy_diff = parse_num(nums[3])
 
-                          jpx_map[code4] = {
-                              "buy": buy,
-                              "buy_diff": buy_diff,
-                              "sell": sell,
-                              "sell_diff": sell_diff,
-                              "ratio": ratio
-                          }
+              ratio = round(buy / sell, 2) if sell != 0 else None
+
+              jpx_map[code4] = {
+                  "buy": buy,
+                  "buy_diff": buy_diff,
+                  "sell": sell,
+                  "sell_diff": sell_diff,
+                  "ratio": ratio
+              }
 
           # ============================
           # margin.json 統合（JSF 信用残は削除）
