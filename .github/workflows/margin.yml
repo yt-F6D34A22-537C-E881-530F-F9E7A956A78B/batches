@@ -152,20 +152,24 @@ jobs:
           jpx_html = requests.get(jpx_base, headers=UA).text
           jpx_soup = BeautifulSoup(jpx_html, "lxml")
 
-          pdf_links = [
-              a["href"] for a in jpx_soup.find_all("a", href=True)
-              if "syumatsu" in a["href"] and a["href"].endswith(".pdf")
-          ]
+          # ★ 修正版：PDF アイコンリンクを正しく抽出
+          pdf_links = []
+          for a in jpx_soup.find_all("a", href=True):
+              href = a["href"]
+              if href.endswith(".pdf") and "syumatsu" in href:
+                  pdf_links.append("https://www.jpx.co.jp" + href)
 
           if not pdf_links:
-              raise Exception("JPX 週末信用残 PDF が見つかりません")
+              raise Exception("JPX 週末信用残 PDF が見つかりません（HTML 構造変更の可能性）")
 
-          latest_pdf = "https://www.jpx.co.jp" + pdf_links[0]
+          latest_pdf = pdf_links[0]
 
+          # PDF ダウンロード
           pdf_data = requests.get(latest_pdf, headers=UA).content
           with open("jpx.pdf", "wb") as f:
               f.write(pdf_data)
 
+          # PDF パース
           jpx_map = {}
 
           with pdfplumber.open("jpx.pdf") as pdf:
@@ -182,15 +186,14 @@ jobs:
                       if not re.fullmatch(r"\d{4}", str(code)):
                           continue
 
-                      try:
-                          buy = int(row[2].replace(",", ""))
-                      except:
-                          buy = None
+                      def to_int(x):
+                          try:
+                              return int(x.replace(",", ""))
+                          except:
+                              return None
 
-                      try:
-                          sell = int(row[3].replace(",", ""))
-                      except:
-                          sell = None
+                      buy = to_int(row[2])
+                      sell = to_int(row[3])
 
                       ratio = None
                       if buy and sell and sell != 0:
