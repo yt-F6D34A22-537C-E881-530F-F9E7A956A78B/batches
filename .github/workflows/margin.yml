@@ -1,0 +1,142 @@
+name: Margin Info Fetch (JSF/JPX scraping)
+
+on:
+  schedule:
+    - cron: "0 18 * * *"   # JST 3:00（UTC 18:00）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-margin-info:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          pip3 install requests beautifulsoup4 lxml pandas
+
+      - name: Run margin-info scraper
+        shell: python
+        run: |
+          import requests
+          import pandas as pd
+          from bs4 import BeautifulSoup
+          import json
+          import re
+
+          # ============================
+          # 1. JSF 貸借銘柄一覧（制度信用）
+          # ============================
+          taisyaku_url = "https://www.jsf.co.jp/de/stock/stock_01.php"
+          html = requests.get(taisyaku_url).text
+          soup = BeautifulSoup(html, "lxml")
+
+          taisyaku_set = set()
+          for row in soup.select("table tr"):
+              cols = row.find_all("td")
+              if len(cols) >= 2:
+                  code = cols[0].get_text(strip=True)
+                  if re.fullmatch(r"\d{4}", code):
+                      taisyaku_set.add(code)
+
+          # ============================
+          # 2. JSF 信用取引週末残高（CSV）
+          # ============================
+          weekly_url = "https://www.jsf.co.jp/de/stock/data/margin_weekly.csv"
+          weekly_df = pd.read_csv(weekly_url, encoding="shift_jis", dtype=str)
+          weekly_df = weekly_df.rename(columns=lambda x: x.strip())
+
+          weekly_map = {}
+          for _, row in weekly_df.iterrows():
+              code = row["銘柄コード"].zfill(4)
+              buy = row.get("買残高")
+              sell = row.get("売残高")
+              weekly_map[code] = {
+                  "buy": int(buy) if str(buy).isdigit() else None,
+                  "sell": int(sell) if str(sell).isdigit() else None
+              }
+
+          # ============================
+          # 3. JSF 日々公表信用残（CSV）
+          # ============================
+          daily_url = "https://www.jsf.co.jp/de/stock/data/margin_daily.csv"
+          daily_df = pd.read_csv(daily_url, encoding="shift_jis", dtype=str)
+          daily_df = daily_df.rename(columns=lambda x: x.strip())
+
+          daily_map = {}
+          for _, row in daily_df.iterrows():
+              code = row["銘柄コード"].zfill(4)
+              buy = row.get("買残高")
+              sell = row.get("売残高")
+              daily_map[code] = {
+                  "buy": int(buy) if str(buy).isdigit() else None,
+                  "sell": int(sell) if str(sell).isdigit() else None
+              }
+
+          # ============================
+          # 4. JPX 規制情報（HTML）
+          # ============================
+          jpx_url = "https://www.jpx.co.jp/regulation/alert/index.html"
+          html = requests.get(jpx_url).text
+          soup = BeautifulSoup(html, "lxml")
+
+          regulation_map = {}
+
+          for row in soup.select("table tr"):
+              cols = row.find_all("td")
+              if len(cols) >= 2:
+                  code = cols[0].get_text(strip=True)
+                  if re.fullmatch(r"\d{4}", code):
+                      reason = cols[1].get_text(strip=True)
+                      regulation_map.setdefault(code, []).append(reason)
+
+          # ============================
+          # 5. 統合して margin.json を生成
+          # ============================
+          margin = {}
+
+          all_codes = set(weekly_map.keys()) | set(daily_map.keys()) | set(taisyaku_set)
+
+          for code in sorted(all_codes):
+              # 日々公表があれば優先
+              if code in daily_map:
+                  buy = daily_map[code]["buy"]
+                  sell = daily_map[code]["sell"]
+                  balance_type = "daily"
+              else:
+                  buy = weekly_map.get(code, {}).get("buy")
+                  sell = weekly_map.get(code, {}).get("sell")
+                  balance_type = "weekly"
+
+              ratio = None
+              if buy and sell and sell != 0:
+                  ratio = round(buy / sell, 2)
+
+              margin[code] = {
+                  "貸借銘柄": code in taisyaku_set,
+                  "制度信用": code in taisyaku_set,
+                  "一般信用": None,
+                  "信用買い残": buy,
+                  "信用売り残": sell,
+                  "信用倍率": ratio,
+                  "残高種別": balance_type,
+                  "規制": regulation_map.get(code, [])
+              }
+
+          with open("margin.json", "w", encoding="utf-8") as f:
+              json.dump(margin, f, ensure_ascii=False, indent=2)
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add margin.json || true
+          git commit -m "Auto-update margin.json (JSF/JPX scraping)" || echo "No changes to commit"
+          git push
