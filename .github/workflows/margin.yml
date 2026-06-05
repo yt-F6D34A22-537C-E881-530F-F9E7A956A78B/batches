@@ -32,21 +32,17 @@ jobs:
           from bs4 import BeautifulSoup
 
           UA = {"User-Agent": "Mozilla/5.0"}
-
           base = "https://www.taisyaku.jp/data/"
 
           # ============================
           # 1. meigara.csv（貸借銘柄一覧）
           # ============================
-          # 1行目はタイトル → skiprows=1
           meigara_df = pd.read_csv(
               base + "meigara.csv",
               encoding="shift_jis",
               dtype=str,
-              skiprows=1
+              skiprows=1  # 1行目はタイトル
           )
-
-          # 列名クリーン
           meigara_df.columns = meigara_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
 
           # ============================
@@ -59,6 +55,33 @@ jobs:
           )
           zandaka_df.columns = zandaka_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
 
+          # ★ 信用残列の厳密検出
+          buy_col = None
+          sell_col = None
+
+          # 完全一致を優先
+          for col in zandaka_df.columns:
+              if col == "制度信用・買残高株数":
+                  buy_col = col
+              if col == "制度信用・売残高株数":
+                  sell_col = col
+
+          # 見つからなければ意味一致で検出
+          if buy_col is None:
+              for col in zandaka_df.columns:
+                  if "制度信用" in col and "買残高株数" in col:
+                      buy_col = col
+                      break
+
+          if sell_col is None:
+              for col in zandaka_df.columns:
+                  if "制度信用" in col and "売残高株数" in col:
+                      sell_col = col
+                      break
+
+          if buy_col is None or sell_col is None:
+              raise Exception(f"制度信用の買残／売残列が見つかりません: {zandaka_df.columns.tolist()}")
+
           # ============================
           # 3. seigenichiran.csv（規制）
           # ============================
@@ -68,10 +91,7 @@ jobs:
               dtype=str,
               skiprows=4
           )
-
-          # 末尾3行削除（サマリ）
-          sei_df = sei_df.iloc[:-3]
-
+          sei_df = sei_df.iloc[:-3]  # 末尾3行削除
           sei_df.columns = sei_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
 
           # ============================
@@ -80,7 +100,7 @@ jobs:
           taisyaku_set = set()
           for _, row in meigara_df.iterrows():
               code = str(row["コード"]).zfill(4)
-              kubun = row["貸借銘柄区分（東証）"]  # 1 or 2 が制度信用
+              kubun = row["貸借銘柄区分（東証）"]
               if kubun in ("1", "2"):
                   taisyaku_set.add(code)
 
@@ -90,8 +110,8 @@ jobs:
           zandaka_map = {}
           for _, row in zandaka_df.iterrows():
               code = str(row["銘柄コード"]).zfill(4)
-              buy  = row.get("制度信用・買残高株数")
-              sell = row.get("制度信用・売残高株数")
+              buy  = row.get(buy_col)
+              sell = row.get(sell_col)
               zandaka_map[code] = {
                   "buy": int(buy) if str(buy).isdigit() else None,
                   "sell": int(sell) if str(sell).isdigit() else None
