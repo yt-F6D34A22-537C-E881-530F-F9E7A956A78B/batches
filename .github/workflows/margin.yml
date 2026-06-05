@@ -50,36 +50,49 @@ jobs:
                       taisyaku_set.add(code)
 
           # ============================
-          # 2. JSF data/ ディレクトリから CSV を取得
+          # 2. 週末残高 CSV（stock_03.php からリンク抽出）
           # ============================
-          data_url = f"{BASE}/de/stock/data/"
-          html = requests.get(data_url, headers=UA).text
+          weekly_page = f"{BASE}/de/stock/stock_03.php"
+          html = requests.get(weekly_page, headers=UA).text
           soup = BeautifulSoup(html, "lxml")
 
           weekly_csv = None
-          daily_csv = None
-
           for a in soup.find_all("a", href=True):
               href = a["href"]
-
-              # 週末残高（weekly）
               if "stock_03" in href and href.endswith(".csv"):
                   weekly_csv = href
+                  break
 
-              # 日々公表（daily）
-              if "stock_04" in href and href.endswith(".csv"):
-                  daily_csv = href
+          if not weekly_csv:
+              raise Exception("週末残高 CSV が見つかりません（stock_03*.csv のリンクがありません）")
 
-          if weekly_csv:
+          if weekly_csv.startswith("/"):
               weekly_csv = BASE + weekly_csv
-          else:
-              raise Exception("週末残高 CSV が見つかりません（stock_03_*.csv が存在しません）")
-
-          if daily_csv:
-              daily_csv = BASE + daily_csv
+          elif not weekly_csv.startswith("http"):
+              weekly_csv = BASE + "/de/stock/" + weekly_csv.lstrip("./")
 
           # ============================
-          # 3. CSV 読み込み
+          # 3. 日々公表 CSV（stock_04.php からリンク抽出）
+          # ============================
+          daily_page = f"{BASE}/de/stock/stock_04.php"
+          html = requests.get(daily_page, headers=UA).text
+          soup = BeautifulSoup(html, "lxml")
+
+          daily_csv = None
+          for a in soup.find_all("a", href=True):
+              href = a["href"]
+              if "stock_04" in href and href.endswith(".csv"):
+                  daily_csv = href
+                  break
+
+          if daily_csv:
+              if daily_csv.startswith("/"):
+                  daily_csv = BASE + daily_csv
+              elif not daily_csv.startswith("http"):
+                  daily_csv = BASE + "/de/stock/" + daily_csv.lstrip("./")
+
+          # ============================
+          # 4. CSV 読み込み
           # ============================
           weekly_df = pd.read_csv(weekly_csv, encoding="shift_jis", dtype=str)
           weekly_df = weekly_df.rename(columns=lambda x: x.strip())
@@ -109,7 +122,7 @@ jobs:
                   }
 
           # ============================
-          # 4. JPX 規制情報
+          # 5. JPX 規制情報
           # ============================
           jpx_url = "https://www.jpx.co.jp/regulation/alert/index.html"
           html = requests.get(jpx_url, headers=UA).text
@@ -125,14 +138,13 @@ jobs:
                       regulation_map.setdefault(code, []).append(reason)
 
           # ============================
-          # 5. 統合して margin.json を生成
+          # 6. 統合して margin.json を生成
           # ============================
           margin = {}
 
           all_codes = set(weekly_map.keys()) | set(daily_map.keys()) | set(taisyaku_set)
 
           for code in sorted(all_codes):
-              # 日々公表があれば優先
               if code in daily_map:
                   buy = daily_map[code]["buy"]
                   sell = daily_map[code]["sell"]
