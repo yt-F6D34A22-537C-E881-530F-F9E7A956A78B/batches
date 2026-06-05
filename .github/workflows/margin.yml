@@ -1,4 +1,4 @@
-name: Margin Info Fetch (taisyaku.jp CSV)
+name: Margin Info Fetch (taisyaku.jp + Rakuten)
 
 on:
   schedule:
@@ -20,7 +20,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip
-          pip3 install requests pandas
+          pip3 install requests pandas beautifulsoup4 lxml
 
       - name: Run margin-info scraper
         shell: python
@@ -28,87 +28,108 @@ jobs:
           import requests
           import pandas as pd
           import json
+          import re
+          from bs4 import BeautifulSoup
 
-          BASE = "https://www.taisyaku.jp/download/"
-
-          # ============================
-          # 1. CSV ダウンロード
-          # ============================
-          weekly_url = BASE + "syuyou_weekly.csv"
-          daily_url  = BASE + "syuyou_daily.csv"
-          list_url   = BASE + "taisyaku_list.csv"
-          reg_url    = BASE + "regulation.csv"
-
-          weekly_df = pd.read_csv(weekly_url, encoding="shift_jis", dtype=str)
-          daily_df  = pd.read_csv(daily_url,  encoding="shift_jis", dtype=str)
-          list_df   = pd.read_csv(list_url,   encoding="shift_jis", dtype=str)
-          reg_df    = pd.read_csv(reg_url,    encoding="shift_jis", dtype=str)
+          UA = {"User-Agent": "Mozilla/5.0"}
 
           # ============================
-          # 2. 貸借銘柄一覧
+          # 1. taisyaku.jp CSV 取得
           # ============================
-          taisyaku_set = set(list_df["銘柄コード"].astype(str).str.zfill(4))
+          base = "https://www.taisyaku.jp/data/"
+
+          meigara_url       = base + "meigara.csv"
+          zandaka_url       = base + "zandaka.csv"
+          shina_url         = base + "shina.csv"
+          seigenichiran_url = base + "seigenichiran.csv"
+
+          meigara_df       = pd.read_csv(meigara_url,       encoding="shift_jis", dtype=str)
+          zandaka_df       = pd.read_csv(zandaka_url,       encoding="shift_jis", dtype=str)
+          seigenichiran_df = pd.read_csv(seigenichiran_url, encoding="shift_jis", dtype=str)
+          # shina_df = pd.read_csv(shina_url, encoding="shift_jis", dtype=str)  # 必要なら使用
 
           # ============================
-          # 3. 週末残高
+          # 2. 貸借銘柄・制度信用
           # ============================
-          weekly_map = {}
-          for _, row in weekly_df.iterrows():
+          # meigara.csv の構造例：
+          # 銘柄コード, 区分(1=貸借,2=融資,0=非制度) など
+          taisyaku_set = set()
+          for _, row in meigara_df.iterrows():
               code = str(row["銘柄コード"]).zfill(4)
-              weekly_map[code] = {
-                  "buy": int(row["買残"]) if row["買残"].isdigit() else None,
-                  "sell": int(row["売残"]) if row["売残"].isdigit() else None
+              kubun = row.get("区分")  # 列名は実際のヘッダに合わせて調整
+              if kubun in ("1", "2"):
+                  taisyaku_set.add(code)
+
+          # ============================
+          # 3. 信用残高（買残・売残）
+          # ============================
+          # zandaka.csv の構造例：
+          # 銘柄コード, 買残, 売残 など
+          zandaka_map = {}
+          for _, row in zandaka_df.iterrows():
+              code = str(row["銘柄コード"]).zfill(4)
+              buy  = row.get("買残")
+              sell = row.get("売残")
+              zandaka_map[code] = {
+                  "buy": int(buy)  if str(buy).isdigit()  else None,
+                  "sell": int(sell) if str(sell).isdigit() else None
               }
 
           # ============================
-          # 4. 日々公表
-          # ============================
-          daily_map = {}
-          for _, row in daily_df.iterrows():
-              code = str(row["銘柄コード"]).zfill(4)
-              daily_map[code] = {
-                  "buy": int(row["買残"]) if row["買残"].isdigit() else None,
-                  "sell": int(row["売残"]) if row["売残"].isdigit() else None
-              }
-
-          # ============================
-          # 5. 規制情報
+          # 4. 規制情報
           # ============================
           regulation_map = {}
-          for _, row in reg_df.iterrows():
-              code = str(row["銘柄コード"]).zfill(4)
-              reason = row["規制内容"]
+          for _, row in seigenichiran_df.iterrows():
+              code   = str(row["銘柄コード"]).zfill(4)
+              reason = row.get("規制内容")
               regulation_map.setdefault(code, []).append(reason)
 
           # ============================
-          # 6. margin.json を生成
+          # 5. 楽天証券 一般信用（売り建て）
+          # ============================
+          rakuten_url = "https://www.rakuten-sec.co.jp/web/market/search/general_margin/"
+          html = requests.get(rakuten_url, headers=UA).text
+          soup = BeautifulSoup(html, "lxml")
+
+          general_map = {}
+          for row in soup.select("table tr"):
+              cols = row.find_all("td")
+              if len(cols) >= 3:
+                  code = cols[0].get_text(strip=True)
+                  if re.fullmatch(r"\d{4}", code):
+                      status = cols[2].get_text(strip=True)  # ◎ / ○ / △ / ×
+                      general_map[code] = {
+                          "売り建て": status != "×",
+                          "在庫区分": status,
+                          "在庫数量": None
+                      }
+
+          # ============================
+          # 6. margin.json 統合
           # ============================
           margin = {}
-
-          all_codes = set(weekly_map.keys()) | set(daily_map.keys()) | set(taisyaku_set)
+          all_codes = set(zandaka_map.keys()) | set(taisyaku_set)
 
           for code in sorted(all_codes):
-              if code in daily_map:
-                  buy = daily_map[code]["buy"]
-                  sell = daily_map[code]["sell"]
-                  balance_type = "daily"
-              else:
-                  buy = weekly_map.get(code, {}).get("buy")
-                  sell = weekly_map.get(code, {}).get("sell")
-                  balance_type = "weekly"
+              buy  = zandaka_map.get(code, {}).get("buy")
+              sell = zandaka_map.get(code, {}).get("sell")
 
               ratio = None
-              if buy and sell and sell != 0:
+              if buy is not None and sell is not None and sell != 0:
                   ratio = round(buy / sell, 2)
 
               margin[code] = {
                   "貸借銘柄": code in taisyaku_set,
                   "制度信用": code in taisyaku_set,
-                  "一般信用": None,
+                  "一般信用": general_map.get(code, {
+                      "売り建て": False,
+                      "在庫区分": None,
+                      "在庫数量": None
+                  }),
                   "信用買い残": buy,
                   "信用売り残": sell,
                   "信用倍率": ratio,
-                  "残高種別": balance_type,
+                  "残高種別": "latest",  # zandaka.csv は直近残高
                   "規制": regulation_map.get(code, [])
               }
 
@@ -120,5 +141,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (taisyaku.jp CSV)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (taisyaku.jp + Rakuten)" || echo "No changes to commit"
           git push
