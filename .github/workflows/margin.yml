@@ -1,8 +1,6 @@
-name: Margin Info Fetch (JPX Only)
+name: Margin Info Fetch (Debug Version)
 
 on:
-  schedule:
-    - cron: "0 18 * * *"
   workflow_dispatch:
 
 permissions:
@@ -68,7 +66,11 @@ jobs:
           regulation_map = {}
           for _, row in sei_df.iterrows():
               code = str(row["銘柄コード"]).zfill(4)
-              reason = f'{row["実施措置"]}:{row["実施内容"]}'
+              reason_raw = row["実施内容"]
+              if pd.notna(reason_raw):
+                  reason = f'{row["実施措置"]}:{reason_raw}'
+              else:
+                  reason = row["実施措置"]
               regulation_map.setdefault(code, []).append(reason)
 
           # ============================
@@ -92,130 +94,45 @@ jobs:
                       }
 
           # ============================
-          # JPX 週末信用残（05.html → PDF）
+          # JPX PDF ダウンロード
           # ============================
           jpx_page = "https://www.jpx.co.jp/markets/statistics-equities/margin/05.html"
           jpx_html = requests.get(jpx_page, headers=UA).text
           jpx_soup = BeautifulSoup(jpx_html, "lxml")
-          
+
           pdf_links = []
           for a in jpx_soup.find_all("a", href=True):
               href = a["href"]
               if href.endswith(".pdf") and "syumatsu" in href:
                   pdf_links.append("https://www.jpx.co.jp" + href)
-          
+
           latest_pdf = sorted(pdf_links)[-1]
-          
+
           pdf_data = requests.get(latest_pdf, headers=UA).content
           with open("jpx.pdf", "wb") as f:
               f.write(pdf_data)
-          
+
           # ============================
-          # JPX PDF パース（ETF 対応ブロック方式）
+          # ★ デバッグ：PDF の全文を出力 ★
           # ============================
-          jpx_map = {}
-          
+          print("===== JPX PDF DEBUG START =====")
           with pdfplumber.open("jpx.pdf") as pdf:
-              full_text = ""
-              for page in pdf.pages:
-                  t = page.extract_text()
-                  if t:
-                      full_text += "\n" + t
-          
-          # 5桁コードでブロックに分割
-          blocks = re.split(r"(?=\d{5}\s+JP\d{10})", full_text)
-          
-          def parse_num(s):
-              s = s.replace(",", "").replace(" ", "")
-              if s in ("", "▲"):
-                  return 0
-              if s.startswith("▲"):
-                  return -int(s[1:])
-              return int(s)
-          
-          for block in blocks:
-              # 銘柄コード
-              m = re.search(r"(\d{5})\s+JP\d{10}", block)
-              if not m:
-                  continue
-          
-              code5 = m.group(1)
-              code4 = code5[:4]
-          
-              # ISIN の後ろだけを切り出す（ここが重要）
-              after_isin = re.split(r"JP\d{10}", block)[1]
-          
-              # 数字だけ抽出（銘柄コード・ISIN を除外）
-              nums = re.findall(r"[▲\-]?\s*[\d,]+", after_isin)
-              nums = [parse_num(n) for n in nums]
-          
-              # ETF（制度＋一般）かどうか判定
-              if len(nums) >= 8:
-                  # 制度
-                  sell_sys = nums[0]
-                  sell_sys_diff = nums[1]
-                  buy_sys = nums[2]
-                  buy_sys_diff = nums[3]
-          
-                  # 一般
-                  sell_gen = nums[4]
-                  sell_gen_diff = nums[5]
-                  buy_gen = nums[6]
-                  buy_gen_diff = nums[7]
-          
-                  sell = sell_sys + sell_gen
-                  sell_diff = sell_sys_diff + sell_gen_diff
-                  buy = buy_sys + buy_gen
-                  buy_diff = buy_sys_diff + buy_gen_diff
-          
-              else:
-                  # 通常銘柄（制度のみ）
-                  sell = nums[0]
-                  sell_diff = nums[1]
-                  buy = nums[2]
-                  buy_diff = nums[3]
-          
-              ratio = round(buy / sell, 2) if sell != 0 else None
-          
-              jpx_map[code4] = {
-                  "buy": buy,
-                  "buy_diff": buy_diff,
-                  "sell": sell,
-                  "sell_diff": sell_diff,
-                  "ratio": ratio
-              }
+              for i, page in enumerate(pdf.pages):
+                  print(f"----- PAGE {i+1} -----")
+                  text = page.extract_text()
+                  print(text)
+          print("===== JPX PDF DEBUG END =====")
 
           # ============================
-          # margin.json 統合（JSF 信用残は削除）
+          # ★ パースは行わず、margin.json は空で出力 ★
           # ============================
-          margin = {}
-          all_codes = set(taisyaku_set) | set(jpx_map.keys()) | set(general_map.keys())
-
-          for code in sorted(all_codes):
-              jpx = jpx_map.get(code, {})
-
-              margin[code] = {
-                  "貸借銘柄": code in taisyaku_set,
-                  "一般信用": general_map.get(code, {
-                      "売り建て": False,
-                      "在庫区分": None,
-                      "在庫数量": None
-                  }),
-                  "JPX信用買残": jpx.get("buy"),
-                  "JPX信用買残前週比": jpx.get("buy_diff"),
-                  "JPX信用売残": jpx.get("sell"),
-                  "JPX信用売残前週比": jpx.get("sell_diff"),
-                  "JPX信用倍率": jpx.get("ratio"),
-                  "規制": regulation_map.get(code, [])
-              }
-
           with open("margin.json", "w", encoding="utf-8") as f:
-              json.dump(margin, f, ensure_ascii=False, indent=2)
+              json.dump({"debug": "PDF text printed to logs"}, f, ensure_ascii=False, indent=2)
 
       - name: Commit & Push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json" || echo "No changes to commit"
+          git commit -m "Debug PDF output" || echo "No changes to commit"
           git push
