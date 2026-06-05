@@ -38,50 +38,47 @@ jobs:
           # ============================
           base = "https://www.taisyaku.jp/data/"
 
-          meigara_url       = base + "meigara.csv"
-          zandaka_url       = base + "zandaka.csv"
-          shina_url         = base + "shina.csv"
-          seigenichiran_url = base + "seigenichiran.csv"
+          meigara_df = pd.read_csv(base + "meigara.csv", encoding="shift_jis", dtype=str)
+          zandaka_df = pd.read_csv(base + "zandaka.csv", encoding="shift_jis", dtype=str)
 
-          meigara_df       = pd.read_csv(meigara_url,       encoding="shift_jis", dtype=str)
-          zandaka_df       = pd.read_csv(zandaka_url,       encoding="shift_jis", dtype=str)
-          seigenichiran_df = pd.read_csv(seigenichiran_url, encoding="shift_jis", dtype=str)
-          # shina_df = pd.read_csv(shina_url, encoding="shift_jis", dtype=str)  # 必要なら使用
+          # ★ seigenichiran.csv は先頭4行が説明文 → skiprows=4
+          seigenichiran_df = pd.read_csv(
+              base + "seigenichiran.csv",
+              encoding="shift_jis",
+              dtype=str,
+              skiprows=4
+          )
 
           # ============================
-          # 2. 貸借銘柄・制度信用
+          # 2. 貸借銘柄（制度信用）
           # ============================
-          # meigara.csv の構造例：
-          # 銘柄コード, 区分(1=貸借,2=融資,0=非制度) など
           taisyaku_set = set()
           for _, row in meigara_df.iterrows():
               code = str(row["銘柄コード"]).zfill(4)
-              kubun = row.get("区分")  # 列名は実際のヘッダに合わせて調整
+              kubun = row["区分"]  # 1=貸借、2=融資、0=非制度
               if kubun in ("1", "2"):
                   taisyaku_set.add(code)
 
           # ============================
-          # 3. 信用残高（買残・売残）
+          # 3. 信用残（買残・売残）
           # ============================
-          # zandaka.csv の構造例：
-          # 銘柄コード, 買残, 売残 など
           zandaka_map = {}
           for _, row in zandaka_df.iterrows():
               code = str(row["銘柄コード"]).zfill(4)
               buy  = row.get("買残")
               sell = row.get("売残")
               zandaka_map[code] = {
-                  "buy": int(buy)  if str(buy).isdigit()  else None,
+                  "buy": int(buy) if str(buy).isdigit() else None,
                   "sell": int(sell) if str(sell).isdigit() else None
               }
 
           # ============================
-          # 4. 規制情報
+          # 4. 規制情報（seigenichiran.csv）
           # ============================
           regulation_map = {}
           for _, row in seigenichiran_df.iterrows():
-              code   = str(row["銘柄コード"]).zfill(4)
-              reason = row.get("規制内容")
+              code = str(row["銘柄コード"]).zfill(4)
+              reason = f'{row["実施措置"]}:{row["実施内容"]}'
               regulation_map.setdefault(code, []).append(reason)
 
           # ============================
@@ -129,7 +126,7 @@ jobs:
                   "信用買い残": buy,
                   "信用売り残": sell,
                   "信用倍率": ratio,
-                  "残高種別": "latest",  # zandaka.csv は直近残高
+                  "残高種別": "latest",
                   "規制": regulation_map.get(code, [])
               }
 
@@ -141,5 +138,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (taisyaku.jp + Rakuten)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json" || echo "No changes to commit"
           git push
