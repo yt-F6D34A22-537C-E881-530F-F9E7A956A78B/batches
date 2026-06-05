@@ -31,11 +31,14 @@ jobs:
           import json
           import re
 
+          BASE = "https://www.jsf.co.jp"
+          UA = {"User-Agent": "Mozilla/5.0"}
+
           # ============================
           # 1. JSF 貸借銘柄一覧（制度信用）
           # ============================
-          taisyaku_url = "https://www.jsf.co.jp/de/stock/stock_01.php"
-          html = requests.get(taisyaku_url).text
+          taisyaku_url = f"{BASE}/de/stock/stock_01.php"
+          html = requests.get(taisyaku_url, headers=UA).text
           soup = BeautifulSoup(html, "lxml")
 
           taisyaku_set = set()
@@ -47,24 +50,33 @@ jobs:
                       taisyaku_set.add(code)
 
           # ============================
-          # 2. JSF 信用取引週末残高（CSVリンクを動的取得）
+          # 2. JSF data/ ディレクトリから CSV を取得
           # ============================
-          weekly_page = "https://www.jsf.co.jp/de/stock/stock_03.php"
-          html = requests.get(weekly_page).text
+          data_url = f"{BASE}/de/stock/data/"
+          html = requests.get(data_url, headers=UA).text
           soup = BeautifulSoup(html, "lxml")
 
           weekly_csv = None
-          for a in soup.find_all("a", href=True):
-              if a["href"].endswith(".csv"):
-                  weekly_csv = a["href"]
-                  break
+          daily_csv = None
 
-          if not weekly_csv:
+          for a in soup.find_all("a", href=True):
+              href = a["href"]
+              if "margin_weekly" in href and href.endswith(".csv"):
+                  weekly_csv = href
+              if "margin_daily" in href and href.endswith(".csv"):
+                  daily_csv = href
+
+          if weekly_csv:
+              weekly_csv = BASE + weekly_csv
+          else:
               raise Exception("週末残高 CSV が見つかりません")
 
-          if weekly_csv.startswith("/"):
-              weekly_csv = "https://www.jsf.co.jp" + weekly_csv
+          if daily_csv:
+              daily_csv = BASE + daily_csv
 
+          # ============================
+          # 3. CSV 読み込み
+          # ============================
           weekly_df = pd.read_csv(weekly_csv, encoding="shift_jis", dtype=str)
           weekly_df = weekly_df.rename(columns=lambda x: x.strip())
 
@@ -78,27 +90,11 @@ jobs:
                   "sell": int(sell) if str(sell).isdigit() else None
               }
 
-          # ============================
-          # 3. JSF 日々公表信用残（CSVリンクを動的取得）
-          # ============================
-          daily_page = "https://www.jsf.co.jp/de/stock/stock_04.php"
-          html = requests.get(daily_page).text
-          soup = BeautifulSoup(html, "lxml")
-
-          daily_csv = None
-          for a in soup.find_all("a", href=True):
-              if a["href"].endswith(".csv"):
-                  daily_csv = a["href"]
-                  break
-
+          daily_map = {}
           if daily_csv:
-              if daily_csv.startswith("/"):
-                  daily_csv = "https://www.jsf.co.jp" + daily_csv
-
               daily_df = pd.read_csv(daily_csv, encoding="shift_jis", dtype=str)
               daily_df = daily_df.rename(columns=lambda x: x.strip())
 
-              daily_map = {}
               for _, row in daily_df.iterrows():
                   code = row["銘柄コード"].zfill(4)
                   buy = row.get("買残高")
@@ -107,18 +103,15 @@ jobs:
                       "buy": int(buy) if str(buy).isdigit() else None,
                       "sell": int(sell) if str(sell).isdigit() else None
                   }
-          else:
-              daily_map = {}
 
           # ============================
-          # 4. JPX 規制情報（HTML）
+          # 4. JPX 規制情報
           # ============================
           jpx_url = "https://www.jpx.co.jp/regulation/alert/index.html"
-          html = requests.get(jpx_url).text
+          html = requests.get(jpx_url, headers=UA).text
           soup = BeautifulSoup(html, "lxml")
 
           regulation_map = {}
-
           for row in soup.select("table tr"):
               cols = row.find_all("td")
               if len(cols) >= 2:
