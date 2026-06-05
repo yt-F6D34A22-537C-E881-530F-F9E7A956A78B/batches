@@ -47,10 +47,25 @@ jobs:
                       taisyaku_set.add(code)
 
           # ============================
-          # 2. JSF 信用取引週末残高（CSV）
+          # 2. JSF 信用取引週末残高（CSVリンクを動的取得）
           # ============================
-          weekly_url = "https://www.jsf.co.jp/de/stock/data/margin_weekly.csv"
-          weekly_df = pd.read_csv(weekly_url, encoding="shift_jis", dtype=str)
+          weekly_page = "https://www.jsf.co.jp/de/stock/stock_03.php"
+          html = requests.get(weekly_page).text
+          soup = BeautifulSoup(html, "lxml")
+
+          weekly_csv = None
+          for a in soup.find_all("a", href=True):
+              if a["href"].endswith(".csv"):
+                  weekly_csv = a["href"]
+                  break
+
+          if not weekly_csv:
+              raise Exception("週末残高 CSV が見つかりません")
+
+          if weekly_csv.startswith("/"):
+              weekly_csv = "https://www.jsf.co.jp" + weekly_csv
+
+          weekly_df = pd.read_csv(weekly_csv, encoding="shift_jis", dtype=str)
           weekly_df = weekly_df.rename(columns=lambda x: x.strip())
 
           weekly_map = {}
@@ -64,21 +79,36 @@ jobs:
               }
 
           # ============================
-          # 3. JSF 日々公表信用残（CSV）
+          # 3. JSF 日々公表信用残（CSVリンクを動的取得）
           # ============================
-          daily_url = "https://www.jsf.co.jp/de/stock/data/margin_daily.csv"
-          daily_df = pd.read_csv(daily_url, encoding="shift_jis", dtype=str)
-          daily_df = daily_df.rename(columns=lambda x: x.strip())
+          daily_page = "https://www.jsf.co.jp/de/stock/stock_04.php"
+          html = requests.get(daily_page).text
+          soup = BeautifulSoup(html, "lxml")
 
-          daily_map = {}
-          for _, row in daily_df.iterrows():
-              code = row["銘柄コード"].zfill(4)
-              buy = row.get("買残高")
-              sell = row.get("売残高")
-              daily_map[code] = {
-                  "buy": int(buy) if str(buy).isdigit() else None,
-                  "sell": int(sell) if str(sell).isdigit() else None
-              }
+          daily_csv = None
+          for a in soup.find_all("a", href=True):
+              if a["href"].endswith(".csv"):
+                  daily_csv = a["href"]
+                  break
+
+          if daily_csv:
+              if daily_csv.startswith("/"):
+                  daily_csv = "https://www.jsf.co.jp" + daily_csv
+
+              daily_df = pd.read_csv(daily_csv, encoding="shift_jis", dtype=str)
+              daily_df = daily_df.rename(columns=lambda x: x.strip())
+
+              daily_map = {}
+              for _, row in daily_df.iterrows():
+                  code = row["銘柄コード"].zfill(4)
+                  buy = row.get("買残高")
+                  sell = row.get("売残高")
+                  daily_map[code] = {
+                      "buy": int(buy) if str(buy).isdigit() else None,
+                      "sell": int(sell) if str(sell).isdigit() else None
+                  }
+          else:
+              daily_map = {}
 
           # ============================
           # 4. JPX 規制情報（HTML）
