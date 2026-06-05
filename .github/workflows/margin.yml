@@ -1,6 +1,8 @@
-name: Margin Info Fetch (Debug JPX PDF)
+name: Margin Info Fetch (taisyaku.jp + Rakuten + JPX)
 
 on:
+  schedule:
+    - cron: "0 18 * * *"
   workflow_dispatch:
 
 permissions:
@@ -24,43 +26,215 @@ jobs:
         shell: python
         run: |
           import requests
+          import pandas as pd
+          import json
+          import re
           import pdfplumber
           from bs4 import BeautifulSoup
-          import re
 
           UA = {"User-Agent": "Mozilla/5.0"}
 
-          print("=== STEP 1: Fetch 05.html ===")
-          jpx_page = "https://www.jpx.co.jp/markets/statistics-equities/margin/05.html"
-          html = requests.get(jpx_page, headers=UA).text
+          # ============================
+          # JSF meigara.csv
+          # ============================
+          base = "https://www.taisyaku.jp/data/"
+          meigara_df = pd.read_csv(
+              base + "meigara.csv",
+              encoding="shift_jis",
+              dtype=str,
+              skiprows=1
+          )
+          meigara_df.columns = meigara_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
+
+          # ============================
+          # JSF zandaka.csv
+          # ============================
+          zandaka_df = pd.read_csv(
+              base + "zandaka.csv",
+              encoding="shift_jis",
+              dtype=str
+          )
+          zandaka_df.columns = zandaka_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
+
+          # 制度信用残の列名検出
+          buy_col = None
+          sell_col = None
+
+          for col in zandaka_df.columns:
+              if col == "制度信用・買残高株数":
+                  buy_col = col
+              if col == "制度信用・売残高株数":
+                  sell_col = col
+
+          if buy_col is None:
+              for col in zandaka_df.columns:
+                  if "制度信用" in col and "買残高株数" in col:
+                      buy_col = col
+                      break
+
+          if sell_col is None:
+              for col in zandaka_df.columns:
+                  if "制度信用" in col and "売残高株数" in col:
+                      sell_col = col
+                      break
+
+          # ============================
+          # JSF seigenichiran.csv
+          # ============================
+          sei_df = pd.read_csv(
+              base + "seigenichiran.csv",
+              encoding="shift_jis",
+              dtype=str,
+              skiprows=4
+          )
+          sei_df = sei_df.iloc[:-3]
+          sei_df.columns = sei_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
+
+          # ============================
+          # 貸借銘柄
+          # ============================
+          taisyaku_set = set()
+          for _, row in meigara_df.iterrows():
+              code = str(row["コード"]).zfill(4)
+              kubun = row["貸借銘柄区分（東証）"]
+              if kubun in ("1", "2"):
+                  taisyaku_set.add(code)
+
+          # ============================
+          # JSF 制度信用残
+          # ============================
+          zandaka_map = {}
+          for _, row in zandaka_df.iterrows():
+              code = str(row["銘柄コード"]).zfill(4)
+              buy  = row.get(buy_col)
+              sell = row.get(sell_col)
+              zandaka_map[code] = {
+                  "buy": int(buy) if str(buy).isdigit() else None,
+                  "sell": int(sell) if str(sell).isdigit() else None
+              }
+
+          # ============================
+          # 規制情報
+          # ============================
+          regulation_map = {}
+          for _, row in sei_df.iterrows():
+              code = str(row["銘柄コード"]).zfill(4)
+              reason = f'{row["実施措置"]}:{row["実施内容"]}'
+              regulation_map.setdefault(code, []).append(reason)
+
+          # ============================
+          # 楽天 一般信用
+          # ============================
+          rakuten_url = "https://www.rakuten-sec.co.jp/web/market/search/general_margin/"
+          html = requests.get(rakuten_url, headers=UA).text
           soup = BeautifulSoup(html, "lxml")
 
-          print("=== STEP 2: Extract PDF links ===")
+          general_map = {}
+          for row in soup.select("table tr"):
+              cols = row.find_all("td")
+              if len(cols) >= 3:
+                  code = cols[0].get_text(strip=True)
+                  if re.fullmatch(r"\d{4}", code):
+                      status = cols[2].get_text(strip=True)
+                      general_map[code] = {
+                          "売り建て": status != "×",
+                          "在庫区分": status,
+                          "在庫数量": None
+                      }
+
+          # ============================
+          # JPX 週末信用残（05.html → PDF）
+          # ============================
+          jpx_page = "https://www.jpx.co.jp/markets/statistics-equities/margin/05.html"
+          jpx_html = requests.get(jpx_page, headers=UA).text
+          jpx_soup = BeautifulSoup(jpx_html, "lxml")
+
           pdf_links = []
-          for a in soup.find_all("a", href=True):
+          for a in jpx_soup.find_all("a", href=True):
               href = a["href"]
               if href.endswith(".pdf") and "syumatsu" in href:
-                  full = "https://www.jpx.co.jp" + href
-                  pdf_links.append(full)
-                  print("FOUND PDF:", full)
-
-          if not pdf_links:
-              raise Exception("JPX PDF が見つかりません")
+                  pdf_links.append("https://www.jpx.co.jp" + href)
 
           latest_pdf = sorted(pdf_links)[-1]
-          print("=== STEP 3: Latest PDF ===")
-          print(latest_pdf)
 
-          print("=== STEP 4: Download PDF ===")
           pdf_data = requests.get(latest_pdf, headers=UA).content
           with open("jpx.pdf", "wb") as f:
               f.write(pdf_data)
-          print("PDF saved as jpx.pdf")
 
-          print("=== STEP 5: DEBUG — PDF TEXT OUTPUT START ===")
+          # ============================
+          # JPX PDF パース（売残・売残前週比・買残・買残前週比）
+          # ============================
+          jpx_map = {}
+
+          pattern = re.compile(
+              r"(\d{5})\s+JP\d{10}\s+([\d,]+)\s+([▲\-\d,]+)\s+([\d,]+)\s+([▲\-\d,]+)"
+          )
+
           with pdfplumber.open("jpx.pdf") as pdf:
-              for i, page in enumerate(pdf.pages):
-                  print(f"\n--- PAGE {i+1} ---")
+              for page in pdf.pages:
                   text = page.extract_text()
-                  print(text)
-          print("=== DEBUG — PDF TEXT OUTPUT END ===")
+                  if not text:
+                      continue
+
+                  for line in text.split("\n"):
+                      m = pattern.search(line)
+                      if m:
+                          code5 = m.group(1)
+                          code4 = code5[:4]
+
+                          sell = int(m.group(2).replace(",", ""))
+                          sell_diff = int(m.group(3).replace(",", "").replace("▲", "-"))
+
+                          buy = int(m.group(4).replace(",", ""))
+                          buy_diff = int(m.group(5).replace(",", "").replace("▲", "-"))
+
+                          ratio = round(buy / sell, 2) if sell != 0 else None
+
+                          jpx_map[code4] = {
+                              "buy": buy,
+                              "buy_diff": buy_diff,
+                              "sell": sell,
+                              "sell_diff": sell_diff,
+                              "ratio": ratio
+                          }
+
+          # ============================
+          # margin.json 統合
+          # ============================
+          margin = {}
+          all_codes = set(zandaka_map.keys()) | set(taisyaku_set) | set(jpx_map.keys())
+
+          for code in sorted(all_codes):
+              jsf_buy  = zandaka_map.get(code, {}).get("buy")
+              jsf_sell = zandaka_map.get(code, {}).get("sell")
+
+              jpx = jpx_map.get(code, {})
+
+              margin[code] = {
+                  "貸借銘柄": code in taisyaku_set,
+                  "制度信用": code in taisyaku_set,
+                  "一般信用": general_map.get(code, {
+                      "売り建て": False,
+                      "在庫区分": None,
+                      "在庫数量": None
+                  }),
+                  "信用買い残": jsf_buy,
+                  "信用売り残": jsf_sell,
+                  "JPX信用買残": jpx.get("buy"),
+                  "JPX信用買残前週比": jpx.get("buy_diff"),
+                  "JPX信用売残": jpx.get("sell"),
+                  "JPX信用売残前週比": jpx.get("sell_diff"),
+                  "JPX信用倍率": jpx.get("ratio"),
+                  "規制": regulation_map.get(code, [])
+              }
+
+          with open("margin.json", "w", encoding="utf-8") as f:
+              json.dump(margin, f, ensure_ascii=False, indent=2)
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add margin.json || true
+          git commit -m "Auto-update margin.json" || echo "No changes to commit"
+          git push
