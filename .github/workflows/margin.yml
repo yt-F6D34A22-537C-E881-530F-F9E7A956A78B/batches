@@ -146,18 +146,6 @@ jobs:
           )
 
           # ============================
-          # ★ デバッグ出力 ★
-          # ============================
-          print("=== DEBUG: daily_url ===")
-          print(daily_url)
-
-          print("=== DEBUG: daily_df.columns ===")
-          print(list(daily_df.columns))
-
-          print("=== DEBUG: daily_df.head(10) ===")
-          print(daily_df.head(10).to_string())
-
-          # ============================
           # ★ 列名で参照（日本語列名） ★
           # ============================
           code_col = "コード"
@@ -175,12 +163,6 @@ jobs:
                   except:
                       continue
                   daily_map[code4] = {"sell": sell, "buy": buy}
-
-          print("=== DEBUG: daily_map keys (first 20) ===")
-          print(list(daily_map.keys())[:20])
-
-          print("=== DEBUG: 4833 in daily_map? ===")
-          print("4833" in daily_map)
 
           # ============================
           # JPX PDF パース（週次 syumatsu）
@@ -237,9 +219,6 @@ jobs:
           # ============================
           # ★ 日々公表（mtdailyk）で上書き（前週比を正しく計算） ★
           # ============================
-          print("=== DEBUG: jpx_map[4833] BEFORE override ===")
-          print(jpx_map.get("4833"))
-
           for code4, d in daily_map.items():
               if code4 in jpx_map:
                   prev_buy = jpx_map[code4]["buy"]
@@ -265,9 +244,6 @@ jobs:
                       "sell_diff": None,
                       "ratio": round(d["buy"] / d["sell"], 2) if d["sell"] != 0 else None
                   }
-
-          print("=== DEBUG: jpx_map[4833] AFTER override ===")
-          print(jpx_map.get("4833"))
 
           # ============================
           # margin.json 統合
@@ -301,5 +277,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (daily override debug)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (daily override)" || echo "No changes to commit"
           git push
