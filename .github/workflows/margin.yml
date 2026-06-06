@@ -137,12 +137,12 @@ jobs:
           else:
               daily_url = latest_daily
 
-          # ★ XLS を xlrd 2.0.1 で読み込む（ヘッダー行を 5 行スキップ）
+          # ★ XLS を xlrd 2.0.1 で読み込む（header=5）
           daily_df = pd.read_excel(
               daily_url,
               dtype=str,
               engine="xlrd",
-              header=5   # ← これが最重要
+              header=5
           )
 
           # ============================
@@ -158,9 +158,9 @@ jobs:
           print(daily_df.head(10).to_string())
 
           # ============================
-          # ★ 列名で正しく参照（G=Code, I=売残, L=買残） ★
+          # ★ 列名で参照（日本語列名） ★
           # ============================
-          code_col = "Code"
+          code_col = "コード"
           sell_col = "売残高 Outstanding Sales"
           buy_col  = "買残高 Outstanding Purchases"
 
