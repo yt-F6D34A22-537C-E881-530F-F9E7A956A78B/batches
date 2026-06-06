@@ -1,4 +1,4 @@
-name: Margin Info Fetch (Daily Override)
+name: Margin Info Fetch (Daily Override Auto Detect)
 
 on:
   schedule:
@@ -115,12 +115,30 @@ jobs:
               f.write(pdf_data)
 
           # ============================
-          # 日々公表（mtdailyk） XLS
+          # ★ 日々公表（mtdailyk） XLS 自動検出 ★
           # ============================
-          daily_url = "https://www.jpx.co.jp/markets/statistics-equities/margin/tvdivq0000001r92-att/mtdailyk2026060400.xls"
+          daily_index = "https://www.jpx.co.jp/markets/statistics-equities/margin/index.html"
+          daily_html = requests.get(daily_index, headers=UA).text
+          daily_soup = BeautifulSoup(daily_html, "lxml")
+
+          daily_links = []
+          for a in daily_soup.find_all("a", href=True):
+              href = a["href"]
+              if re.search(r"mtdailyk.*\.xls$", href):
+                  daily_links.append(href)
+
+          if not daily_links:
+              raise Exception("日々公表 mtdailyk*.xls が見つかりませんでした")
+
+          latest_daily = sorted(daily_links)[-1]
+
+          if latest_daily.startswith("/"):
+              daily_url = "https://www.jpx.co.jp" + latest_daily
+          else:
+              daily_url = latest_daily
+
           daily_df = pd.read_excel(daily_url, dtype=str)
 
-          # 銘柄コード列を抽出
           daily_df.columns = daily_df.columns.str.strip()
           daily_df = daily_df.dropna(subset=[daily_df.columns[0]])
 
@@ -193,12 +211,14 @@ jobs:
           # ============================
           for code4, d in daily_map.items():
               if code4 in jpx_map:
+                  # 週次データを上書き
                   jpx_map[code4]["sell"] = d["sell"]
                   jpx_map[code4]["buy"]  = d["buy"]
                   jpx_map[code4]["ratio"] = (
                       round(d["buy"] / d["sell"], 2) if d["sell"] != 0 else None
                   )
               else:
+                  # 週次に存在しない銘柄（新規日々公表銘柄）
                   jpx_map[code4] = {
                       "buy": d["buy"],
                       "buy_diff": None,
@@ -239,5 +259,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (daily override)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (daily override auto detect)" || echo "No changes to commit"
           git push
