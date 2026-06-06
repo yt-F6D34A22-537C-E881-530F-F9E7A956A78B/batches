@@ -90,7 +90,6 @@ jobs:
                   if re.fullmatch(r"\d{4}", code):
                       status = cols[2].get_text(strip=True)
                       general_map[code] = {
-                          "売り建て": status != "×",
                           "在庫区分": status,
                           "在庫数量": None
                       }
@@ -246,27 +245,49 @@ jobs:
                   }
 
           # ============================
-          # margin.json 統合
+          # margin.json 統合（建て区分 完全統合）
           # ============================
           margin = {}
           all_codes = set(taisyaku_set) | set(jpx_map.keys()) | set(general_map.keys())
 
           for code in sorted(all_codes):
               jpx = jpx_map.get(code, {})
+              regs = regulation_map.get(code, [])
+              gen = general_map.get(code, {"在庫区分": "×", "在庫数量": None})
+
+              # 制度信用（貸借銘柄）
+              sei_buy = code in taisyaku_set and not any("買" in r for r in regs)
+              sei_sell = code in taisyaku_set and not any(("売" in r or "申込停止:新規売" in r) for r in regs)
+
+              # 一般信用
+              gen_buy = not any("買" in r for r in regs)
+              gen_sell = gen["在庫区分"] != "×" and not any(("売" in r or "申込停止:新規売" in r) for r in regs)
+
+              # 一日信用（一般信用と同じ判定）
+              day_buy = gen_buy
+              day_sell = gen_sell
 
               margin[code] = {
-                  "貸借銘柄": code in taisyaku_set,
-                  "一般信用": general_map.get(code, {
-                      "売り建て": False,
-                      "在庫区分": None,
-                      "在庫数量": None
-                  }),
+                  "制度信用": {
+                      "買い建て": sei_buy,
+                      "売り建て": sei_sell
+                  },
+                  "一般信用": {
+                      "買い建て": gen_buy,
+                      "売り建て": gen_sell,
+                      "在庫区分": gen["在庫区分"],
+                      "在庫数量": gen["在庫数量"]
+                  },
+                  "一日信用": {
+                      "買い建て": day_buy,
+                      "売り建て": day_sell
+                  },
                   "JPX信用買残": jpx.get("buy"),
                   "JPX信用買残前週比": jpx.get("buy_diff"),
                   "JPX信用売残": jpx.get("sell"),
                   "JPX信用売残前週比": jpx.get("sell_diff"),
                   "JPX信用倍率": jpx.get("ratio"),
-                  "規制": regulation_map.get(code, [])
+                  "規制": regs
               }
 
           with open("margin.json", "w", encoding="utf-8") as f:
@@ -277,5 +298,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (daily override)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (full credit categories)" || echo "No changes to commit"
           git push
