@@ -137,8 +137,13 @@ jobs:
           else:
               daily_url = latest_daily
 
-          # ★ XLS を xlrd 2.0.1 で読み込む
-          daily_df = pd.read_excel(daily_url, dtype=str, engine="xlrd")
+          # ★ XLS を xlrd 2.0.1 で読み込む（ヘッダー行を 5 行スキップ）
+          daily_df = pd.read_excel(
+              daily_url,
+              dtype=str,
+              engine="xlrd",
+              header=5   # ← これが最重要
+          )
 
           # ============================
           # ★ デバッグ出力 ★
@@ -153,11 +158,11 @@ jobs:
           print(daily_df.head(10).to_string())
 
           # ============================
-          # ★ 列構造（G=コード、I=売残、L=買残） ★
+          # ★ 列名で正しく参照（G=Code, I=売残, L=買残） ★
           # ============================
-          code_col = daily_df.columns[6]   # G列
-          sell_col = daily_df.columns[8]   # I列
-          buy_col  = daily_df.columns[11]  # L列
+          code_col = "Code"
+          sell_col = "売残高 Outstanding Sales"
+          buy_col  = "買残高 Outstanding Purchases"
 
           daily_map = {}
           for _, row in daily_df.iterrows():
@@ -232,6 +237,9 @@ jobs:
           # ============================
           # ★ 日々公表（mtdailyk）で上書き ★
           # ============================
+          print("=== DEBUG: jpx_map[4833] BEFORE override ===")
+          print(jpx_map.get("4833"))
+
           for code4, d in daily_map.items():
               if code4 in jpx_map:
                   jpx_map[code4]["sell"] = d["sell"]
@@ -247,6 +255,9 @@ jobs:
                       "sell_diff": None,
                       "ratio": round(d["buy"] / d["sell"], 2) if d["sell"] != 0 else None
                   }
+
+          print("=== DEBUG: jpx_map[4833] AFTER override ===")
+          print(jpx_map.get("4833"))
 
           # ============================
           # margin.json 統合
