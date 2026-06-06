@@ -235,17 +235,27 @@ jobs:
               }
 
           # ============================
-          # ★ 日々公表（mtdailyk）で上書き ★
+          # ★ 日々公表（mtdailyk）で上書き（前週比を正しく計算） ★
           # ============================
           print("=== DEBUG: jpx_map[4833] BEFORE override ===")
           print(jpx_map.get("4833"))
 
           for code4, d in daily_map.items():
               if code4 in jpx_map:
-                  jpx_map[code4]["sell"] = d["sell"]
-                  jpx_map[code4]["buy"]  = d["buy"]
+                  prev_buy = jpx_map[code4]["buy"]
+                  prev_sell = jpx_map[code4]["sell"]
+
+                  new_buy = d["buy"]
+                  new_sell = d["sell"]
+
+                  jpx_map[code4]["buy"] = new_buy
+                  jpx_map[code4]["sell"] = new_sell
+
+                  jpx_map[code4]["buy_diff"] = new_buy - prev_buy
+                  jpx_map[code4]["sell_diff"] = new_sell - prev_sell
+
                   jpx_map[code4]["ratio"] = (
-                      round(d["buy"] / d["sell"], 2) if d["sell"] != 0 else None
+                      round(new_buy / new_sell, 2) if new_sell != 0 else None
                   )
               else:
                   jpx_map[code4] = {
