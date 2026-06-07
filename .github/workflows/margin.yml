@@ -1,4 +1,4 @@
-name: Margin Info Fetch (Seido Only, Rakuten Regulation, Tokyo Market Only, Full Rowspan Support)
+name: Margin Info Fetch (Debug Full Version)
 
 on:
   schedule:
@@ -46,97 +46,24 @@ jobs:
           )
           meigara_df.columns = meigara_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
 
-          # ------------------------------------------------------------
-          # 貸借銘柄区分（東証）
-          #   1 = 貸借銘柄（制度信用売り建て可能）
-          #   2 = 貸借融資銘柄（売り建て不可）
-          #   0 = 非制度信用銘柄（制度信用不可）
-          # ------------------------------------------------------------
-          taisyaku_set = set()  # 貸借銘柄（1）のみ
-          kubun_map = {}        # ← margin.json に出力するため追加
+          taisyaku_set = set()
+          kubun_map = {}
+
+          print("DEBUG meigara columns:", meigara_df.columns)
+          print("DEBUG meigara head:\n", meigara_df.head(20))
 
           for _, row in meigara_df.iterrows():
               code = str(row["コード"]).zfill(4)
               kubun = str(row["貸借銘柄区分（東証）"])
-              kubun_map[code] = kubun  # ← ここで保存
+              kubun_map[code] = kubun
+              print("DEBUG kubun:", code, kubun)
 
               if kubun == "1":
                   taisyaku_set.add(code)
 
           # ============================================================
           # 2. 楽天証券の制度信用規制ページ
-          #    （公式文言一覧・採用/非採用理由コメント完全復元）
           # ============================================================
-
-          # --------------------------------------------------------------------
-          # 【参考元】
-          #   楽天証券公式ページ：
-          #   https://www.rakuten-sec.co.jp/ITS/qaOth0007.html
-          #
-          # 【公式ページに記載されている規制文言一覧】
-          #
-          #  整理銘柄
-          #  監理銘柄（審査中）
-          #  監理銘柄（確認中）
-          #  特別注意銘柄
-          #  監視区分銘柄
-          #  増担保***％（うち現金***％）
-          #  レバETF
-          #  日々公表銘柄
-          #  貸株注意喚起
-          #  申告規制
-          #  即日預託
-          #  制度信用社内規制
-          #  一般信用社内規制
-          #  建玉上限
-          #
-          #  代用掛目規制***％
-          #  代用掛目規制予定***％
-          #  新規買停止
-          #  一般信用新規買停止
-          #  新規売停止
-          #  一般信用新規売停止
-          #  返済買埋停止
-          #  一般信用返済買埋停止
-          #  返済売埋停止
-          #  一般信用返済売埋停止
-          #  現引停止
-          #  一般信用現引停止
-          #  現渡停止
-          #  一般信用現渡停止
-          #  全取引停止
-          #  現物売付停止
-          #  現物買付停止
-          #
-          # --------------------------------------------------------------------
-          # 【制度信用の新規建て可否に採用した文言】
-          #
-          #  ● 新規買停止      → 制度信用の新規買い禁止
-          #  ● 新規売停止      → 制度信用の新規売り禁止
-          #  ● 全取引停止      → 新規買い・新規売りともに禁止
-          #
-          # --------------------------------------------------------------------
-          # 【制度信用の新規建て可否に採用しなかった文言（理由付き）】
-          #
-          #  ● 整理銘柄 / 監理銘柄 / 特別注意銘柄 / 監視区分銘柄
-          #      → 注意喚起・情報区分であり、新規建て可否とは無関係
-          #
-          #  ● 増担保 / レバETF / 日々公表銘柄 / 貸株注意喚起
-          #      → 担保率や注意喚起であり、新規建て可否とは無関係
-          #
-          #  ● 申告規制 / 即日預託 / 建玉上限
-          #      → 取引条件や建玉制限であり、新規建て可否とは無関係
-          #
-          #  ● 制度信用社内規制
-          #      → 文言だけでは「買い禁止」「売り禁止」が判別できないため除外
-          #
-          #  ● 一般信用〜（新規買停止 / 新規売停止 / 返済系 / 現引 / 現渡）
-          #      → 一般信用専用の規制であり、制度信用とは別体系
-          #
-          #  ● 現物売付停止 / 現物買付停止
-          #      → 現物取引の規制であり、信用新規建てとは無関係
-          #
-          # --------------------------------------------------------------------
 
           BUY_BAN_KEYWORDS = ["新規買停止", "全取引停止"]
           SELL_BAN_KEYWORDS = ["新規売停止", "全取引停止"]
@@ -153,12 +80,13 @@ jobs:
           sell_ban_map = {}
 
           TOKYO_KEYWORDS = [
-              "東京", "東証", "ETF", "ETN", "REIT", "インフラ",
-              "プライム", "スタンダード", "グロース"
+              "東京", "東証", "STD", "PRM", "GRT",
+              "スタンダード", "プライム", "グロース",
+              "ETF", "ETN", "REIT", "インフラ"
           ]
 
           # ------------------------------------------------------------
-          # ★ 汎用 rowspan 展開アルゴリズム
+          # ★ rowspan 展開デバッグ付き
           # ------------------------------------------------------------
           current_vals = [None] * 6
           rowspan_left = [0] * 6
@@ -193,16 +121,28 @@ jobs:
 
                   td_i += 1
 
+              print("DEBUG logical:", logical)
+
               code   = logical[0]
               market = logical[2]
               text   = logical[3]
 
-              if not code or not re.fullmatch(r"\d{4}", code):
+              print("DEBUG extracted:", code, market, text)
+              print("DEBUG market raw:", repr(market))
+
+              if market:
+                  m = market.replace(" ", "").replace("　", "")
+                  market_flag = any(k in m for k in TOKYO_KEYWORDS)
+              else:
+                  market_flag = False
+
+              print("DEBUG market check:", market, "→", market_flag)
+
+              if not market_flag:
+                  print("DEBUG SKIP (market filtered):", code, market)
                   continue
 
-              if not market or not any(k in market for k in TOKYO_KEYWORDS):
-                  continue
-
+              print("DEBUG add regulation:", repr(code), repr(text))
               regulation_map.setdefault(code, []).append(text)
 
               if any(k in text for k in BUY_BAN_KEYWORDS):
@@ -210,6 +150,8 @@ jobs:
 
               if any(k in text for k in SELL_BAN_KEYWORDS):
                   sell_ban_map[code] = True
+
+          print("DEBUG regulation_map keys:", list(regulation_map.keys()))
 
           # ============================================================
           # 3. JPX 週次 PDF（syumatsu）
@@ -231,7 +173,7 @@ jobs:
               f.write(pdf_data)
 
           # ============================================================
-          # 4. 日々公表（mtdailyk） XLS 自動検出
+          # 4. 日々公表（mtdailyk） XLS
           # ============================================================
           daily_index = "https://www.jpx.co.jp/markets/statistics-equities/margin/index.html"
           daily_html = requests.get(daily_index, headers=UA).text
@@ -270,7 +212,7 @@ jobs:
                   daily_map[code4] = {"sell": sell, "buy": buy}
 
           # ============================================================
-          # 5. JPX PDF パース（週次 syumatsu）
+          # 5. JPX PDF パース
           # ============================================================
           jpx_map = {}
 
@@ -351,28 +293,26 @@ jobs:
                   }
 
           # ============================================================
-          # 7. margin.json 統合（制度信用のみ）
+          # 7. margin.json 統合（デバッグ付き）
           # ============================================================
           margin = {}
           all_codes = set(kubun_map.keys()) | set(jpx_map.keys()) | set(regulation_map.keys())
 
           for code in sorted(all_codes):
-              jpx = jpx_map.get(code, {})
+              kubun = kubun_map.get(code)
               regs = regulation_map.get(code, [])
-
-              kubun = kubun_map.get(code)  # ← 追加
+              jpx = jpx_map.get(code, {})
 
               has_buy_ban = buy_ban_map.get(code, False)
               has_sell_ban = sell_ban_map.get(code, False)
 
-              # 制度信用買い建て：規制がなければ可
               sei_buy = not has_buy_ban
-
-              # 制度信用売り建て：貸借銘柄（1）かつ規制なし
               sei_sell = (kubun == "1") and (not has_sell_ban)
 
+              print("DEBUG merge code:", repr(code), "→ regs:", regs)
+
               margin[code] = {
-                  "貸借区分": kubun,  # ← 追加
+                  "貸借区分": kubun,
                   "制度信用": {
                       "買い建て": sei_buy,
                       "売り建て": sei_sell
@@ -393,5 +333,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (貸借区分追加 + コメント復元)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (Full Debug Version)" || echo "No changes to commit"
           git push
