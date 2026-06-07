@@ -132,12 +132,142 @@ jobs:
               regulation_map.setdefault(code, []).append(text)
 
           # ============================================================
-          # 3. JPX PDF + 日々公表（あなたの既存ロジックをそのまま使用）
+          # 3. JPX PDF（週次）取得
           # ============================================================
-          jpx_map = {}  # ← 実際はあなたの既存コードをここに入れてください
+          jpx_page = "https://www.jpx.co.jp/markets/statistics-equities/margin/05.html"
+          jpx_html = requests.get(jpx_page, headers=UA).text
+          jpx_soup = BeautifulSoup(jpx_html, "lxml")
+
+          pdf_links = []
+          for a in jpx_soup.find_all("a", href=True):
+              href = a["href"]
+              if href.endswith(".pdf") and "syumatsu" in href:
+                  pdf_links.append("https://www.jpx.co.jp" + href)
+
+          latest_pdf = sorted(pdf_links)[-1]
+
+          pdf_data = requests.get(latest_pdf, headers=UA).content
+          with open("jpx.pdf", "wb") as f:
+              f.write(pdf_data)
+
+          # PDF パース
+          jpx_map = {}
+
+          with pdfplumber.open("jpx.pdf") as pdf:
+              full_text = ""
+              for page in pdf.pages:
+                  t = page.extract_text()
+                  if t:
+                      full_text += "\n" + t
+
+          blocks = re.split(r"(?=\d{5}\s+JP\d{10})", full_text)
+
+          def parse_num(s):
+              s = s.replace(",", "").replace(" ", "")
+              if s in ("", "▲"):
+                  return 0
+              if s.startswith("▲"):
+                  return -int(s[1:])
+              return int(s)
+
+          for block in blocks:
+              m = re.search(r"(\d{5})\s+JP\d{10}", block)
+              if not m:
+                  continue
+
+              code5 = m.group(1)
+              code4 = unicodedata.normalize("NFKC", code5[:4])
+
+              after_isin = re.split(r"JP\d{10}", block)[1]
+              nums = re.findall(r"[▲\-]?\s*[\d,]+", after_isin)
+              nums = [parse_num(n) for n in nums]
+
+              if len(nums) < 4:
+                  continue
+
+              sell = nums[0]
+              sell_diff = nums[1]
+              buy = nums[2]
+              buy_diff = nums[3]
+
+              ratio = round(buy / sell, 2) if sell != 0 else None
+
+              jpx_map[code4] = {
+                  "buy": buy,
+                  "buy_diff": buy_diff,
+                  "sell": sell,
+                  "sell_diff": sell_diff,
+                  "ratio": ratio
+              }
 
           # ============================================================
-          # 4. margin.json 統合（全銘柄 新ロジック）
+          # 4. 日々公表（XLS）で上書き
+          # ============================================================
+          daily_index = "https://www.jpx.co.jp/markets/statistics-equities/margin/index.html"
+          daily_html = requests.get(daily_index, headers=UA).text
+          daily_soup = BeautifulSoup(daily_html, "lxml")
+
+          daily_links = []
+          for a in daily_soup.find_all("a", href=True):
+              href = a["href"]
+              if re.search(r"mtdailyk.*\.xls$", href):
+                  daily_links.append(href)
+
+          latest_daily = sorted(daily_links)[-1]
+          daily_url = "https://www.jpx.co.jp" + latest_daily
+
+          daily_df = pd.read_excel(
+              daily_url,
+              dtype=str,
+              engine="xlrd",
+              header=5
+          )
+
+          code_col = "コード"
+          sell_col = "売残高 Outstanding Sales"
+          buy_col  = "買残高 Outstanding Purchases"
+
+          daily_map = {}
+          for _, row in daily_df.iterrows():
+              raw = str(row[code_col])
+              if re.fullmatch(r"\d{5}", raw):
+                  code4 = unicodedata.normalize("NFKC", raw[:4])
+                  try:
+                      sell = int(str(row[sell_col]).replace(",", ""))
+                      buy = int(str(row[buy_col]).replace(",", ""))
+                  except Exception:
+                      continue
+                  daily_map[code4] = {"sell": sell, "buy": buy}
+
+          # 日々公表で上書き
+          for code4, d in daily_map.items():
+              if code4 in jpx_map:
+                  prev_buy = jpx_map[code4]["buy"]
+                  prev_sell = jpx_map[code4]["sell"]
+
+                  new_buy = d["buy"]
+                  new_sell = d["sell"]
+
+                  jpx_map[code4]["buy"] = new_buy
+                  jpx_map[code4]["sell"] = new_sell
+
+                  jpx_map[code4]["buy_diff"] = new_buy - prev_buy
+                  jpx_map[code4]["sell_diff"] = new_sell - prev_sell
+
+                  jpx_map[code4]["ratio"] = (
+                      round(new_buy / new_sell, 2) if new_sell != 0 else None
+                  )
+              else:
+                  jpx_map[code4] = {
+                      "buy": d["buy"],
+                      "buy_diff": None,
+                      "sell": d["sell"],
+                      "sell_diff": None,
+                      "ratio": round(d["buy"] / d["sell"], 2) if d["sell"] != 0 else None
+                  }
+
+          # ============================================================
+          # 5. margin.json 統合（全銘柄 新ロジック）
           # ============================================================
           margin = {}
 
