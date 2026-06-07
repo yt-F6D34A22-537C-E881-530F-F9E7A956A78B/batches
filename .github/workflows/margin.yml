@@ -1,4 +1,4 @@
-name: Margin Info Fetch (Stepwise 183A Only)
+name: Margin Info Fetch (All Codes New Logic)
 
 on:
   schedule:
@@ -54,7 +54,7 @@ jobs:
               kubun_map[code] = str(row["貸借銘柄区分（東証）"])
 
           # ============================================================
-          # 2. 楽天証券 規制ページ
+          # 2. 楽天証券 規制ページ（全銘柄 新ロジック）
           # ============================================================
           BUY_BAN_KEYWORDS = ["新規買停止", "全取引停止"]
           SELL_BAN_KEYWORDS = ["新規売停止", "全取引停止"]
@@ -67,8 +67,6 @@ jobs:
           soup = BeautifulSoup(html, "lxml")
 
           regulation_map = {}
-          buy_ban_map = {}
-          sell_ban_map = {}
 
           TOKYO_KEYWORDS = [
               "東京", "東証", "STD", "PRM", "GRT",
@@ -130,25 +128,16 @@ jobs:
               if not market_flag:
                   continue
 
-              # 規制文言を格納
+              # 規制文言を格納（全銘柄）
               regulation_map.setdefault(code, []).append(text)
 
-              # 従来ロジック（他銘柄用）
-              if any(k in text for k in BUY_BAN_KEYWORDS):
-                  buy_ban_map[code] = True
-              if any(k in text for k in SELL_BAN_KEYWORDS):
-                  sell_ban_map[code] = True
+          # ============================================================
+          # 3. JPX PDF + 日々公表（あなたの既存ロジックをそのまま使用）
+          # ============================================================
+          jpx_map = {}  # ← 実際はあなたの既存コードをここに入れてください
 
           # ============================================================
-          # 3. JPX PDF + 日々公表（省略：従来どおり）
-          # ============================================================
-          # ※ここはあなたの既存コードをそのまま残してください
-          #   jpx_map の生成部分は省略します（長いため）
-
-          jpx_map = {}  # ← 実際はあなたの既存ロジックを入れてください
-
-          # ============================================================
-          # 4. margin.json 統合（183A だけ新ロジック）
+          # 4. margin.json 統合（全銘柄 新ロジック）
           # ============================================================
           margin = {}
 
@@ -164,32 +153,18 @@ jobs:
               regs = regulation_map.get(code, [])
               jpx = jpx_map.get(code, {})
 
-              # --- 183A だけ新ロジック ---
-              if code == "183A":
-                  has_sell_ban = any(
-                      any(k in r for k in SELL_BAN_KEYWORDS)
-                      for r in regs
-                  )
-                  has_buy_ban = any(
-                      any(k in r for k in BUY_BAN_KEYWORDS)
-                      for r in regs
-                  )
-
-                  print("DEBUG MERGE 183A (stepwise):")
-                  print("  regs:", regs)
-                  print("  has_buy_ban:", has_buy_ban)
-                  print("  has_sell_ban:", has_sell_ban)
-
-              else:
-                  # 従来ロジック
-                  has_buy_ban = buy_ban_map.get(code, False)
-                  has_sell_ban = sell_ban_map.get(code, False)
+              # --- 全銘柄 新ロジック ---
+              has_sell_ban = any(
+                  any(k in r for k in SELL_BAN_KEYWORDS)
+                  for r in regs
+              )
+              has_buy_ban = any(
+                  any(k in r for k in BUY_BAN_KEYWORDS)
+                  for r in regs
+              )
 
               sei_buy = not has_buy_ban
               sei_sell = (kubun == "1") and (not has_sell_ban)
-
-              if code == "183A":
-                  print("  sei_buy:", sei_buy, "sei_sell:", sei_sell)
 
               margin[code] = {
                   "貸借区分": kubun,
@@ -205,8 +180,6 @@ jobs:
                   "規制": regs
               }
 
-          print("DEBUG FINAL 183A:", margin.get("183A"))
-
           with open("margin.json", "w", encoding="utf-8") as f:
               json.dump(margin, f, ensure_ascii=False, indent=2)
 
@@ -215,5 +188,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (183A stepwise)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (All Codes New Logic)" || echo "No changes to commit"
           git push
