@@ -1,4 +1,4 @@
-name: Margin Info Fetch (Seido Only, Rakuten Regulation)
+name: Margin Info Fetch (Seido Only, Rakuten Regulation, Encoding Fixed)
 
 on:
   schedule:
@@ -54,7 +54,7 @@ jobs:
                   taisyaku_set.add(code)
 
           # ============================================================
-          # 2. 楽天証券の制度信用規制ページをスクレイピング
+          # 2. 楽天証券の制度信用規制ページをスクレイピング（文字コード対応）
           # ============================================================
 
           # --------------------------------------------------------------------
@@ -98,38 +98,39 @@ jobs:
           #  現物買付停止
           #
           # --------------------------------------------------------------------
-          # 【制度信用の新規建て可否に関係する文言（採用したもの）】
+          # 【制度信用の新規建て可否に関係する文言（判定対象としたもの）】
           #
           #  ● 新規買停止      → 制度信用の新規買い禁止
           #  ● 新規売停止      → 制度信用の新規売り禁止
           #  ● 全取引停止      → 新規買い・新規売りともに禁止
           #
           # --------------------------------------------------------------------
-          # 【制度信用の新規建て可否に関係しないため除外した文言】
+          # 【制度信用の新規建て可否に関係しないため判定対象としなかった文言】
           #
-          #  ● 整理銘柄 / 監理銘柄 / 特別注意銘柄 / 監視区分銘柄
-          #      → 注意喚起・情報区分であり、新規建て可否とは無関係
+          #  ● 整理銘柄 / 監理銘柄（審査中・確認中） / 特別注意銘柄 / 監視区分銘柄
+          #      → 注意喚起・情報区分であり、新規建て可否とは直接無関係
           #
-          #  ● 増担保 / レバETF / 日々公表銘柄 / 貸株注意喚起
-          #      → 担保率や注意喚起であり、新規建て可否とは無関係
+          #  ● 増担保***％（うち現金***％） / レバETF / 日々公表銘柄 / 貸株注意喚起
+          #      → 担保率や注意喚起であり、新規建て可否とは直接無関係
           #
           #  ● 申告規制 / 即日預託 / 建玉上限
-          #      → 取引条件や建玉制限であり、新規建て可否とは無関係
+          #      → 取引条件や建玉制限であり、新規建て可否とは直接無関係
           #
           #  ● 制度信用社内規制
-          #      → 文言だけでは「買い禁止」「売り禁止」が判別できないため除外
+          #      → 文言だけでは「買い禁止」「売り禁止」が判別できないため、
+          #         保守的に新規建て可否ロジックからは除外
           #
-          #  ● 一般信用〜（新規買停止 / 新規売停止 / 返済〜 / 現引 / 現渡）
+          #  ● 一般信用社内規制 / 一般信用新規買停止 / 一般信用新規売停止
           #      → 一般信用専用の規制であり、制度信用とは別体系のため除外
           #
-          #  ● 返済買埋停止 / 返済売埋停止
-          #      → 決済（返済）に関する規制であり、新規建て可否とは無関係
+          #  ● 返済買埋停止 / 返済売埋停止 / 一般信用返済買埋停止 / 一般信用返済売埋停止
+          #      → 決済（返済）に関する規制であり、新規建て可否とは直接無関係
           #
-          #  ● 現引停止 / 現渡停止
-          #      → 現引・現渡は決済手段であり、新規建て可否とは無関係
+          #  ● 現引停止 / 現渡停止 / 一般信用現引停止 / 一般信用現渡停止
+          #      → 現引・現渡は決済手段であり、新規建て可否とは直接無関係
           #
           #  ● 現物売付停止 / 現物買付停止
-          #      → 現物取引の規制であり、信用新規建てとは無関係
+          #      → 現物取引の規制であり、信用新規建てとは直接無関係
           #
           # --------------------------------------------------------------------
           # 以上の理由により、制度信用の新規建て可否に使用する文言は
@@ -146,10 +147,15 @@ jobs:
               "新規売停止",
               "全取引停止",
           ]
-          # --------------------------------------------------------------------
 
+          # 楽天証券の規制ページは UTF-8 ではなく日本語コードページ（Shift_JIS 等）の可能性が高いため、
+          # requests の encoding を明示的に設定して文字化けを防ぎます。
           rakuten_url = "https://www.rakuten-sec.co.jp/ITS/Companyfile/margin_restriction.html"
-          html = requests.get(rakuten_url, headers=UA).text
+          res = requests.get(rakuten_url, headers=UA)
+          # 自動判定されたエンコーディングを採用（多くの場合 cp932 / shift_jis）
+          res.encoding = res.apparent_encoding
+          html = res.text
+
           soup = BeautifulSoup(html, "lxml")
 
           regulation_map = {}
@@ -230,8 +236,8 @@ jobs:
                   code4 = raw[:4]
                   try:
                       sell = int(str(row[sell_col]).replace(",", ""))
-                      buy  = int(str[row[buy_col]].replace(",", ""))
-                  except:
+                      buy  = int(str(row[buy_col]).replace(",", ""))
+                  except Exception:
                       continue
                   daily_map[code4] = {"sell": sell, "buy": buy}
 
@@ -353,5 +359,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (Seido only, Rakuten regulation official dictionary)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (Seido only, Rakuten regulation encoding fixed)" || echo "No changes to commit"
           git push
