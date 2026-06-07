@@ -1,4 +1,4 @@
-name: Margin Info Fetch (183A Unicode Dump Debug)
+name: Margin Info Fetch (183A Full Logical Dump)
 
 on:
   schedule:
@@ -54,7 +54,7 @@ jobs:
               kubun_map[code] = str(row["貸借銘柄区分（東証）"])
 
           # ============================================================
-          # 2. 楽天証券 規制ページ（183A の text を Unicode ダンプ）
+          # 2. 楽天証券 規制ページ（183A logical 全列ダンプ）
           # ============================================================
           BUY_BAN_KEYWORDS = ["新規買停止", "全取引停止"]
           SELL_BAN_KEYWORDS = ["新規売停止", "全取引停止"]
@@ -79,7 +79,7 @@ jobs:
           current_vals = [None] * 6
           rowspan_left = [0] * 6
 
-          print("===== DEBUG: 183A Unicode Dump START =====")
+          print("===== DEBUG: 183A FULL LOGICAL DUMP START =====")
 
           for row in soup.select("table tr"):
               tds = row.find_all("td")
@@ -125,12 +125,10 @@ jobs:
               if code != "183A":
                   continue
 
-              # ★ 183A の text を Unicode ダンプ
-              print("DEBUG 183A logical:", logical)
-              print("DEBUG 183A text repr:", repr(text))
-              print("DEBUG 183A text Unicode dump:")
-              for ch in text:
-                  print("  U+%04X  %s" % (ord(ch), ch))
+              # ★ 183A の logical 全列を完全ダンプ
+              print("DEBUG 183A FULL logical columns:")
+              for i, v in enumerate(logical):
+                  print(f"  col{i}: {repr(v)}")
 
               # 市場フィルタ
               if market:
@@ -148,11 +146,11 @@ jobs:
               print("DEBUG 183A add regulation:", repr(text))
               regulation_map.setdefault(code, []).append(text)
 
-          print("===== DEBUG: 183A Unicode Dump END =====")
+          print("===== DEBUG: 183A FULL LOGICAL DUMP END =====")
           print("DEBUG regulation_map[183A]:", regulation_map.get("183A"))
 
           # ============================================================
-          # 3. margin.json（最低限）
+          # 3. margin.json（最小構成）
           # ============================================================
           margin = {}
           margin["183A"] = {
@@ -170,5 +168,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (183A Unicode dump)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (183A full logical dump)" || echo "No changes to commit"
           git push
