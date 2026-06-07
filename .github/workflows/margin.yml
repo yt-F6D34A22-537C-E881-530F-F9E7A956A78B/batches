@@ -2,7 +2,7 @@ name: Margin Info Fetch (All Codes New Logic, 281A Fixed)
 
 on:
   schedule:
-    - cron: "0 18 * * *"
+    - cron: "0 18 * * *"   # JST 3:00（UTC 18:00）
   workflow_dispatch:
 
 permissions:
