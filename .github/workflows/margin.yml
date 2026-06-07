@@ -78,9 +78,9 @@ jobs:
           buy_ban_map = {}
           sell_ban_map = {}
 
-          # 東京市場に該当するキーワード
+          # ★ 市場フィルタに「東京」を追加（最重要修正）
           TOKYO_KEYWORDS = [
-              "東証", "ETF", "ETN", "REIT", "インフラ",
+              "東京", "東証", "ETF", "ETN", "REIT", "インフラ",
               "プライム", "スタンダード", "グロース"
           ]
 
@@ -94,6 +94,8 @@ jobs:
                   continue
 
               market = cols[2].get_text(strip=True)
+
+              # ★ 市場が東京系でなければ除外
               if not any(k in market for k in TOKYO_KEYWORDS):
                   continue
 
@@ -220,7 +222,7 @@ jobs:
               }
 
           # ============================================================
-          # 6. 日々公表で上書き（★ newnew_buy → new_buy 修正済み）
+          # 6. 日々公表で上書き
           # ============================================================
           for code4, d in daily_map.items():
               if code4 in jpx_map:
