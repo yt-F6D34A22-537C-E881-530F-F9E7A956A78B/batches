@@ -1,4 +1,4 @@
-name: Margin Info Fetch (Seido Only, Strict Regulation)
+name: Margin Info Fetch (Seido Only, Rakuten Regulation)
 
 on:
   schedule:
@@ -34,9 +34,9 @@ jobs:
 
           UA = {"User-Agent": "Mozilla/5.0"}
 
-          # ============================
-          # JSF meigara.csv（貸借銘柄）
-          # ============================
+          # ============================================================
+          # 1. JSF 貸借銘柄（制度信用売り建て可否の基礎）
+          # ============================================================
           base = "https://www.taisyaku.jp/data/"
           meigara_df = pd.read_csv(
               base + "meigara.csv",
@@ -53,62 +53,133 @@ jobs:
               if kubun in ("1", "2"):
                   taisyaku_set.add(code)
 
-          # ============================
-          # JSF seigenichiran.csv（規制）
-          # ============================
-          sei_df = pd.read_csv(
-              base + "seigenichiran.csv",
-              encoding="shift_jis",
-              dtype=str,
-              skiprows=4
-          )
-          sei_df = sei_df.iloc[:-3]
-          sei_df.columns = sei_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
+          # ============================================================
+          # 2. 楽天証券の制度信用規制ページをスクレイピング
+          # ============================================================
+
+          # --------------------------------------------------------------------
+          # 【重要】この辞書は楽天証券公式ページ
+          #   https://www.rakuten-sec.co.jp/ITS/qaOth0007.html
+          # に記載されている規制文言一覧を元に作成しています。
+          #
+          # 公式ページに記載されている文言（全て）：
+          #
+          #  整理銘柄
+          #  監理銘柄（審査中）
+          #  監理銘柄（確認中）
+          #  特別注意銘柄
+          #  監視区分銘柄
+          #  増担保***％（うち現金***％）
+          #  レバETF
+          #  日々公表銘柄
+          #  貸株注意喚起
+          #  申告規制
+          #  即日預託
+          #  制度信用社内規制
+          #  一般信用社内規制
+          #  建玉上限
+          #
+          #  代用掛目規制***％
+          #  代用掛目規制予定***％
+          #  新規買停止
+          #  一般信用新規買停止
+          #  新規売停止
+          #  一般信用新規売停止
+          #  返済買埋停止
+          #  一般信用返済買埋停止
+          #  返済売埋停止
+          #  一般信用返済売埋停止
+          #  現引停止
+          #  一般信用現引停止
+          #  現渡停止
+          #  一般信用現渡停止
+          #  全取引停止
+          #  現物売付停止
+          #  現物買付停止
+          #
+          # --------------------------------------------------------------------
+          # 【制度信用の新規建て可否に関係する文言（採用したもの）】
+          #
+          #  ● 新規買停止      → 制度信用の新規買い禁止
+          #  ● 新規売停止      → 制度信用の新規売り禁止
+          #  ● 全取引停止      → 新規買い・新規売りともに禁止
+          #
+          # --------------------------------------------------------------------
+          # 【制度信用の新規建て可否に関係しないため除外した文言】
+          #
+          #  ● 整理銘柄 / 監理銘柄 / 特別注意銘柄 / 監視区分銘柄
+          #      → 注意喚起・情報区分であり、新規建て可否とは無関係
+          #
+          #  ● 増担保 / レバETF / 日々公表銘柄 / 貸株注意喚起
+          #      → 担保率や注意喚起であり、新規建て可否とは無関係
+          #
+          #  ● 申告規制 / 即日預託 / 建玉上限
+          #      → 取引条件や建玉制限であり、新規建て可否とは無関係
+          #
+          #  ● 制度信用社内規制
+          #      → 文言だけでは「買い禁止」「売り禁止」が判別できないため除外
+          #
+          #  ● 一般信用〜（新規買停止 / 新規売停止 / 返済〜 / 現引 / 現渡）
+          #      → 一般信用専用の規制であり、制度信用とは別体系のため除外
+          #
+          #  ● 返済買埋停止 / 返済売埋停止
+          #      → 決済（返済）に関する規制であり、新規建て可否とは無関係
+          #
+          #  ● 現引停止 / 現渡停止
+          #      → 現引・現渡は決済手段であり、新規建て可否とは無関係
+          #
+          #  ● 現物売付停止 / 現物買付停止
+          #      → 現物取引の規制であり、信用新規建てとは無関係
+          #
+          # --------------------------------------------------------------------
+          # 以上の理由により、制度信用の新規建て可否に使用する文言は
+          #   「新規買停止」「新規売停止」「全取引停止」
+          # のみとしています。
+          # --------------------------------------------------------------------
+
+          BUY_BAN_KEYWORDS = [
+              "新規買停止",
+              "全取引停止",
+          ]
+
+          SELL_BAN_KEYWORDS = [
+              "新規売停止",
+              "全取引停止",
+          ]
+          # --------------------------------------------------------------------
+
+          rakuten_url = "https://www.rakuten-sec.co.jp/ITS/Companyfile/margin_restriction.html"
+          html = requests.get(rakuten_url, headers=UA).text
+          soup = BeautifulSoup(html, "lxml")
 
           regulation_map = {}
           buy_ban_map = {}
           sell_ban_map = {}
 
-          buy_keywords = [
-              "新規買付停止",
-              "新規買停止",
-              "買付停止",
-              "買付申込停止",
-              "申込停止：新規買",
-              "申込停止:新規買"
-          ]
-          sell_keywords = [
-              "新規売付停止",
-              "新規売停止",
-              "売付停止",
-              "売付申込停止",
-              "申込停止：新規売",
-              "申込停止:新規売",
-              "空売禁止",
-              "売禁"
-          ]
+          for row in soup.select("table tr"):
+              cols = row.find_all("td")
+              if len(cols) < 3:
+                  continue
 
-          for _, row in sei_df.iterrows():
-              code = str(row["銘柄コード"]).zfill(4)
-              jisshi = str(row["実施措置"]) if pd.notna(row["実施措置"]) else ""
-              naiyo = str(row["実施内容"]) if pd.notna(row["実施内容"]) else ""
-              text = f"{jisshi} {naiyo}"
+              code = cols[0].get_text(strip=True)
+              if not re.fullmatch(r"\d{4}", code):
+                  continue
 
-              if pd.notna(row["実施内容"]):
-                  reason = f'{jisshi}:{naiyo}'
-              else:
-                  reason = jisshi
+              text = cols[2].get_text(strip=True)
+              if not text:
+                  continue
 
-              regulation_map.setdefault(code, []).append(reason)
+              regulation_map.setdefault(code, []).append(text)
 
-              if any(k in text for k in buy_keywords):
+              if any(k in text for k in BUY_BAN_KEYWORDS):
                   buy_ban_map[code] = True
-              if any(k in text for k in sell_keywords):
+
+              if any(k in text for k in SELL_BAN_KEYWORDS):
                   sell_ban_map[code] = True
 
-          # ============================
-          # JPX 週次 PDF（syumatsu）
-          # ============================
+          # ============================================================
+          # 3. JPX 週次 PDF（syumatsu）
+          # ============================================================
           jpx_page = "https://www.jpx.co.jp/markets/statistics-equities/margin/05.html"
           jpx_html = requests.get(jpx_page, headers=UA).text
           jpx_soup = BeautifulSoup(jpx_html, "lxml")
@@ -125,9 +196,9 @@ jobs:
           with open("jpx.pdf", "wb") as f:
               f.write(pdf_data)
 
-          # ============================
-          # 日々公表（mtdailyk） XLS 自動検出
-          # ============================
+          # ============================================================
+          # 4. 日々公表（mtdailyk） XLS 自動検出
+          # ============================================================
           daily_index = "https://www.jpx.co.jp/markets/statistics-equities/margin/index.html"
           daily_html = requests.get(daily_index, headers=UA).text
           daily_soup = BeautifulSoup(daily_html, "lxml")
@@ -138,15 +209,8 @@ jobs:
               if re.search(r"mtdailyk.*\.xls$", href):
                   daily_links.append(href)
 
-          if not daily_links:
-              raise Exception("日々公表 mtdailyk*.xls が見つかりませんでした")
-
           latest_daily = sorted(daily_links)[-1]
-
-          if latest_daily.startswith("/"):
-              daily_url = "https://www.jpx.co.jp" + latest_daily
-          else:
-              daily_url = latest_daily
+          daily_url = "https://www.jpx.co.jp" + latest_daily
 
           daily_df = pd.read_excel(
               daily_url,
@@ -166,14 +230,14 @@ jobs:
                   code4 = raw[:4]
                   try:
                       sell = int(str(row[sell_col]).replace(",", ""))
-                      buy  = int(str(row[buy_col]).replace(",", ""))
-                  except Exception:
+                      buy  = int(str[row[buy_col]].replace(",", ""))
+                  except:
                       continue
                   daily_map[code4] = {"sell": sell, "buy": buy}
 
-          # ============================
-          # JPX PDF パース（週次 syumatsu）
-          # ============================
+          # ============================================================
+          # 5. JPX PDF パース（週次 syumatsu）
+          # ============================================================
           jpx_map = {}
 
           with pdfplumber.open("jpx.pdf") as pdf:
@@ -223,9 +287,9 @@ jobs:
                   "ratio": ratio
               }
 
-          # ============================
-          # 日々公表で上書き（前週比は差分）
-          # ============================
+          # ============================================================
+          # 6. 日々公表で上書き
+          # ============================================================
           for code4, d in daily_map.items():
               if code4 in jpx_map:
                   prev_buy = jpx_map[code4]["buy"]
@@ -252,11 +316,11 @@ jobs:
                       "ratio": round(d["buy"] / d["sell"], 2) if d["sell"] != 0 else None
                   }
 
-          # ============================
-          # margin.json 統合（制度信用のみ）
-          # ============================
+          # ============================================================
+          # 7. margin.json 統合（制度信用のみ）
+          # ============================================================
           margin = {}
-          all_codes = set(taisyaku_set) | set(jpx_map.keys())
+          all_codes = set(taisyaku_set) | set(jpx_map.keys()) | set(regulation_map.keys())
 
           for code in sorted(all_codes):
               jpx = jpx_map.get(code, {})
@@ -289,5 +353,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (Seido only, strict regulation)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (Seido only, Rakuten regulation official dictionary)" || echo "No changes to commit"
           git push
