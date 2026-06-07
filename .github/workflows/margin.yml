@@ -1,4 +1,4 @@
-name: Margin Info Fetch (Seido Only, Rakuten Regulation, Tokyo Market Only)
+name: Margin Info Fetch (Seido Only, Rakuten Regulation, Tokyo Market Only, Rowspan Supported)
 
 on:
   schedule:
@@ -54,18 +54,81 @@ jobs:
                   taisyaku_set.add(code)
 
           # ============================================================
-          # 2. 楽天証券の制度信用規制ページをスクレイピング（文字コード対応）
+          # 2. 楽天証券の制度信用規制ページ（rowspan 完全対応）
           # ============================================================
 
-          BUY_BAN_KEYWORDS = [
-              "新規買停止",
-              "全取引停止",
-          ]
+          # --------------------------------------------------------------------
+          # 【重要】この辞書は楽天証券公式ページ
+          #   https://www.rakuten-sec.co.jp/ITS/qaOth0007.html
+          # に記載されている規制文言一覧を元に作成しています。
+          #
+          # 公式ページに記載されている文言（全て）：
+          #
+          #  整理銘柄
+          #  監理銘柄（審査中）
+          #  監理銘柄（確認中）
+          #  特別注意銘柄
+          #  監視区分銘柄
+          #  増担保***％（うち現金***％）
+          #  レバETF
+          #  日々公表銘柄
+          #  貸株注意喚起
+          #  申告規制
+          #  即日預託
+          #  制度信用社内規制
+          #  一般信用社内規制
+          #  建玉上限
+          #
+          #  代用掛目規制***％
+          #  代用掛目規制予定***％
+          #  新規買停止
+          #  一般信用新規買停止
+          #  新規売停止
+          #  一般信用新規売停止
+          #  返済買埋停止
+          #  一般信用返済買埋停止
+          #  返済売埋停止
+          #  一般信用返済売埋停止
+          #  現引停止
+          #  一般信用現引停止
+          #  現渡停止
+          #  一般信用現渡停止
+          #  全取引停止
+          #  現物売付停止
+          #  現物買付停止
+          #
+          # --------------------------------------------------------------------
+          # 【制度信用の新規建て可否に採用した文言】
+          #
+          #  ● 新規買停止      → 制度信用の新規買い禁止
+          #  ● 新規売停止      → 制度信用の新規売り禁止
+          #  ● 全取引停止      → 新規買い・新規売りともに禁止
+          #
+          # --------------------------------------------------------------------
+          # 【制度信用の新規建て可否に採用しなかった文言（理由付き）】
+          #
+          #  ● 整理銘柄 / 監理銘柄 / 特別注意銘柄 / 監視区分銘柄
+          #      → 注意喚起・情報区分であり、新規建て可否とは無関係
+          #
+          #  ● 増担保 / レバETF / 日々公表銘柄 / 貸株注意喚起
+          #      → 担保率や注意喚起であり、新規建て可否とは無関係
+          #
+          #  ● 申告規制 / 即日預託 / 建玉上限
+          #      → 取引条件や建玉制限であり、新規建て可否とは無関係
+          #
+          #  ● 制度信用社内規制
+          #      → 文言だけでは「買い禁止」「売り禁止」が判別できないため除外
+          #
+          #  ● 一般信用〜（新規買停止 / 新規売停止 / 返済系 / 現引 / 現渡）
+          #      → 一般信用専用の規制であり、制度信用とは別体系
+          #
+          #  ● 現物売付停止 / 現物買付停止
+          #      → 現物取引の規制であり、信用新規建てとは無関係
+          #
+          # --------------------------------------------------------------------
 
-          SELL_BAN_KEYWORDS = [
-              "新規売停止",
-              "全取引停止",
-          ]
+          BUY_BAN_KEYWORDS = ["新規買停止", "全取引停止"]
+          SELL_BAN_KEYWORDS = ["新規売停止", "全取引停止"]
 
           rakuten_url = "https://www.rakuten-sec.co.jp/ITS/Companyfile/margin_restriction.html"
           res = requests.get(rakuten_url, headers=UA)
@@ -78,31 +141,40 @@ jobs:
           buy_ban_map = {}
           sell_ban_map = {}
 
-          # ★ 市場フィルタに「東京」を追加（最重要修正）
           TOKYO_KEYWORDS = [
               "東京", "東証", "ETF", "ETN", "REIT", "インフラ",
               "プライム", "スタンダード", "グロース"
           ]
 
+          current_code = None
+          current_market = None
+
           for row in soup.select("table tr"):
               cols = row.find_all("td")
-              if len(cols) < 4:
+
+              # rowspan の 1 行目（コードあり）
+              if len(cols) >= 4 and re.fullmatch(r"\d{4}", cols[0].get_text(strip=True)):
+                  code = cols[0].get_text(strip=True)
+                  market = cols[2].get_text(strip=True)
+                  text = cols[3].get_text(strip=True)
+
+                  current_code = code
+                  current_market = market
+
+              # rowspan の 2 行目（コードなし）
+              elif len(cols) >= 2 and current_code is not None:
+                  code = current_code
+                  market = current_market
+                  text = cols[1].get_text(strip=True)
+
+              else:
                   continue
 
-              code = cols[0].get_text(strip=True)
-              if not re.fullmatch(r"\d{4}", code):
-                  continue
-
-              market = cols[2].get_text(strip=True)
-
-              # ★ 市場が東京系でなければ除外
+              # 市場フィルタ
               if not any(k in market for k in TOKYO_KEYWORDS):
                   continue
 
-              text = cols[3].get_text(strip=True)
-              if not text:
-                  continue
-
+              # 規制内容追加
               regulation_map.setdefault(code, []).append(text)
 
               if any(k in text for k in BUY_BAN_KEYWORDS):
@@ -287,5 +359,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (Seido only, Rakuten regulation, Tokyo only)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (Seido only, Rakuten regulation, Tokyo only, rowspan supported, comments restored)" || echo "No changes to commit"
           git push
