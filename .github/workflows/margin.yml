@@ -152,23 +152,34 @@ jobs:
           for row in soup.select("table tr"):
               cols = row.find_all("td")
 
+              # -------------------------------
               # rowspan の 1 行目（コードあり）
+              # -------------------------------
               if len(cols) >= 4 and re.fullmatch(r"\d{4}", cols[0].get_text(strip=True)):
                   code = cols[0].get_text(strip=True)
                   market = cols[2].get_text(strip=True)
                   text = cols[3].get_text(strip=True)
-
                   current_code = code
                   current_market = market
 
-              # rowspan の 2 行目（コードなし）
-              elif len(cols) >= 2 and current_code is not None:
+              # -------------------------------
+              # rowspan の 2 行目以降（コードなし）
+              # -------------------------------
+              else:
                   code = current_code
                   market = current_market
-                  text = cols[1].get_text(strip=True)
 
-              else:
-                  continue
+                  # パターンB（市場 + 摘要）
+                  if len(cols) >= 2 and (
+                      "東京" in cols[0].text or
+                      "JNX" in cols[0].text or
+                      "市場" in cols[0].text
+                  ):
+                      text = cols[1].get_text(strip=True)
+
+                  # パターンC（摘要が cols[0]）
+                  else:
+                      text = cols[0].get_text(strip=True)
 
               # 市場フィルタ
               if not any(k in market for k in TOKYO_KEYWORDS):
