@@ -1,4 +1,4 @@
-name: Margin Info Fetch (All Codes New Logic, 281A Fixed)
+name: Margin Info Fetch
 
 on:
   schedule:
@@ -331,6 +331,11 @@ jobs:
               code = unicodedata.normalize("NFKC", raw_code)
 
               kubun = kubun_map.get(code)
+
+              # 貸借区分 0（非制度信用銘柄）は margin.json に出力しない（東証での取り扱いが無いため）
+              if kubun == "0":
+                  continue
+              
               regs = regulation_map.get(code, [])
               jpx = jpx_map.get(code, {})
 
