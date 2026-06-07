@@ -1,4 +1,4 @@
-name: Margin Info Fetch (All Codes New Logic)
+name: Margin Info Fetch (All Codes New Logic, 281A Fixed)
 
 on:
   schedule:
@@ -132,7 +132,7 @@ jobs:
               regulation_map.setdefault(code, []).append(text)
 
           # ============================================================
-          # 3. JPX PDF（週次）取得
+          # 3. JPX PDF（週次）取得 ＋ 281A 対応
           # ============================================================
           jpx_page = "https://www.jpx.co.jp/markets/statistics-equities/margin/05.html"
           jpx_html = requests.get(jpx_page, headers=UA).text
@@ -160,7 +160,8 @@ jobs:
                   if t:
                       full_text += "\n" + t
 
-          blocks = re.split(r"(?=\d{5}\s+JP\d{10})", full_text)
+          # ★ 281A0 など「4桁＋0」形式に対応
+          blocks = re.split(r"(?=[0-9A-Z]{4}0\s+JP\d{10})", full_text)
 
           def parse_num(s):
               s = s.replace(",", "").replace(" ", "")
@@ -171,12 +172,12 @@ jobs:
               return int(s)
 
           for block in blocks:
-              m = re.search(r"(\d{5})\s+JP\d{10}", block)
+              m = re.search(r"([0-9A-Z]{4}0)\s+JP\d{10}", block)
               if not m:
                   continue
 
-              code5 = m.group(1)
-              code4 = unicodedata.normalize("NFKC", code5[:4])
+              raw_code5 = m.group(1)  # 例: 281A0, 72030
+              code4 = unicodedata.normalize("NFKC", raw_code5[:4])  # 例: 281A, 7203
 
               after_isin = re.split(r"JP\d{10}", block)[1]
               nums = re.findall(r"[▲\-]?\s*[\d,]+", after_isin)
@@ -201,7 +202,7 @@ jobs:
               }
 
           # ============================================================
-          # 4. 日々公表（XLS）で上書き
+          # 4. 日々公表（XLS）で上書き ＋ 281A 対応
           # ============================================================
           daily_index = "https://www.jpx.co.jp/markets/statistics-equities/margin/index.html"
           daily_html = requests.get(daily_index, headers=UA).text
@@ -229,8 +230,9 @@ jobs:
 
           daily_map = {}
           for _, row in daily_df.iterrows():
-              raw = str(row[code_col])
-              if re.fullmatch(r"\d{5}", raw):
+              raw = str(row[code_col]).strip()
+              # ★ 281A0 / 72030 など「4桁＋0」形式に対応
+              if re.fullmatch(r"[0-9A-Z]{4}0", raw):
                   code4 = unicodedata.normalize("NFKC", raw[:4])
                   try:
                       sell = int(str(row[sell_col]).replace(",", ""))
@@ -283,7 +285,6 @@ jobs:
               regs = regulation_map.get(code, [])
               jpx = jpx_map.get(code, {})
 
-              # --- 全銘柄 新ロジック ---
               has_sell_ban = any(
                   any(k in r for k in SELL_BAN_KEYWORDS)
                   for r in regs
@@ -318,5 +319,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (All Codes New Logic)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (All Codes New Logic, 281A Fixed)" || echo "No changes to commit"
           git push
