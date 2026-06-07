@@ -1,4 +1,4 @@
-name: Margin Info Fetch (NFKC Normalized, Full Debug Ready)
+name: Margin Info Fetch (Full Debug for 183A)
 
 on:
   schedule:
@@ -36,7 +36,7 @@ jobs:
           UA = {"User-Agent": "Mozilla/5.0"}
 
           # ============================================================
-          # 1. JSF 貸借銘柄（制度信用売り建て可否の基礎）
+          # 1. JSF 貸借銘柄
           # ============================================================
           base = "https://www.taisyaku.jp/data/"
           meigara_df = pd.read_csv(
@@ -50,20 +50,22 @@ jobs:
           taisyaku_set = set()
           kubun_map = {}
 
+          print("DEBUG meigara columns:", meigara_df.columns)
+          print("DEBUG meigara head:\n", meigara_df.head(20))
+
           for _, row in meigara_df.iterrows():
               raw_code = str(row["コード"])
               code = unicodedata.normalize("NFKC", raw_code).zfill(4)
-
               kubun = str(row["貸借銘柄区分（東証）"])
               kubun_map[code] = kubun
-
+              if code == "183A":
+                  print("DEBUG JSF 183A kubun:", repr(raw_code), "→", repr(code), "kubun:", kubun)
               if kubun == "1":
                   taisyaku_set.add(code)
 
           # ============================================================
-          # 2. 楽天証券の制度信用規制ページ
+          # 2. 楽天証券 規制ページ
           # ============================================================
-
           BUY_BAN_KEYWORDS = ["新規買停止", "全取引停止"]
           SELL_BAN_KEYWORDS = ["新規売停止", "全取引停止"]
 
@@ -84,9 +86,6 @@ jobs:
               "ETF", "ETN", "REIT", "インフラ"
           ]
 
-          # ------------------------------------------------------------
-          # ★ rowspan 展開 + NFKC 正規化
-          # ------------------------------------------------------------
           current_vals = [None] * 6
           rowspan_left = [0] * 6
 
@@ -121,6 +120,9 @@ jobs:
                   td_i += 1
 
               raw_code = logical[0]
+              market = logical[2]
+              text = logical[3]
+
               if not raw_code:
                   continue
 
@@ -129,28 +131,36 @@ jobs:
               if not re.fullmatch(r"\d{4}", code):
                   continue
 
-              market = logical[2]
-              text = logical[3]
-
               if market:
                   m = unicodedata.normalize("NFKC", market).replace(" ", "").replace("　", "")
                   market_flag = any(k in m for k in TOKYO_KEYWORDS)
               else:
                   market_flag = False
 
+              if code == "183A":
+                  print("DEBUG 183A logical:", logical)
+                  print("DEBUG 183A market raw:", repr(market), "→ flag:", market_flag)
+
               if not market_flag:
+                  if code == "183A":
+                      print("DEBUG 183A SKIP by market:", repr(market))
                   continue
 
               regulation_map.setdefault(code, []).append(text)
 
+              if code == "183A":
+                  print("DEBUG 183A add regulation:", repr(text))
+
               if any(k in text for k in BUY_BAN_KEYWORDS):
                   buy_ban_map[code] = True
-
               if any(k in text for k in SELL_BAN_KEYWORDS):
                   sell_ban_map[code] = True
 
+          print("DEBUG regulation_map keys:", list(regulation_map.keys()))
+          print("DEBUG regulation_map[183A]:", regulation_map.get("183A"))
+
           # ============================================================
-          # 3. JPX 週次 PDF（syumatsu）
+          # 3. JPX 週次 PDF
           # ============================================================
           jpx_page = "https://www.jpx.co.jp/markets/statistics-equities/margin/05.html"
           jpx_html = requests.get(jpx_page, headers=UA).text
@@ -169,7 +179,7 @@ jobs:
               f.write(pdf_data)
 
           # ============================================================
-          # 4. 日々公表（mtdailyk） XLS
+          # 4. 日々公表 XLS
           # ============================================================
           daily_index = "https://www.jpx.co.jp/markets/statistics-equities/margin/index.html"
           daily_html = requests.get(daily_index, headers=UA).text
@@ -289,7 +299,7 @@ jobs:
                   }
 
           # ============================================================
-          # 7. margin.json 統合（NFKC 正規化済み）
+          # 7. margin.json 統合（183A フルデバッグ）
           # ============================================================
           margin = {}
 
@@ -311,6 +321,14 @@ jobs:
               sei_buy = not has_buy_ban
               sei_sell = (kubun == "1") and (not has_sell_ban)
 
+              if code == "183A":
+                  print("DEBUG MERGE 183A:")
+                  print("  kubun:", kubun)
+                  print("  regs:", regs)
+                  print("  has_buy_ban:", has_buy_ban)
+                  print("  has_sell_ban:", has_sell_ban)
+                  print("  sei_buy:", sei_buy, "sei_sell:", sei_sell)
+
               margin[code] = {
                   "貸借区分": kubun,
                   "制度信用": {
@@ -325,6 +343,8 @@ jobs:
                   "規制": regs
               }
 
+          print("DEBUG FINAL 183A:", margin.get("183A"))
+
           with open("margin.json", "w", encoding="utf-8") as f:
               json.dump(margin, f, ensure_ascii=False, indent=2)
 
@@ -333,5 +353,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (NFKC normalized)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (183A full debug)" || echo "No changes to commit"
           git push
