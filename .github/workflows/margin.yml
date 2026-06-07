@@ -1,4 +1,4 @@
-name: Margin Info Fetch (Seido Only)
+name: Margin Info Fetch (Seido Only, Strict Regulation)
 
 on:
   schedule:
@@ -66,14 +66,45 @@ jobs:
           sei_df.columns = sei_df.columns.str.strip().str.replace("\ufeff", "", regex=False)
 
           regulation_map = {}
+          buy_ban_map = {}
+          sell_ban_map = {}
+
+          buy_keywords = [
+              "新規買付停止",
+              "新規買停止",
+              "買付停止",
+              "買付申込停止",
+              "申込停止：新規買",
+              "申込停止:新規買"
+          ]
+          sell_keywords = [
+              "新規売付停止",
+              "新規売停止",
+              "売付停止",
+              "売付申込停止",
+              "申込停止：新規売",
+              "申込停止:新規売",
+              "空売禁止",
+              "売禁"
+          ]
+
           for _, row in sei_df.iterrows():
               code = str(row["銘柄コード"]).zfill(4)
-              reason_raw = row["実施内容"]
-              if pd.notna(reason_raw):
-                  reason = f'{row["実施措置"]}:{reason_raw}'
+              jisshi = str(row["実施措置"]) if pd.notna(row["実施措置"]) else ""
+              naiyo = str(row["実施内容"]) if pd.notna(row["実施内容"]) else ""
+              text = f"{jisshi} {naiyo}"
+
+              if pd.notna(row["実施内容"]):
+                  reason = f'{jisshi}:{naiyo}'
               else:
-                  reason = row["実施措置"]
+                  reason = jisshi
+
               regulation_map.setdefault(code, []).append(reason)
+
+              if any(k in text for k in buy_keywords):
+                  buy_ban_map[code] = True
+              if any(k in text for k in sell_keywords):
+                  sell_ban_map[code] = True
 
           # ============================
           # JPX 週次 PDF（syumatsu）
@@ -135,8 +166,8 @@ jobs:
                   code4 = raw[:4]
                   try:
                       sell = int(str(row[sell_col]).replace(",", ""))
-                      buy  = int(str[row[buy_col]].replace(",", ""))
-                  except:
+                      buy  = int(str(row[buy_col]).replace(",", ""))
+                  except Exception:
                       continue
                   daily_map[code4] = {"sell": sell, "buy": buy}
 
@@ -231,8 +262,8 @@ jobs:
               jpx = jpx_map.get(code, {})
               regs = regulation_map.get(code, [])
 
-              has_buy_ban = any("買" in r for r in regs)
-              has_sell_ban = any("売" in r for r in regs)
+              has_buy_ban = buy_ban_map.get(code, False)
+              has_sell_ban = sell_ban_map.get(code, False)
 
               sei_buy = not has_buy_ban
               sei_sell = (code in taisyaku_set) and (not has_sell_ban)
@@ -258,5 +289,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (Seido only)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (Seido only, strict regulation)" || echo "No changes to commit"
           git push
