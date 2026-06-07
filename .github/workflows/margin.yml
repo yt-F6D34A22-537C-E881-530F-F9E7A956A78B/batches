@@ -1,4 +1,4 @@
-name: Margin Info Fetch (183A HTML Full Dump Debug)
+name: Margin Info Fetch (183A Market Raw Debug)
 
 on:
   schedule:
@@ -59,7 +59,7 @@ jobs:
                   taisyaku_set.add(code)
 
           # ============================================================
-          # 2. 楽天証券 規制ページ（183A HTMLフルダンプ）
+          # 2. 楽天証券 規制ページ（183A market raw デバッグ）
           # ============================================================
           BUY_BAN_KEYWORDS = ["新規買停止", "全取引停止"]
           SELL_BAN_KEYWORDS = ["新規売停止", "全取引停止"]
@@ -84,19 +84,8 @@ jobs:
           current_vals = [None] * 6
           rowspan_left = [0] * 6
 
-          print("===== DEBUG: START DUMP ALL TR CONTAINING '183A' =====")
-          for tr in soup.select("table tr"):
-              tds = tr.find_all("td")
-              if not tds:
-                  continue
-              texts = [td.get_text(strip=True) for td in tds]
-              if any("183A" in t for t in texts):
-                  print("DEBUG TR RAW (contains 183A):")
-                  print(tr.prettify())
-                  print("DEBUG TD TEXTS:", texts)
-          print("===== DEBUG: END DUMP ALL TR CONTAINING '183A' =====")
+          print("===== DEBUG: 183A market raw dump START =====")
 
-          # rowspan 展開＋通常処理
           for row in soup.select("table tr"):
               tds = row.find_all("td")
               if not tds:
@@ -105,11 +94,13 @@ jobs:
               logical = [None] * 6
               td_i = 0
 
+              # rowspan 継承
               for col in range(6):
                   if rowspan_left[col] > 0:
                       logical[col] = current_vals[col]
                       rowspan_left[col] -= 1
 
+              # 通常セル
               for col in range(6):
                   if logical[col] is not None:
                       continue
@@ -136,32 +127,38 @@ jobs:
 
               code = unicodedata.normalize("NFKC", raw_code)
 
-              if not re.fullmatch(r"\d{4}", code):
+              if code != "183A":
                   continue
+
+              # ★ 183A の market を徹底的にダンプ
+              print("DEBUG 183A logical:", logical)
+              print("DEBUG 183A raw_code repr:", repr(raw_code))
+              print("DEBUG 183A market repr:", repr(market))
 
               if market:
-                  m = unicodedata.normalize("NFKC", market).replace(" ", "").replace("　", "")
-                  market_flag = any(k in m for k in TOKYO_KEYWORDS)
+                  m = unicodedata.normalize("NFKC", market)
+                  m2 = m.replace(" ", "").replace("　", "")
               else:
-                  market_flag = False
+                  m = None
+                  m2 = None
 
-              if code == "183A":
-                  print("DEBUG 183A logical:", logical)
-                  print("DEBUG 183A market raw:", repr(market), "→ flag:", market_flag)
+              print("DEBUG 183A market NFKC:", repr(m))
+              print("DEBUG 183A market cleaned:", repr(m2))
+
+              market_flag = False
+              if m2:
+                  market_flag = any(k in m2 for k in TOKYO_KEYWORDS)
+
+              print("DEBUG 183A market_flag:", market_flag)
 
               if not market_flag:
+                  print("DEBUG 183A SKIP by market:", repr(market))
                   continue
 
+              print("DEBUG 183A add regulation:", repr(text))
               regulation_map.setdefault(code, []).append(text)
 
-              if code == "183A":
-                  print("DEBUG 183A add regulation:", repr(text))
-
-              if any(k in text for k in BUY_BAN_KEYWORDS):
-                  buy_ban_map[code] = True
-              if any(k in text for k in SELL_BAN_KEYWORDS):
-                  sell_ban_map[code] = True
-
+          print("===== DEBUG: 183A market raw dump END =====")
           print("DEBUG regulation_map[183A]:", regulation_map.get("183A"))
 
           # ============================================================
@@ -217,7 +214,7 @@ jobs:
                   code4 = unicodedata.normalize("NFKC", raw[:4])
                   try:
                       sell = int(str(row[sell_col]).replace(",", ""))
-                      buy = int(str(row[buy_col]).replace(",", ""))
+                      buy = int(str[row[buy_col]).replace(",", ""))
                   except Exception:
                       continue
                   daily_map[code4] = {"sell": sell, "buy": buy}
@@ -358,5 +355,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (183A HTML full dump debug)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (183A market raw debug)" || echo "No changes to commit"
           git push
