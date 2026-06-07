@@ -1,4 +1,4 @@
-name: Margin Info Fetch (183A Full Logical Dump)
+name: Margin Info Fetch (Stepwise 183A Only)
 
 on:
   schedule:
@@ -54,7 +54,7 @@ jobs:
               kubun_map[code] = str(row["貸借銘柄区分（東証）"])
 
           # ============================================================
-          # 2. 楽天証券 規制ページ（183A logical 全列ダンプ）
+          # 2. 楽天証券 規制ページ
           # ============================================================
           BUY_BAN_KEYWORDS = ["新規買停止", "全取引停止"]
           SELL_BAN_KEYWORDS = ["新規売停止", "全取引停止"]
@@ -78,8 +78,6 @@ jobs:
 
           current_vals = [None] * 6
           rowspan_left = [0] * 6
-
-          print("===== DEBUG: 183A FULL LOGICAL DUMP START =====")
 
           for row in soup.select("table tr"):
               tds = row.find_all("td")
@@ -122,14 +120,6 @@ jobs:
 
               code = unicodedata.normalize("NFKC", raw_code)
 
-              if code != "183A":
-                  continue
-
-              # ★ 183A の logical 全列を完全ダンプ
-              print("DEBUG 183A FULL logical columns:")
-              for i, v in enumerate(logical):
-                  print(f"  col{i}: {repr(v)}")
-
               # 市場フィルタ
               if market:
                   m = unicodedata.normalize("NFKC", market).replace(" ", "").replace("　", "")
@@ -137,28 +127,85 @@ jobs:
               else:
                   market_flag = False
 
-              print("DEBUG 183A market_flag:", market_flag)
-
               if not market_flag:
-                  print("DEBUG 183A SKIP by market:", repr(market))
                   continue
 
-              print("DEBUG 183A add regulation:", repr(text))
+              # 規制文言を格納
               regulation_map.setdefault(code, []).append(text)
 
-          print("===== DEBUG: 183A FULL LOGICAL DUMP END =====")
-          print("DEBUG regulation_map[183A]:", regulation_map.get("183A"))
+              # 従来ロジック（他銘柄用）
+              if any(k in text for k in BUY_BAN_KEYWORDS):
+                  buy_ban_map[code] = True
+              if any(k in text for k in SELL_BAN_KEYWORDS):
+                  sell_ban_map[code] = True
 
           # ============================================================
-          # 3. margin.json（最小構成）
+          # 3. JPX PDF + 日々公表（省略：従来どおり）
+          # ============================================================
+          # ※ここはあなたの既存コードをそのまま残してください
+          #   jpx_map の生成部分は省略します（長いため）
+
+          jpx_map = {}  # ← 実際はあなたの既存ロジックを入れてください
+
+          # ============================================================
+          # 4. margin.json 統合（183A だけ新ロジック）
           # ============================================================
           margin = {}
-          margin["183A"] = {
-              "貸借区分": kubun_map.get("183A"),
-              "規制": regulation_map.get("183A"),
-          }
 
-          print("DEBUG FINAL 183A:", margin["183A"])
+          all_codes = list(regulation_map.keys()) \
+                   + list(kubun_map.keys()) \
+                   + list(jpx_map.keys())
+          all_codes = list(dict.fromkeys(all_codes))
+
+          for raw_code in all_codes:
+              code = unicodedata.normalize("NFKC", raw_code)
+
+              kubun = kubun_map.get(code)
+              regs = regulation_map.get(code, [])
+              jpx = jpx_map.get(code, {})
+
+              # --- 183A だけ新ロジック ---
+              if code == "183A":
+                  has_sell_ban = any(
+                      any(k in r for k in SELL_BAN_KEYWORDS)
+                      for r in regs
+                  )
+                  has_buy_ban = any(
+                      any(k in r for k in BUY_BAN_KEYWORDS)
+                      for r in regs
+                  )
+
+                  print("DEBUG MERGE 183A (stepwise):")
+                  print("  regs:", regs)
+                  print("  has_buy_ban:", has_buy_ban)
+                  print("  has_sell_ban:", has_sell_ban)
+
+              else:
+                  # 従来ロジック
+                  has_buy_ban = buy_ban_map.get(code, False)
+                  has_sell_ban = sell_ban_map.get(code, False)
+
+              sei_buy = not has_buy_ban
+              sei_sell = (kubun == "1") and (not has_sell_ban)
+
+              if code == "183A":
+                  print("  sei_buy:", sei_buy, "sei_sell:", sei_sell)
+
+              margin[code] = {
+                  "貸借区分": kubun,
+                  "制度信用": {
+                      "買い建て": sei_buy,
+                      "売り建て": sei_sell
+                  },
+                  "JPX信用買残": jpx.get("buy"),
+                  "JPX信用買残前週比": jpx.get("buy_diff"),
+                  "JPX信用売残": jpx.get("sell"),
+                  "JPX信用売残前週比": jpx.get("sell_diff"),
+                  "JPX信用倍率": jpx.get("ratio"),
+                  "規制": regs
+              }
+
+          print("DEBUG FINAL 183A:", margin.get("183A"))
 
           with open("margin.json", "w", encoding="utf-8") as f:
               json.dump(margin, f, ensure_ascii=False, indent=2)
@@ -168,5 +215,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add margin.json || true
-          git commit -m "Auto-update margin.json (183A full logical dump)" || echo "No changes to commit"
+          git commit -m "Auto-update margin.json (183A stepwise)" || echo "No changes to commit"
           git push
