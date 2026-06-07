@@ -368,10 +368,45 @@ jobs:
           with open("margin.json", "w", encoding="utf-8") as f:
               json.dump(margin, f, ensure_ascii=False, indent=2)
 
+      - name: Backup margin.json (JST timestamp)
+        run: |
+          mkdir -p backup
+          TS=$(TZ='Asia/Tokyo' date +"%Y%m%d_%H%M%S")
+          cp margin.json backup/margin.json.$TS
+
+      - name: Cleanup old backups (older than 3 days)
+        shell: python
+        run: |
+          import os
+          import re
+          from datetime import datetime, timedelta
+          import pytz
+          import subprocess
+
+          backup_dir = "backup"
+          pattern = re.compile(r"margin\.json\.(\d{8}_\d{6})$")
+
+          tz = pytz.timezone("Asia/Tokyo")
+          now = datetime.now(tz)
+
+          for fname in os.listdir(backup_dir):
+              m = pattern.match(fname)
+              if not m:
+                  continue
+
+              timestamp_str = m.group(1)
+              dt = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+              dt = tz.localize(dt)
+
+              if now - dt > timedelta(days=3):
+                  full_path = os.path.join(backup_dir, fname)
+                  print(f"Deleting old backup: {full_path}")
+                  subprocess.run(["git", "rm", full_path], check=False)
+
       - name: Commit & Push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add margin.json || true
-          git commit -m "Auto-update margin.json (All Codes New Logic, 281A Fixed)" || echo "No changes to commit"
+          git add margin.json backup/ || true
+          git commit -m "Auto-update margin.json + backup" || echo "No changes to commit"
           git push
