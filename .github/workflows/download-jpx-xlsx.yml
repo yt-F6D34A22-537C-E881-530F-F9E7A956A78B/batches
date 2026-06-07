@@ -22,6 +22,10 @@ jobs:
           sudo apt-get install -y libreoffice python3 python3-pip
           pip3 install requests beautifulsoup4 lxml pytz
 
+      - name: Ensure data directory exists
+        run: |
+          mkdir -p data
+
       - name: Scrape JPX page to get data_j.xls URL
         id: scrape
         shell: python
@@ -56,18 +60,18 @@ jobs:
 
       - name: Download data_j.xls
         run: |
-          curl -L "${{ steps.scrape.outputs.url }}" -o data_j.xls
+          curl -L "${{ steps.scrape.outputs.url }}" -o data/data_j.xls
 
       - name: Convert XLS → XLSX (keep name as data_j.xlsx)
         run: |
-          libreoffice --headless --convert-to xlsx data_j.xls --outdir .
+          libreoffice --headless --convert-to xlsx data_j.xls --outdir data
 
       - name: Backup files (JST timestamp)
         run: |
-          mkdir -p backup
+          mkdir -p data/backup
           TS=$(TZ='Asia/Tokyo' date +"%Y%m%d_%H%M%S")
-          cp data_j.xls backup/data_j.xls.$TS
-          cp data_j.xlsx backup/data_j.xlsx.$TS
+          cp data/data_j.xls data/backup/data_j.xls.$TS
+          cp data/data_j.xlsx data/backup/data_j.xlsx.$TS
 
       - name: Remove data_j.xls (not needed after backup)
         run: |
@@ -82,7 +86,7 @@ jobs:
           import pytz
           import subprocess
 
-          backup_dir = "backup"
+          backup_dir = "data/backup"
           pattern = re.compile(r"(data_j\.(xls|xlsx))\.(\d{8}_\d{6})$")
 
           tz = pytz.timezone("Asia/Tokyo")
@@ -106,6 +110,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add data_j.xlsx backup/ || true
-          git commit -m "Auto-update JPX data_j.xlsx + backup (JST timestamp, filename-based cleanup)" || echo "No changes to commit"
+          git add data/data_j.xlsx data/backup/ || true
+          git commit -m "Auto-update JPX data_j.xlsx + backup" || echo "No changes to commit"
           git push
