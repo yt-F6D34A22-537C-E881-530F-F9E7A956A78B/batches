@@ -16,11 +16,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libreoffice
-          npm install node-fetch@3 xlsx
+          npm install node-fetch@3 xlsx jsdom pdf-parse
 
       - name: Ensure data directory exists
         run: mkdir -p data
@@ -30,8 +35,8 @@ jobs:
 
       - name: Commit & Push
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
           git add data/data_j.xlsx data/backup/ || true
           git commit -m "Auto-update JPX data_j.xlsx + backup" || echo "No changes"
           git pull --rebase || true
