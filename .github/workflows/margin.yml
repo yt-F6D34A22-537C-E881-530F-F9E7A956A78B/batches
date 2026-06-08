@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install node-fetch@3 xlsx pdf-parse jsdom
+          npm install node-fetch@3 xlsx jsdom pdfjs-dist iconv-lite
 
       - name: Ensure data directory exists
         run: mkdir -p data
