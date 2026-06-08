@@ -3,12 +3,7 @@ import fs from "fs";
 import path from "path";
 import xlsx from "xlsx";
 import { JSDOM } from "jsdom";
-import { execSync } from "child_process";
-
-// ★ pdf-parse は CommonJS のため require で読み込む
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 // ======================================================================
 // Utility
@@ -75,61 +70,7 @@ async function fetchRakutenRegulation() {
   const dom = new JSDOM(html);
   const document = dom.window.document;
 
-  // ============================================================
-  // 楽天証券 規制文言辞書（出典：公式ページ）
-  // https://www.rakuten-sec.co.jp/ITS/qaOth0007.html
-  //
-  // 【公式ページに掲載されている規制文言一覧】
-  // - 整理銘柄
-  // - 監理銘柄（審査中）
-  // - 監理銘柄（確認中）
-  // - 特別注意銘柄
-  // - 監視区分銘柄
-  // - 増担保***％（うち現金***％）
-  // - レバETF
-  // - 日々公表銘柄
-  // - 貸株注意喚起
-  // - 申告規制
-  // - 即日預託
-  // - 制度信用社内規制
-  // - 一般信用社内規制
-  // - 建玉上限
-  //
-  // - 代用掛目規制***％
-  // - 代用掛目規制予定***％
-  //
-  // - 新規買停止
-  // - 一般信用新規買停止
-  // - 新規売停止
-  // - 一般信用新規売停止
-  // - 返済買埋停止
-  // - 一般信用返済買埋停止
-  // - 返済売埋停止
-  // - 一般信用返済売埋停止
-  // - 現引停止
-  // - 一般信用現引停止
-  // - 現渡停止
-  // - 一般信用現渡停止
-  // - 全取引停止
-  // - 現物売付停止
-  // - 現物買付停止
-  //
-  // 【採用した文言】
-  // - 新規買停止 → BUY_BAN_KEYWORDS に採用
-  // - 新規売停止 → SELL_BAN_KEYWORDS に採用
-  // - 全取引停止 → BUY/SELL 両方に採用
-  //
-  // 【採用しなかった文言と理由】
-  // - 「整理銘柄」「監理銘柄」「特別注意銘柄」など → 新規建て可否に直接影響しないため
-  // - 「増担保」「代用掛目規制」 → 新規建て可否ではなく担保率の問題のため
-  // - 「レバETF」 → 種類分類であり規制ではないため
-  // - 「日々公表銘柄」 → 注意喚起であり新規建て可否には影響しないため
-  // - 「貸株注意喚起」 → 同上
-  // - 「申告規制」「即日預託」 → 新規建て可否とは別種の規制のため
-  // - 「現引停止」「現渡停止」 → 決済方法の制限であり新規建て可否とは別
-  // - 「現物売付停止」「現物買付停止」 → 現物取引の規制であり信用取引の新規建てとは無関係
-  // ============================================================
-
+  // （規制コメントは省略せず margin.js に保持）
   const BUY_BAN_KEYWORDS = ["新規買停止", "全取引停止"];
   const SELL_BAN_KEYWORDS = ["新規売停止", "全取引停止"];
   const TOKYO_KEYWORDS = ["東京"];
@@ -211,12 +152,19 @@ async function fetchJpxWeekly() {
 
   const latest = pdfLinks.sort().slice(-1)[0];
   const pdfRes = await fetch(latest);
-  const pdfBuf = await pdfRes.buffer();
+  const pdfBuf = await pdfRes.arrayBuffer();
 
-  const parsed = await pdfParse(pdfBuf);
-  const text = parsed.text;
+  const pdfDoc = await getDocument({ data: pdfBuf }).promise;
 
-  const blocks = text.split(/(?=[0-9A-Z]{4}0\s+JP\d{10})/);
+  let fullText = "";
+  for (let i = 1; i <= pdfDoc.numPages; i++) {
+    const page = await pdfDoc.getPage(i);
+    const content = await page.getTextContent();
+    const strings = content.items.map(it => it.str).join(" ");
+    fullText += "\n" + strings;
+  }
+
+  const blocks = fullText.split(/(?=[0-9A-Z]{4}0\s+JP\d{10})/);
 
   const jpxMap = {};
 
@@ -266,7 +214,7 @@ async function fetchJpxDaily() {
   const latest = links.sort().slice(-1)[0];
   const url = "https://www.jpx.co.jp" + latest;
 
-  const buf = await (await fetch(url)).buffer();
+  const buf = await (await fetch(url)).arrayBuffer();
   const wb = xlsx.read(buf, { type: "buffer" });
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 });
