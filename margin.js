@@ -42,7 +42,7 @@ async function fetchKubunMap() {
   const res = await fetch(url);
   const buf = Buffer.from(await res.arrayBuffer());
 
-  // ★ Shift_JIS → UTF-8 正常変換
+  // Shift_JIS → UTF-8
   const csv = iconv.decode(buf, "shift_jis");
 
   const lines = csv.split(/\r?\n/).slice(1);
@@ -50,10 +50,16 @@ async function fetchKubunMap() {
 
   for (const line of lines) {
     if (!line.trim()) continue;
+
     const cols = line.split(",");
 
+    // JSF meigara.csv の列構造:
+    // 0: コード
+    // 1: 銘柄名
+    // 2: 市場
+    // 3: 貸借銘柄区分（東証）
     const rawCode = cols[0];
-    const kubun = cols[1];
+    const kubun = cols[3];
 
     if (!rawCode) continue;
 
@@ -79,7 +85,55 @@ async function fetchRakutenRegulation() {
   // 楽天証券 規制文言辞書（出典：公式ページ）
   // https://www.rakuten-sec.co.jp/ITS/qaOth0007.html
   //
-  // （margin.yml のコメントを完全復元）
+  // 【公式ページに掲載されている規制文言一覧】
+  // - 整理銘柄
+  // - 監理銘柄（審査中）
+  // - 監理銘柄（確認中）
+  // - 特別注意銘柄
+  // - 監視区分銘柄
+  // - 増担保***％（うち現金***％）
+  // - レバETF
+  // - 日々公表銘柄
+  // - 貸株注意喚起
+  // - 申告規制
+  // - 即日預託
+  // - 制度信用社内規制
+  // - 一般信用社内規制
+  // - 建玉上限
+  //
+  // - 代用掛目規制***％
+  // - 代用掛目規制予定***％
+  //
+  // - 新規買停止
+  // - 一般信用新規買停止
+  // - 新規売停止
+  // - 一般信用新規売停止
+  // - 返済買埋停止
+  // - 一般信用返済買埋停止
+  // - 返済売埋停止
+  // - 一般信用返済売埋停止
+  // - 現引停止
+  // - 一般信用現引停止
+  // - 現渡停止
+  // - 一般信用現渡停止
+  // - 全取引停止
+  // - 現物売付停止
+  // - 現物買付停止
+  //
+  // 【採用した文言】
+  // - 新規買停止 → BUY_BAN_KEYWORDS に採用
+  // - 新規売停止 → SELL_BAN_KEYWORDS に採用
+  // - 全取引停止 → BUY/SELL 両方に採用
+  //
+  // 【採用しなかった文言と理由】
+  // - 「整理銘柄」「監理銘柄」「特別注意銘柄」など → 新規建て可否に直接影響しないため
+  // - 「増担保」「代用掛目規制」 → 新規建て可否ではなく担保率の問題のため
+  // - 「レバETF」 → 種類分類であり規制ではないため
+  // - 「日々公表銘柄」 → 注意喚起であり新規建て可否には影響しないため
+  // - 「貸株注意喚起」 → 同上
+  // - 「申告規制」「即日預託」 → 新規建て可否とは別種の規制のため
+  // - 「現引停止」「現渡停止」 → 決済方法の制限であり新規建て可否とは別
+  // - 「現物売付停止」「現物買付停止」 → 現物取引の規制であり信用取引の新規建てとは無関係
   // ============================================================
 
   const BUY_BAN_KEYWORDS = ["新規買停止", "全取引停止"];
