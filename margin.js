@@ -30,8 +30,13 @@ function timestamp() {
   );
 }
 
-function normalizeCode(code) {
-  return code.replace(/\s+/g, "").replace("　", "");
+// Python版の unicodedata.normalize("NFKC", ...) 相当（簡易）
+function normalizeNFKC(s) {
+  return s.normalize("NFKC");
+}
+
+function normalizeCodeForReg(raw) {
+  return normalizeNFKC(raw).replace(/\s+/g, "").replace("　", "");
 }
 
 // ======================================================================
@@ -54,15 +59,15 @@ async function fetchKubunMap() {
   const headerLine = lines[1];
   const headers = headerLine.split(",");
 
-  const kubunIndex = headers.indexOf("貸借銘柄区分（東証）");
   const codeIndex = headers.indexOf("コード");
+  const kubunIndex = headers.indexOf("貸借銘柄区分（東証）");
 
   console.log("=== JSF meigara.csv HEADERS ===");
   console.log(headers);
   console.log("コード index =", codeIndex, " 貸借区分（東証） index =", kubunIndex);
   console.log("================================");
 
-  if (kubunIndex === -1 || codeIndex === -1) {
+  if (codeIndex === -1 || kubunIndex === -1) {
     throw new Error("コード または 貸借銘柄区分（東証）列が見つかりません");
   }
 
@@ -80,8 +85,9 @@ async function fetchKubunMap() {
 
     if (!rawCode) continue;
 
-    const code = rawCode.replace(/\D/g, "").padStart(4, "0");
-    kubunMap[code] = kubun;
+    // Python: unicodedata.normalize("NFKC", raw_code).zfill(4)
+    const code = normalizeNFKC(String(rawCode)).padStart(4, "0");
+    kubunMap[code] = String(kubun);
   }
 
   return kubunMap;
@@ -115,6 +121,7 @@ async function fetchRakutenRegulation() {
     const logical = Array(6).fill(null);
     let td_i = 0;
 
+    // rowspan 継承
     for (let col = 0; col < 6; col++) {
       if (rowspanLeft[col] > 0) {
         logical[col] = current[col];
@@ -122,6 +129,7 @@ async function fetchRakutenRegulation() {
       }
     }
 
+    // 通常セル
     for (let col = 0; col < 6; col++) {
       if (logical[col] !== null) continue;
       if (td_i >= tds.length) break;
@@ -145,11 +153,13 @@ async function fetchRakutenRegulation() {
 
     if (!rawCode) continue;
 
-    const code = normalizeCode(rawCode);
+    // Python: unicodedata.normalize("NFKC", raw_code)
+    const code = normalizeNFKC(String(rawCode));
 
+    // 市場フィルタ（東京のみ）
     let marketFlag = false;
     if (market) {
-      const m = normalizeCode(market);
+      const m = normalizeNFKC(String(market)).replace(/\s+/g, "").replace("　", "");
       marketFlag = TOKYO_KEYWORDS.some(k => m.includes(k));
     }
     if (!marketFlag) continue;
@@ -162,7 +172,7 @@ async function fetchRakutenRegulation() {
 }
 
 // ======================================================================
-// 3. JPX 週次 PDF（pdfjs-dist）
+// 3. JPX 週次 PDF（pdfjs-dist, 281A0 対応）
 // ======================================================================
 async function fetchJpxWeekly() {
   const page = "https://www.jpx.co.jp/markets/statistics-equities/margin/05.html";
@@ -177,9 +187,7 @@ async function fetchJpxWeekly() {
     .filter(h => h.endsWith(".pdf") && h.includes("syumatsu"))
     .map(h => "https://www.jpx.co.jp" + h);
 
-  if (pdfLinks.length === 0) {
-    return {};
-  }
+  if (pdfLinks.length === 0) return {};
 
   const latest = pdfLinks.sort().slice(-1)[0];
   const pdfRes = await fetch(latest);
@@ -200,7 +208,7 @@ async function fetchJpxWeekly() {
   const jpxMap = {};
 
   function parseNum(s) {
-    s = s.replace(/,/g, "").trim();
+    s = s.replace(/,/g, "").replace(/\s+/g, "");
     if (s === "" || s === "▲") return 0;
     if (s.startsWith("▲")) return -parseInt(s.slice(1));
     return parseInt(s);
@@ -210,25 +218,31 @@ async function fetchJpxWeekly() {
     const m = block.match(/([0-9A-Z]{4}0)\s+JP\d{10}/);
     if (!m) continue;
 
-    const raw5 = m[1];
-    const code4 = raw5.slice(0, 4);
+    const rawCode5 = m[1]; // 例: 281A0, 72030
+    const code4 = normalizeNFKC(rawCode5.slice(0, 4)); // 例: 281A, 7203
 
-    const after = block.split(/JP\d{10}/)[1];
-    const nums = (after.match(/[▲\-]?\s*[\d,]+/g) || []).map(parseNum);
+    const afterIsin = block.split(/JP\d{10}/)[1] || "";
+    const nums = (afterIsin.match(/[▲\-]?\s*[\d,]+/g) || []).map(parseNum);
 
     if (nums.length < 4) continue;
 
     const [sell, sellDiff, buy, buyDiff] = nums;
     const ratio = sell !== 0 ? Math.round((buy / sell) * 100) / 100 : null;
 
-    jpxMap[code4] = { buy, buy_diff: buyDiff, sell, sell_diff: sellDiff, ratio };
+    jpxMap[code4] = {
+      buy,
+      buy_diff: buyDiff,
+      sell,
+      sell_diff: sellDiff,
+      ratio
+    };
   }
 
   return jpxMap;
 }
 
 // ======================================================================
-// 4. JPX 日々公表 XLS
+// 4. JPX 日々公表 XLS（Python版と同じ列名・ヘッダ行）
 // ======================================================================
 async function fetchJpxDaily() {
   const index = "https://www.jpx.co.jp/markets/statistics-equities/margin/index.html";
@@ -242,9 +256,7 @@ async function fetchJpxDaily() {
     .map(a => a.href)
     .filter(h => /mtdailyk.*\.xls$/.test(h));
 
-  if (links.length === 0) {
-    return {};
-  }
+  if (links.length === 0) return {};
 
   const latest = links.sort().slice(-1)[0];
   const url = "https://www.jpx.co.jp" + latest;
@@ -252,17 +264,29 @@ async function fetchJpxDaily() {
   const buf = await (await fetch(url)).arrayBuffer();
   const wb = xlsx.read(buf, { type: "buffer" });
   const sheet = wb.Sheets[wb.SheetNames[0]];
-  const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+
+  // Python: header=5 → 6行目がヘッダ
+  const rows = xlsx.utils.sheet_to_json(sheet, { header: 0, range: 5 });
+
+  const codeCol = "コード";
+  const sellCol = "売残高 Outstanding Sales";
+  const buyCol = "買残高 Outstanding Purchases";
 
   const dailyMap = {};
 
   for (const row of rows) {
-    const raw = String(row[0] || "").trim();
+    const raw = String(row[codeCol] || "").trim();
     if (!/^[0-9A-Z]{4}0$/.test(raw)) continue;
 
-    const code4 = raw.slice(0, 4);
-    const sell = parseInt(String(row[1] || "0").replace(/,/g, ""));
-    const buy = parseInt(String(row[2] || "0").replace(/,/g, ""));
+    const code4 = normalizeNFKC(raw.slice(0, 4));
+
+    const sellStr = String(row[sellCol] || "0").replace(/,/g, "");
+    const buyStr = String(row[buyCol] || "0").replace(/,/g, "");
+
+    const sell = parseInt(sellStr);
+    const buy = parseInt(buyStr);
+
+    if (Number.isNaN(sell) || Number.isNaN(buy)) continue;
 
     dailyMap[code4] = { sell, buy };
   }
@@ -271,53 +295,62 @@ async function fetchJpxDaily() {
 }
 
 // ======================================================================
-// 5. margin.json 統合（規制 + 日々公表上書き）
+// 5. 日々公表で jpx_map を事前上書き（Python版と同じ）
 // ======================================================================
-function buildMarginJson(kubunMap, regulationMap, BUY_BAN, SELL_BAN, jpxMap, dailyMap) {
+function applyDailyToWeekly(jpxMap, dailyMap) {
+  for (const [code4, d] of Object.entries(dailyMap)) {
+    const newBuy = d.buy;
+    const newSell = d.sell;
+
+    if (jpxMap[code4]) {
+      const prevBuy = jpxMap[code4].buy ?? 0;
+      const prevSell = jpxMap[code4].sell ?? 0;
+
+      jpxMap[code4].buy = newBuy;
+      jpxMap[code4].sell = newSell;
+      jpxMap[code4].buy_diff = newBuy - prevBuy;
+      jpxMap[code4].sell_diff = newSell - prevSell;
+      jpxMap[code4].ratio = newSell !== 0 ? Math.round((newBuy / newSell) * 100) / 100 : null;
+    } else {
+      jpxMap[code4] = {
+        buy: newBuy,
+        buy_diff: null,
+        sell: newSell,
+        sell_diff: null,
+        ratio: newSell !== 0 ? Math.round((newBuy / newSell) * 100) / 100 : null
+      };
+    }
+  }
+}
+
+// ======================================================================
+// 6. margin.json 統合（規制 + 日々公表 + 制度信用可否）
+// ======================================================================
+function buildMarginJson(kubunMap, regulationMap, BUY_BAN, SELL_BAN, jpxMap) {
   const margin = {};
 
-  const allCodes = new Set([
-    ...Object.keys(kubunMap),
+  const allCodes = [
     ...Object.keys(regulationMap),
-    ...Object.keys(jpxMap),
-    ...Object.keys(dailyMap)
-  ]);
+    ...Object.keys(kubunMap),
+    ...Object.keys(jpxMap)
+  ];
+  const uniqCodes = [...new Set(allCodes)];
 
-  for (const code of allCodes) {
+  for (const rawCode of uniqCodes) {
+    const code = normalizeNFKC(String(rawCode));
+
     const kubun = kubunMap[code];
-    if (kubun === "0" || kubun == null) continue;
+    // Python: kubun in (None, "0") は出力しない
+    if (kubun === undefined || kubun === null || kubun === "0") continue;
 
     const regs = regulationMap[code] || [];
-    const weekly = jpxMap[code] || {};
-    const daily = dailyMap[code] || null;
+    const jpx = jpxMap[code] || {};
 
-    const hasBuyBan = regs.some(r => BUY_BAN.some(k => r.includes(k)));
     const hasSellBan = regs.some(r => SELL_BAN.some(k => r.includes(k)));
+    const hasBuyBan = regs.some(r => BUY_BAN.some(k => r.includes(k)));
 
     const seiBuy = !hasBuyBan;
     const seiSell = kubun === "1" && !hasSellBan;
-
-    let buy = weekly.buy;
-    let sell = weekly.sell;
-    let buyDiff = weekly.buy_diff;
-    let sellDiff = weekly.sell_diff;
-    let ratio = weekly.ratio;
-
-    const isDailyByReg = regs.some(r => r.includes("日々公表"));
-
-    if (daily || isDailyByReg) {
-      const d = daily || {};
-      const dBuy = d.buy ?? buy ?? 0;
-      const dSell = d.sell ?? sell ?? 0;
-      const wBuy = weekly.buy ?? 0;
-      const wSell = weekly.sell ?? 0;
-
-      buy = dBuy;
-      sell = dSell;
-      buyDiff = dBuy - wBuy;
-      sellDiff = dSell - wSell;
-      ratio = dSell !== 0 ? Math.round((dBuy / dSell) * 100) / 100 : null;
-    }
 
     margin[code] = {
       "貸借区分": kubun,
@@ -325,11 +358,11 @@ function buildMarginJson(kubunMap, regulationMap, BUY_BAN, SELL_BAN, jpxMap, dai
         "買い建て": seiBuy,
         "売り建て": seiSell
       },
-      "JPX信用買残": buy,
-      "JPX信用買残前週比": buyDiff,
-      "JPX信用売残": sell,
-      "JPX信用売残前週比": sellDiff,
-      "JPX信用倍率": ratio,
+      "JPX信用買残": jpx.buy,
+      "JPX信用買残前週比": jpx.buy_diff,
+      "JPX信用売残": jpx.sell,
+      "JPX信用売残前週比": jpx.sell_diff,
+      "JPX信用倍率": jpx.ratio,
       "規制": regs
     };
   }
@@ -338,13 +371,14 @@ function buildMarginJson(kubunMap, regulationMap, BUY_BAN, SELL_BAN, jpxMap, dai
 }
 
 // ======================================================================
-// 6. バックアップ & 古いバックアップ削除
+// 7. バックアップ & 古いバックアップ削除（ファイル版）
 // ======================================================================
 function backupMargin() {
   ensureDir("data/backup");
 
   const ts = timestamp();
   if (fs.existsSync("data/margin.json")) {
+    fs.copyFileSync("data/margin.json", `data/margin.json.${ts}`);
     fs.copyFileSync("data/margin.json", `data/backup/margin.json.${ts}`);
   }
 }
@@ -354,7 +388,6 @@ function cleanupBackups() {
   if (!fs.existsSync(dir)) return;
 
   const files = fs.readdirSync(dir);
-
   for (const f of files) {
     const m = f.match(/margin\.json\.(\d{8}_\d{6})$/);
     if (!m) continue;
@@ -377,7 +410,7 @@ function cleanupBackups() {
 }
 
 // ======================================================================
-// 7. Main
+// 8. Main
 // ======================================================================
 async function main() {
   ensureDir("data");
@@ -388,13 +421,15 @@ async function main() {
   const jpxMap = await fetchJpxWeekly();
   const dailyMap = await fetchJpxDaily();
 
+  // Python版と同様に、jpx_map を事前に日々公表で上書き
+  applyDailyToWeekly(jpxMap, dailyMap);
+
   const margin = buildMarginJson(
     kubunMap,
     regulationMap,
     BUY_BAN_KEYWORDS,
     SELL_BAN_KEYWORDS,
-    jpxMap,
-    dailyMap
+    jpxMap
   );
 
   fs.writeFileSync("data/margin.json", JSON.stringify(margin, null, 2), "utf-8");
