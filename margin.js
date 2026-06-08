@@ -35,7 +35,7 @@ function normalizeCode(code) {
 }
 
 // ======================================================================
-// 1. JSF 貸借銘柄 meigara.csv（Shift_JIS 対応 + ヘッダログ追加）
+// 1. JSF 貸借銘柄 meigara.csv（Shift_JIS + 列自動検出）
 // ======================================================================
 async function fetchKubunMap() {
   const url = "https://www.taisyaku.jp/data/meigara.csv";
@@ -47,22 +47,33 @@ async function fetchKubunMap() {
 
   const lines = csv.split(/\r?\n/);
 
-  // ★★★ ヘッダ行をログ出力（列構造を特定するため） ★★★
-  console.log("=== JSF meigara.csv HEADER ===");
-  console.log(lines[0]);
-  console.log("=== END HEADER ===");
+  // 1行目はタイトル行 → 捨てる
+  const headerLine = lines[1];
+  const headers = headerLine.split(",");
 
-  const dataLines = lines.slice(1);
+  // ★ 貸借銘柄区分（東証）列を自動検出
+  const kubunIndex = headers.indexOf("貸借銘柄区分（東証）");
+
+  console.log("=== DETECTED HEADERS ===");
+  console.log(headers);
+  console.log("貸借区分（東証） index =", kubunIndex);
+  console.log("=========================");
+
+  if (kubunIndex === -1) {
+    throw new Error("貸借銘柄区分（東証）列が見つかりません");
+  }
+
   const kubunMap = {};
 
-  for (const line of dataLines) {
+  // 3行目以降がデータ
+  for (let i = 2; i < lines.length; i++) {
+    const line = lines[i];
     if (!line.trim()) continue;
 
     const cols = line.split(",");
 
-    // ★ 現時点では仮に cols[3] を使う（後で修正する）
     const rawCode = cols[0];
-    const kubun = cols[3];
+    const kubun = cols[kubunIndex];
 
     if (!rawCode) continue;
 
