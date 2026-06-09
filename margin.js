@@ -12,6 +12,23 @@ function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
+function jstNow() {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000);
+}
+
+function timestamp() {
+  const d = jstNow();
+  const pad = n => String(n).padStart(2, "0");
+  return (
+    d.getFullYear().toString() +
+    pad(d.getMonth() + 1) +
+    pad(d.getDate()) + "_" +
+    pad(d.getHours()) +
+    pad(d.getMinutes()) +
+    pad(d.getSeconds())
+  );
+}
+
 function normalizeNFKC(s) {
   return s.normalize("NFKC");
 }
@@ -396,7 +413,47 @@ function buildMarginJson(kubunMap, regulationMap, BUY_BAN, SELL_BAN, jpxMap) {
 }
 
 // ============================================================
-// 7. Main
+// 7. バックアップ作成
+// ============================================================
+function backupMargin() {
+  ensureDir("data/backup");
+  const ts = timestamp();
+  fs.copyFileSync("data/margin.json", `data/backup/margin.json.${ts}`);
+}
+
+// ============================================================
+// 8. 古いバックアップ削除（3日超）
+// ============================================================
+function cleanupBackups() {
+  const dir = "data/backup";
+  if (!fs.existsSync(dir)) return;
+
+  const files = fs.readdirSync(dir);
+  const now = jstNow();
+
+  for (const f of files) {
+    const m = f.match(/margin\.json\.(\d{8}_\d{6})$/);
+    if (!m) continue;
+
+    const ts = m[1];
+    const dt = new Date(
+      ts.slice(0, 4),
+      ts.slice(4, 6) - 1,
+      ts.slice(6, 8),
+      ts.slice(9, 11),
+      ts.slice(11, 13),
+      ts.slice(13, 15)
+    );
+
+    const diffDays = (now - dt) / (1000 * 60 * 60 * 24);
+    if (diffDays > 3) {
+      fs.unlinkSync(`${dir}/${f}`);
+    }
+  }
+}
+
+// ============================================================
+// 9. Main
 // ============================================================
 async function main() {
   ensureDir("data");
@@ -424,6 +481,9 @@ async function main() {
   }
   
   fs.writeFileSync("data/margin.json", JSON.stringify(sorted, null, 2), "utf-8");
+  
+  backupMargin();
+  cleanupBackups();
 }
 
 main();
