@@ -1,4 +1,4 @@
-name: Fetch Yahoo Finance Chart Data
+name: fetch.yml - Fetch Yahoo Finance Chart Data
 
 permissions:
   contents: write
