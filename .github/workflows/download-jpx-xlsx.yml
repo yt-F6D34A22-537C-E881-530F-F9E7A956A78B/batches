@@ -1,4 +1,4 @@
-name: JPX data_j.xls fetch & convert (scraping + backup)
+name: download-jpx-xlsx.yml - JPX data_j.xls fetch & convert (scraping + backup)
 
 on:
   schedule:
