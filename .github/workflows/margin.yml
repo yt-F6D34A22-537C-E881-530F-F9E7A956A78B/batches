@@ -1,4 +1,4 @@
-name: [margin.yml] Margin Info Fetch
+name: 【margin.yml】Margin Info Fetch
 
 on:
   schedule:
