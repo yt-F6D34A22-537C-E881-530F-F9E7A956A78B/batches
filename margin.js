@@ -69,12 +69,66 @@ async function fetchRakutenRegulation() {
   const url = "https://www.rakuten-sec.co.jp/ITS/Companyfile/margin_restriction.html";
   const res = await fetch(url);
   const buf = Buffer.from(await res.arrayBuffer());
-  // ★ ここが最大のポイント：EUC-JP でデコード
+  // margin.restriction.htmlの文字コードであるEUC-JP でデコード
   const html = iconv.decode(buf, "EUC-JP");
 
   const dom = new JSDOM(html);
   const document = dom.window.document;
 
+  // ============================================================
+  // 楽天証券 規制文言辞書（出典：公式ページ）
+  // https://www.rakuten-sec.co.jp/ITS/qaOth0007.html
+  //
+  // 【公式ページに掲載されている規制文言一覧】
+  // - 整理銘柄
+  // - 監理銘柄（審査中）
+  // - 監理銘柄（確認中）
+  // - 特別注意銘柄
+  // - 監視区分銘柄
+  // - 増担保***％（うち現金***％）
+  // - レバETF
+  // - 日々公表銘柄
+  // - 貸株注意喚起
+  // - 申告規制
+  // - 即日預託
+  // - 制度信用社内規制
+  // - 一般信用社内規制
+  // - 建玉上限
+  //
+  // - 代用掛目規制***％
+  // - 代用掛目規制予定***％
+  //
+  // - 新規買停止
+  // - 一般信用新規買停止
+  // - 新規売停止
+  // - 一般信用新規売停止
+  // - 返済買埋停止
+  // - 一般信用返済買埋停止
+  // - 返済売埋停止
+  // - 一般信用返済売埋停止
+  // - 現引停止
+  // - 一般信用現引停止
+  // - 現渡停止
+  // - 一般信用現渡停止
+  // - 全取引停止
+  // - 現物売付停止
+  // - 現物買付停止
+  //
+  // 【採用した文言】
+  // - 新規買停止 → BUY_BAN_KEYWORDS に採用
+  // - 新規売停止 → SELL_BAN_KEYWORDS に採用
+  // - 全取引停止 → BUY/SELL 両方に採用
+  //
+  // 【採用しなかった文言と理由】
+  // - 「整理銘柄」「監理銘柄」「特別注意銘柄」など → 新規建て可否に直接影響しないため
+  // - 「増担保」「代用掛目規制」 → 新規建て可否ではなく担保率の問題のため
+  // - 「レバETF」 → 種類分類であり規制ではないため
+  // - 「日々公表銘柄」 → 注意喚起であり新規建て可否には影響しないため
+  // - 「貸株注意喚起」 → 同上
+  // - 「申告規制」「即日預託」 → 新規建て可否とは別種の規制のため
+  // - 「現引停止」「現渡停止」 → 決済方法の制限であり新規建て可否とは別
+  // - 「現物売付停止」「現物買付停止」 → 現物取引の規制であり信用取引の新規建てとは無関係
+  // ============================================================
   const BUY_BAN_KEYWORDS = ["新規買停止", "全取引停止"];
   const SELL_BAN_KEYWORDS = ["新規売停止", "全取引停止"];
   const TOKYO_KEYWORDS = ["東京"];
@@ -363,6 +417,12 @@ async function main() {
     jpxMap
   );
 
+  // コードの昇順にソート
+  const sorted = {};
+  for (const code of Object.keys(margin).sort()) {
+    sorted[code] = margin[code];
+  }
+  
   fs.writeFileSync("data/margin.json", JSON.stringify(margin, null, 2), "utf-8");
 }
 
