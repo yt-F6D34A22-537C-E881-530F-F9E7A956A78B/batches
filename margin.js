@@ -423,7 +423,7 @@ async function main() {
     sorted[code] = margin[code];
   }
   
-  fs.writeFileSync("data/margin.json", JSON.stringify(margin, null, 2), "utf-8");
+  fs.writeFileSync("data/margin.json", JSON.stringify(sorted, null, 2), "utf-8");
 }
 
 main();
