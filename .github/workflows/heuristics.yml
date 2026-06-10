@@ -1,0 +1,48 @@
+name: 【heuristics.yml】Generate heuristics.json (経験則スクリーニング)
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    - cron: "0 23 * * *"  # JST 08:00（fetch の 1 時間後）
+    - cron: "0 8 * * *"   # JST 17:00（fetch の 1 時間後）
+    - cron: "0 10 * * *"  # JST 19:00（fetch の 1 時間後）
+    - cron: "0 12 * * *"  # JST 21:00（fetch の 1 時間後）
+  workflow_dispatch:
+
+jobs:
+  heuristics:
+    runs-on: ubuntu-latest
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: npm install node-fetch@3 xlsx
+
+      - name: Ensure data directory exists
+        run: |
+          mkdir -p data
+          mkdir -p data/backup
+
+      - name: Run heuristics script
+        run: node scripts/heuristics.js
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add data/heuristics.json data/backup/ || true
+          git commit -m "Update heuristics.json and backup" || echo "No changes"
+          git pull --rebase || true
+          git push
