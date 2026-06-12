@@ -574,7 +574,6 @@ export function isMonowakareCrossDown(daily) {
 // =========================================================
 // Rule9（日足）完全実装
 // =========================================================
-
 export function computeRule9Daily(daily) {
   const dates = Object.keys(daily).sort();
   const n = dates.length;
@@ -585,11 +584,13 @@ export function computeRule9Daily(daily) {
   const ma5 = {};
   const ma100 = {};
 
+  // ★ 修正：MA が計算できる本数に達するまで null を入れる
   for (let i = 0; i < n; i++) {
     const sub = {};
     for (let j = 0; j <= i; j++) sub[dates[j]] = daily[dates[j]];
-    ma5[dates[i]] = calcMA(sub, 5);
-    ma100[dates[i]] = calcMA(sub, 100);
+
+    ma5[dates[i]] = (i >= 4) ? calcMA(sub, 5) : null;
+    ma100[dates[i]] = (i >= 99) ? calcMA(sub, 100) : null;
   }
 
   let ruleDir = null;
@@ -618,6 +619,12 @@ export function computeRule9Daily(daily) {
     const prevMA100 = ma100[prevD];
     const todayMA5 = ma5[d];
     const todayMA100 = ma100[d];
+
+    // ★ 修正：MA が null の場合は判定不能 → スキップ
+    if (prevMA5 === null || todayMA5 === null || prevMA100 === null || todayMA100 === null) {
+      prevClose = c;
+      continue;
+    }
 
     const crossedUp = (prevClose < prevMA100) && (c > todayMA100);
     const crossedDown = (prevClose > prevMA100) && (c < todayMA100);
@@ -726,11 +733,13 @@ export function computeRule9Weekly(weekly) {
   const ma5 = {};
   const ma100 = {};
 
+  // ★ 日足と同じ修正
   for (let i = 0; i < n; i++) {
     const sub = {};
     for (let j = 0; j <= i; j++) sub[dates[j]] = weekly[dates[j]];
-    ma5[dates[i]] = calcMA(sub, 5);
-    ma100[dates[i]] = calcMA(sub, 100);
+
+    ma5[dates[i]] = (i >= 4) ? calcMA(sub, 5) : null;
+    ma100[dates[i]] = (i >= 99) ? calcMA(sub, 100) : null;
   }
 
   let ruleDir = null;
@@ -759,6 +768,12 @@ export function computeRule9Weekly(weekly) {
     const prevMA100 = ma100[prevD];
     const todayMA5 = ma5[d];
     const todayMA100 = ma100[d];
+
+    // ★ MA が null のときはスキップ
+    if (prevMA5 === null || todayMA5 === null || prevMA100 === null || todayMA100 === null) {
+      prevClose = c;
+      continue;
+    }
 
     const crossedUp = (prevClose < prevMA100) && (c > todayMA100);
     const crossedDown = (prevClose > prevMA100) && (c < todayMA100);
