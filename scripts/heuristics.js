@@ -233,11 +233,19 @@ async function main() {
     if (Object.keys(daily).length < 120 ||
         Object.keys(weekly).length < 120 ||
         Object.keys(monthly).length < 120) {
+      
       console.log(`Skipping ${symbol} due to insufficient candles.`, {
         daily: Object.keys(daily).length,
         weekly: Object.keys(weekly).length,
         monthly: Object.keys(monthly).length
       });
+
+      // テストモードでは即終了
+      if (symbols.length === 1) {
+        console.log("Test mode: exiting early due to insufficient candles.");
+        return;
+      }
+      
       finalData[symbol] = { error: "insufficient candles" };
       continue;
     }
