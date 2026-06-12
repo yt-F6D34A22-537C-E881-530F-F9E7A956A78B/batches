@@ -124,7 +124,7 @@ import {
   isRule9DailyDown9, isRule9DailyDown17, isRule9DailyDown23,
   isRule9WeeklyUp9, isRule9WeeklyUp17, isRule9WeeklyUp23,
   isRule9WeeklyDown9, isRule9WeeklyDown17, isRule9WeeklyDown23,
-} from "../heuristics_conditions.js";
+} from "./heuristics_conditions.js";
 
 // ---------------------------------------------------------
 // 4. 条件実行まとめ
