@@ -1,9 +1,10 @@
+◆省略無し版
 // ---------------------------------------------------------
-// heuristics_conditions.js — 完全統合版 Part 4-1
+// heuristics_conditions.js — SAFE 完全統合版
 // ---------------------------------------------------------
 
 // =========================================================
-// 共通関数
+// 共通関数（元の関数 ＋ SAFE ラッパ）
 // =========================================================
 
 function calcMA(candles, period) {
@@ -28,60 +29,99 @@ function getPrevCandles(candles, n) {
   return obj;
 }
 
+// ---- SAFE 版共通ヘルパ ----
+
+function safeCalcMA(candles, period) {
+  const dates = Object.keys(candles).sort();
+  const closes = dates.map(d => candles[d].c);
+  if (closes.length < period) return null;
+  const slice = closes.slice(-period);
+  return slice.reduce((a, b) => a + b, 0) / period;
+}
+
+function safeLast(candles, n) {
+  const dates = Object.keys(candles).sort();
+  if (dates.length < n) return null;
+  return dates.slice(-n).map(d => candles[d]);
+}
+
+function safeGetPrevCandles(candles, n, minLen) {
+  const dates = Object.keys(candles).sort();
+  if (dates.length < minLen) return null;
+  const sliced = dates.slice(0, -n);
+  const obj = {};
+  sliced.forEach(d => obj[d] = candles[d]);
+  return obj;
+}
+
 // =========================================================
-// MA 傾き
+// MA 傾き（SAFE）
 // =========================================================
 
 function isMaSlopeUp(candles, period) {
   const dates = Object.keys(candles).sort();
-  if (dates.length < period + 1) throw new Error("Not enough candles");
+  if (dates.length < period + 1) return false;
+
   const today = {}, prev = {};
   dates.forEach(d => today[d] = candles[d]);
   dates.slice(0, -1).forEach(d => prev[d] = candles[d]);
-  return calcMA(today, period) > calcMA(prev, period);
+
+  const maToday = safeCalcMA(today, period);
+  const maPrev  = safeCalcMA(prev, period);
+  if (maToday === null || maPrev === null) return false;
+
+  return maToday > maPrev;
 }
 
 function isMaSlopeDown(candles, period) {
   const dates = Object.keys(candles).sort();
-  if (dates.length < period + 1) throw new Error("Not enough candles");
+  if (dates.length < period + 1) return false;
+
   const today = {}, prev = {};
   dates.forEach(d => today[d] = candles[d]);
   dates.slice(0, -1).forEach(d => prev[d] = candles[d]);
-  return calcMA(today, period) < calcMA(prev, period);
+
+  const maToday = safeCalcMA(today, period);
+  const maPrev  = safeCalcMA(prev, period);
+  if (maToday === null || maPrev === null) return false;
+
+  return maToday < maPrev;
 }
 
-export const isMaSlopeUpDaily = d => isMaSlopeUp(d, 25);
-export const isMaSlopeDownDaily = d => isMaSlopeDown(d, 25);
-export const isMaSlopeUpWeekly = w => isMaSlopeUp(w, 13);
-export const isMaSlopeDownWeekly = w => isMaSlopeDown(w, 13);
-export const isMaSlopeUpMonthly = m => isMaSlopeUp(m, 12);
+export const isMaSlopeUpDaily     = d => isMaSlopeUp(d, 25);
+export const isMaSlopeDownDaily   = d => isMaSlopeDown(d, 25);
+export const isMaSlopeUpWeekly    = w => isMaSlopeUp(w, 13);
+export const isMaSlopeDownWeekly  = w => isMaSlopeDown(w, 13);
+export const isMaSlopeUpMonthly   = m => isMaSlopeUp(m, 12);
 export const isMaSlopeDownMonthly = m => isMaSlopeDown(m, 12);
 
 // =========================================================
-// パーフェクトオーダー / 逆PO
+// パーフェクトオーダー / 逆PO（SAFE）
 // =========================================================
 
-function getMA(c, p) { return calcMA(c, p); }
+function getMA(c, p) { return safeCalcMA(c, p); }
 
 function isPerfectOrder(c, s, m, l) {
   const maS = getMA(c, s), maM = getMA(c, m), maL = getMA(c, l);
+  if (maS === null || maM === null || maL === null) return false;
   return (maS > maM) && (maM > maL);
 }
 
 function isReversePerfectOrder(c, s, m, l) {
   const maS = getMA(c, s), maM = getMA(c, m), maL = getMA(c, l);
+  if (maS === null || maM === null || maL === null) return false;
   return (maS < maM) && (maM < maL);
 }
 
-export const isPerfectOrderDaily = d => isPerfectOrder(d, 5, 25, 75);
+export const isPerfectOrderDaily        = d => isPerfectOrder(d, 5, 25, 75);
 export const isReversePerfectOrderDaily = d => isReversePerfectOrder(d, 5, 25, 75);
-export const isPerfectOrderWeekly = w => isPerfectOrder(w, 5, 13, 26);
-export const isReversePerfectOrderWeekly = w => isReversePerfectOrder(w, 5, 13, 26);
-export const isPerfectOrderMonthly = m => isPerfectOrder(m, 5, 12, 24);
+export const isPerfectOrderWeekly       = w => isPerfectOrder(w, 5, 13, 26);
+export const isReversePerfectOrderWeekly= w => isReversePerfectOrder(w, 5, 13, 26);
+export const isPerfectOrderMonthly      = m => isPerfectOrder(m, 5, 12, 24);
 export const isReversePerfectOrderMonthly = m => isReversePerfectOrder(m, 5, 12, 24);
 
 // =========================================================
-// PRE-PO / PRE-RPO
+// PRE-PO / PRE-RPO（SAFE）
 // =========================================================
 
 function countReverseForPO(maS, maM, maL) {
@@ -99,181 +139,257 @@ function countReverseForRPO(maS, maM, maL) {
 }
 
 export function isPrePerfectOrder(daily) {
-  const ma5 = calcMA(daily, 5), ma25 = calcMA(daily, 25), ma75 = calcMA(daily, 75);
+  const ma5  = safeCalcMA(daily, 5);
+  const ma25 = safeCalcMA(daily, 25);
+  const ma75 = safeCalcMA(daily, 75);
+  if (ma5 === null || ma25 === null || ma75 === null) return false;
   return countReverseForPO(ma5, ma25, ma75) === 1;
 }
 
 export function isPreReversePerfectOrder(daily) {
-  const ma5 = calcMA(daily, 5), ma25 = calcMA(daily, 25), ma75 = calcMA(daily, 75);
+  const ma5  = safeCalcMA(daily, 5);
+  const ma25 = safeCalcMA(daily, 25);
+  const ma75 = safeCalcMA(daily, 75);
+  if (ma5 === null || ma25 === null || ma75 === null) return false;
   return countReverseForRPO(ma5, ma25, ma75) === 1;
 }
 
 // =========================================================
-// MA 密集
+// MA 密集（SAFE）
 // =========================================================
 
 export function isMaCongestionUp(daily) {
-  const ma5 = calcMA(daily, 5), ma25 = calcMA(daily, 25), ma75 = calcMA(daily, 75);
-  const max = Math.max(ma5, ma25, ma75), min = Math.min(ma5, ma25, ma75);
+  const ma5  = safeCalcMA(daily, 5);
+  const ma25 = safeCalcMA(daily, 25);
+  const ma75 = safeCalcMA(daily, 75);
+  if (ma5 === null || ma25 === null || ma75 === null) return false;
+
+  const max = Math.max(ma5, ma25, ma75);
+  const min = Math.min(ma5, ma25, ma75);
   if ((max - min) / min >= 0.015) return false;
+
   return isMaSlopeUp(daily, 25);
 }
 
 export function isMaCongestionDown(daily) {
-  const ma5 = calcMA(daily, 5), ma25 = calcMA(daily, 25), ma75 = calcMA(daily, 75);
-  const max = Math.max(ma5, ma25, ma75), min = Math.min(ma5, ma25, ma75);
+  const ma5  = safeCalcMA(daily, 5);
+  const ma25 = safeCalcMA(daily, 25);
+  const ma75 = safeCalcMA(daily, 75);
+  if (ma5 === null || ma25 === null || ma75 === null) return false;
+
+  const max = Math.max(ma5, ma25, ma75);
+  const min = Math.min(ma5, ma25, ma75);
   if ((max - min) / min >= 0.015) return false;
+
   return isMaSlopeDown(daily, 25);
 }
 
 // =========================================================
-// MA 間隔
+// MA 間隔（SAFE）
 // =========================================================
 
 export function isMaSpreadUp(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 26) throw new Error("Not enough candles");
+  if (dates.length < 26) return false;
+
   const today = {}, prev = {};
   dates.forEach(d => today[d] = daily[d]);
   dates.slice(0, -1).forEach(d => prev[d] = daily[d]);
-  const sToday = Math.abs(calcMA(today, 5) - calcMA(today, 25));
-  const sPrev = Math.abs(calcMA(prev, 5) - calcMA(prev, 25));
+
+  const ma5Today  = safeCalcMA(today, 5);
+  const ma25Today = safeCalcMA(today, 25);
+  const ma5Prev   = safeCalcMA(prev, 5);
+  const ma25Prev  = safeCalcMA(prev, 25);
+
+  if ([ma5Today, ma25Today, ma5Prev, ma25Prev].some(x => x === null)) return false;
+
+  const sToday = Math.abs(ma5Today - ma25Today);
+  const sPrev  = Math.abs(ma5Prev  - ma25Prev);
+
   return sToday > sPrev;
 }
 
 export function isMaSpreadDown(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 26) throw new Error("Not enough candles");
+  if (dates.length < 26) return false;
+
   const today = {}, prev = {};
   dates.forEach(d => today[d] = daily[d]);
   dates.slice(0, -1).forEach(d => prev[d] = daily[d]);
-  const sToday = Math.abs(calcMA(today, 5) - calcMA(today, 25));
-  const sPrev = Math.abs(calcMA(prev, 5) - calcMA(prev, 25));
+
+  const ma5Today  = safeCalcMA(today, 5);
+  const ma25Today = safeCalcMA(today, 25);
+  const ma5Prev   = safeCalcMA(prev, 5);
+  const ma25Prev  = safeCalcMA(prev, 25);
+
+  if ([ma5Today, ma25Today, ma5Prev, ma25Prev].some(x => x === null)) return false;
+
+  const sToday = Math.abs(ma5Today - ma25Today);
+  const sPrev  = Math.abs(ma5Prev  - ma25Prev);
+
   return sToday < sPrev;
 }
 
 // =========================================================
-// MA100 トレンド
+// MA100 トレンド（SAFE）
 // =========================================================
 
 export function isMa100TrendUp(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 102) throw new Error("Not enough candles");
-  const today = daily;
-  const prev = getPrevCandles(daily, 1);
-  const prev2 = getPrevCandles(daily, 2);
+  if (dates.length < 102) return false;
 
-  const ma100_today = calcMA(today, 100);
-  const ma100_prev = calcMA(prev, 100);
-  const ma100_prev2 = calcMA(prev2, 100);
+  const today = daily;
+  const prev  = safeGetPrevCandles(daily, 1, 101);
+  const prev2 = safeGetPrevCandles(daily, 2, 100);
+  if (!prev || !prev2) return false;
+
+  const ma100_today = safeCalcMA(today, 100);
+  const ma100_prev  = safeCalcMA(prev, 100);
+  const ma100_prev2 = safeCalcMA(prev2, 100);
+
+  if ([ma100_today, ma100_prev, ma100_prev2].some(x => x === null)) return false;
 
   const slopeChange = (ma100_prev2 > ma100_prev) && (ma100_prev < ma100_today);
   if (!slopeChange) return false;
 
-  const last = dates[dates.length - 1];
-  const close_today = daily[last].c;
-  const ma25_today = calcMA(today, 25);
+  const lastDate    = dates[dates.length - 1];
+  const close_today = daily[lastDate].c;
+  const ma25_today  = safeCalcMA(today, 25);
+  if (ma25_today === null) return false;
 
   return (close_today > ma100_today) || (ma25_today > ma100_today);
 }
 
 export function isMa100TrendDown(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 102) throw new Error("Not enough candles");
-  const today = daily;
-  const prev = getPrevCandles(daily, 1);
-  const prev2 = getPrevCandles(daily, 2);
+  if (dates.length < 102) return false;
 
-  const ma100_today = calcMA(today, 100);
-  const ma100_prev = calcMA(prev, 100);
-  const ma100_prev2 = calcMA(prev2, 100);
+  const today = daily;
+  const prev  = safeGetPrevCandles(daily, 1, 101);
+  const prev2 = safeGetPrevCandles(daily, 2, 100);
+  if (!prev || !prev2) return false;
+
+  const ma100_today = safeCalcMA(today, 100);
+  const ma100_prev  = safeCalcMA(prev, 100);
+  const ma100_prev2 = safeCalcMA(prev2, 100);
+
+  if ([ma100_today, ma100_prev, ma100_prev2].some(x => x === null)) return false;
 
   const slopeChange = (ma100_prev2 < ma100_prev) && (ma100_prev > ma100_today);
   if (!slopeChange) return false;
 
-  const last = dates[dates.length - 1];
-  const close_today = daily[last].c;
-  const ma25_today = calcMA(today, 25);
+  const lastDate    = dates[dates.length - 1];
+  const close_today = daily[lastDate].c;
+  const ma25_today  = safeCalcMA(today, 25);
+  if (ma25_today === null) return false;
 
   return (close_today < ma100_today) || (ma25_today < ma100_today);
 }
 
 // =========================================================
-// 下半身 / 逆下半身
+// 下半身 / 逆下半身（SAFE）
 // =========================================================
 
 export function isKahanshin(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 6) throw new Error("Not enough candles");
-  const today = dates[dates.length - 1], prev = dates[dates.length - 2];
-  const o = daily[today].o, c = daily[today].c, cPrev = daily[prev].c;
+  if (dates.length < 6) return false;
 
-  const ma5_today = calcMA(daily, 5);
+  const today = dates[dates.length - 1];
+  const prev  = dates[dates.length - 2];
+
+  const o = daily[today].o;
+  const c = daily[today].c;
+  const cPrev = daily[prev].c;
+
+  const ma5_today = safeCalcMA(daily, 5);
+  if (ma5_today === null) return false;
+
   const prevCandles = {};
   dates.slice(0, -1).forEach(d => prevCandles[d] = daily[d]);
-  const ma5_prev = calcMA(prevCandles, 5);
+  const ma5_prev = safeCalcMA(prevCandles, 5);
+  if (ma5_prev === null) return false;
 
   return (ma5_today > ma5_prev) && (o < c) && (cPrev < ma5_prev) && (c > ma5_today);
 }
 
 export function isGyakuKahanshin(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 6) throw new Error("Not enough candles");
-  const today = dates[dates.length - 1], prev = dates[dates.length - 2];
-  const o = daily[today].o, c = daily[today].c, cPrev = daily[prev].c;
+  if (dates.length < 6) return false;
 
-  const ma5_today = calcMA(daily, 5);
+  const today = dates[dates.length - 1];
+  const prev  = dates[dates.length - 2];
+
+  const o = daily[today].o;
+  const c = daily[today].c;
+  const cPrev = daily[prev].c;
+
+  const ma5_today = safeCalcMA(daily, 5);
+  if (ma5_today === null) return false;
+
   const prevCandles = {};
   dates.slice(0, -1).forEach(d => prevCandles[d] = daily[d]);
-  const ma5_prev = calcMA(prevCandles, 5);
+  const ma5_prev = safeCalcMA(prevCandles, 5);
+  if (ma5_prev === null) return false;
 
   return (ma5_today < ma5_prev) && (o > c) && (cPrev > ma5_prev) && (c < ma5_today);
 }
 
 // =========================================================
-// 5日線更新
+// 5日線更新（SAFE）
 // =========================================================
 
 export function is5MaHighUpdate(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 10) throw new Error("Not enough candles");
-  const ma5_today = calcMA(daily, 5);
+  if (dates.length < 10) return false;
+
+  const ma5_today = safeCalcMA(daily, 5);
+  if (ma5_today === null) return false;
 
   const prevDates = dates.slice(-6, -1);
+
   const maList = prevDates.map((_, idx) => {
     const tmp = {};
     dates.slice(0, dates.length - (5 - idx)).forEach(d => tmp[d] = daily[d]);
-    return calcMA(tmp, 5);
-  });
+    return safeCalcMA(tmp, 5);
+  }).filter(v => v !== null);
+
+  if (maList.length === 0) return false;
 
   return ma5_today > Math.max(...maList);
 }
 
 export function is5MaLowUpdate(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 10) throw new Error("Not enough candles");
-  const ma5_today = calcMA(daily, 5);
+  if (dates.length < 10) return false;
+
+  const ma5_today = safeCalcMA(daily, 5);
+  if (ma5_today === null) return false;
 
   const prevDates = dates.slice(-6, -1);
+
   const maList = prevDates.map((_, idx) => {
     const tmp = {};
     dates.slice(0, dates.length - (5 - idx)).forEach(d => tmp[d] = daily[d]);
-    return calcMA(tmp, 5);
-  });
+    return safeCalcMA(tmp, 5);
+  }).filter(v => v !== null);
+
+  if (maList.length === 0) return false;
 
   return ma5_today < Math.min(...maList);
 }
 
 // =========================================================
-// 酒田五法（完全実装）
+// 酒田五法（SAFE）
 // =========================================================
 
 export function isSakataTripleTop(daily) {
-  const arr = last(daily, 5);
-  if (arr.length < 5) throw new Error("Not enough candles");
+  const arr = safeLast(daily, 5);
+  if (!arr) return false;
+
   const [c1, , c3, , c5] = arr;
   const avg = (c1.h + c3.h + c5.h) / 3;
   const tol = avg * 0.01;
+
   return (
     Math.abs(c1.h - avg) < tol &&
     Math.abs(c3.h - avg) < tol &&
@@ -282,11 +398,13 @@ export function isSakataTripleTop(daily) {
 }
 
 export function isSakataTripleBottom(daily) {
-  const arr = last(daily, 5);
-  if (arr.length < 5) throw new Error("Not enough candles");
+  const arr = safeLast(daily, 5);
+  if (!arr) return false;
+
   const [c1, , c3, , c5] = arr;
   const avg = (c1.l + c3.l + c5.l) / 3;
   const tol = avg * 0.01;
+
   return (
     Math.abs(c1.l - avg) < tol &&
     Math.abs(c3.l - avg) < tol &&
@@ -295,24 +413,28 @@ export function isSakataTripleBottom(daily) {
 }
 
 export function isSakataSankuUp(daily) {
-  const arr = last(daily, 4);
-  if (arr.length < 4) throw new Error("Not enough candles");
+  const arr = safeLast(daily, 4);
+  if (!arr) return false;
+
   const [c1, c2, c3, c4] = arr;
   return (c2.o > c1.h) && (c3.o > c2.h) && (c4.o > c3.h);
 }
 
 export function isSakataSankuDown(daily) {
-  const arr = last(daily, 4);
-  if (arr.length < 4) throw new Error("Not enough candles");
+  const arr = safeLast(daily, 4);
+  if (!arr) return false;
+
   const [c1, c2, c3, c4] = arr;
   return (c2.o < c1.l) && (c3.o < c2.l) && (c4.o < c3.l);
 }
 
 export function isSakataSanpeiUp(daily) {
-  const arr = last(daily, 3);
-  if (arr.length < 3) throw new Error("Not enough candles");
+  const arr = safeLast(daily, 3);
+  if (!arr) return false;
+
   const [c1, c2, c3] = arr;
   const bull = c => c.c > c.o;
+
   return (
     bull(c1) && bull(c2) && bull(c3) &&
     c2.o >= c1.o && c2.o <= c1.c &&
@@ -322,10 +444,12 @@ export function isSakataSanpeiUp(daily) {
 }
 
 export function isSakataSanpeiDown(daily) {
-  const arr = last(daily, 3);
-  if (arr.length < 3) throw new Error("Not enough candles");
+  const arr = safeLast(daily, 3);
+  if (!arr) return false;
+
   const [c1, c2, c3] = arr;
   const bear = c => c.c < c.o;
+
   return (
     bear(c1) && bear(c2) && bear(c3) &&
     c2.o <= c1.o && c2.o >= c1.c &&
@@ -335,11 +459,13 @@ export function isSakataSanpeiDown(daily) {
 }
 
 export function isSakataSanpoUp(daily) {
-  const arr = last(daily, 5);
-  if (arr.length < 5) throw new Error("Not enough candles");
+  const arr = safeLast(daily, 5);
+  if (!arr) return false;
+
   const [c1, c2, c3, c4, c5] = arr;
   const bull = c => c.c > c.o;
   const small = c => Math.abs(c.c - c.o) < (c1.c - c1.o) * 0.5;
+
   return (
     bull(c1) &&
     small(c2) && small(c3) && small(c4) &&
@@ -349,11 +475,13 @@ export function isSakataSanpoUp(daily) {
 }
 
 export function isSakataSanpoDown(daily) {
-  const arr = last(daily, 5);
-  if (arr.length < 5) throw new Error("Not enough candles");
+  const arr = safeLast(daily, 5);
+  if (!arr) return false;
+
   const [c1, c2, c3, c4, c5] = arr;
   const bear = c => c.c < c.o;
   const small = c => Math.abs(c.c - c.o) < Math.abs(c1.c - c1.o) * 0.5;
+
   return (
     bear(c1) &&
     small(c2) && small(c3) && small(c4) &&
@@ -362,17 +490,13 @@ export function isSakataSanpoDown(daily) {
   );
 }
 
-// ---------------------------------------------------------
-// heuristics_conditions.js — 完全統合版 Part 4-2
-// ---------------------------------------------------------
-
 // =========================================================
-// 三尊（Head and Shoulders）
+// 三尊（Head and Shoulders）（SAFE）
 // =========================================================
 
 export function isHeadAndShoulders(daily) {
-  const arr = last(daily, 5);
-  if (arr.length < 5) throw new Error("Not enough candles for Head and Shoulders");
+  const arr = safeLast(daily, 5);
+  if (!arr) return false;
 
   const [c1, c2, c3, c4, c5] = arr;
 
@@ -392,12 +516,12 @@ export function isHeadAndShoulders(daily) {
 }
 
 // =========================================================
-// W底（Double Bottom）
+// W底（Double Bottom）（SAFE）
 // =========================================================
 
 export function isDoubleBottom(daily) {
-  const arr = last(daily, 5);
-  if (arr.length < 5) throw new Error("Not enough candles for Double Bottom");
+  const arr = safeLast(daily, 5);
+  if (!arr) return false;
 
   const [c1, c2, c3, c4] = arr;
 
@@ -416,12 +540,12 @@ export function isDoubleBottom(daily) {
 }
 
 // =========================================================
-// N大（上昇 N / 下降 N）
+// N大（上昇 N / 下降 N）（SAFE）
 // =========================================================
 
 export function isNichiDai(daily) {
-  const arr = last(daily, 4);
-  if (arr.length < 4) throw new Error("Not enough candles for N Up");
+  const arr = safeLast(daily, 4);
+  if (!arr) return false;
 
   const [c1, c2, c3, c4] = arr;
 
@@ -438,8 +562,8 @@ export function isNichiDai(daily) {
 }
 
 export function isGyakuNichiDai(daily) {
-  const arr = last(daily, 4);
-  if (arr.length < 4) throw new Error("Not enough candles for N Down");
+  const arr = safeLast(daily, 4);
+  if (!arr) return false;
 
   const [c1, c2, c3, c4] = arr;
 
@@ -456,12 +580,12 @@ export function isGyakuNichiDai(daily) {
 }
 
 // =========================================================
-// ものわかれ（Monowakare Up / Down）
+// ものわかれ（Monowakare Up / Down）（SAFE）
 // =========================================================
 
 export function isMonowakareUp(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 26) throw new Error("Not enough candles for Monowakare Up");
+  if (dates.length < 26) return false;
 
   const today = dates[dates.length - 1];
   const prev  = dates[dates.length - 2];
@@ -469,17 +593,16 @@ export function isMonowakareUp(daily) {
   const c_today = daily[today].c;
   const c_prev  = daily[prev].c;
 
-  const todayCandles = {};
-  dates.forEach(d => todayCandles[d] = daily[d]);
+  const ma5_today  = safeCalcMA(daily, 5);
+  const ma25_today = safeCalcMA(daily, 25);
 
   const prevCandles = {};
   dates.slice(0, -1).forEach(d => prevCandles[d] = daily[d]);
 
-  const ma5_today  = calcMA(todayCandles, 5);
-  const ma25_today = calcMA(todayCandles, 25);
+  const ma5_prev   = safeCalcMA(prevCandles, 5);
+  const ma25_prev  = safeCalcMA(prevCandles, 25);
 
-  const ma5_prev   = calcMA(prevCandles, 5);
-  const ma25_prev  = calcMA(prevCandles, 25);
+  if ([ma5_today, ma25_today, ma5_prev, ma25_prev].some(x => x === null)) return false;
 
   const cond1 = (c_prev < ma25_prev) && (c_today > ma25_today);
   const cond2 = (ma5_prev < ma25_prev) && (ma5_today > ma25_today);
@@ -489,7 +612,7 @@ export function isMonowakareUp(daily) {
 
 export function isMonowakareDown(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 26) throw new Error("Not enough candles for Monowakare Down");
+  if (dates.length < 26) return false;
 
   const today = dates[dates.length - 1];
   const prev  = dates[dates.length - 2];
@@ -497,17 +620,16 @@ export function isMonowakareDown(daily) {
   const c_today = daily[today].c;
   const c_prev  = daily[prev].c;
 
-  const todayCandles = {};
-  dates.forEach(d => todayCandles[d] = daily[d]);
+  const ma5_today  = safeCalcMA(daily, 5);
+  const ma25_today = safeCalcMA(daily, 25);
 
   const prevCandles = {};
   dates.slice(0, -1).forEach(d => prevCandles[d] = daily[d]);
 
-  const ma5_today  = calcMA(todayCandles, 5);
-  const ma25_today = calcMA(todayCandles, 25);
+  const ma5_prev   = safeCalcMA(prevCandles, 5);
+  const ma25_prev  = safeCalcMA(prevCandles, 25);
 
-  const ma5_prev   = calcMA(prevCandles, 5);
-  const ma25_prev  = calcMA(prevCandles, 25);
+  if ([ma5_today, ma25_today, ma5_prev, ma25_prev].some(x => x === null)) return false;
 
   const cond1 = (c_prev > ma25_prev) && (c_today < ma25_today);
   const cond2 = (ma5_prev > ma25_prev) && (ma5_today < ma25_today);
@@ -516,26 +638,26 @@ export function isMonowakareDown(daily) {
 }
 
 // =========================================================
-// ものわかれ（赤青交差：Monowakare Cross Up / Down）
+// ものわかれ（赤青交差：Monowakare Cross Up / Down）（赤青交差 SAFE）
 // =========================================================
 
 export function isMonowakareCrossUp(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 76) throw new Error("Not enough candles for Monowakare Cross Up");
+  if (dates.length < 76) return false;
 
-  const todayCandles = {};
-  dates.forEach(d => todayCandles[d] = daily[d]);
+  const ma5_today  = safeCalcMA(daily, 5);
+  const ma25_today = safeCalcMA(daily, 25);
+  const ma75_today = safeCalcMA(daily, 75);
 
   const prevCandles = {};
   dates.slice(0, -1).forEach(d => prevCandles[d] = daily[d]);
 
-  const ma5_today  = calcMA(todayCandles, 5);
-  const ma25_today = calcMA(todayCandles, 25);
-  const ma75_today = calcMA(todayCandles, 75);
+  const ma5_prev   = safeCalcMA(prevCandles, 5);
+  const ma25_prev  = safeCalcMA(prevCandles, 25);
+  const ma75_prev  = safeCalcMA(prevCandles, 75);
 
-  const ma5_prev   = calcMA(prevCandles, 5);
-  const ma25_prev  = calcMA(prevCandles, 25);
-  const ma75_prev  = calcMA(prevCandles, 75);
+  if ([ma5_today, ma25_today, ma75_today, ma5_prev, ma25_prev, ma75_prev].some(x => x === null))
+    return false;
 
   const cond1 = (ma5_prev < ma25_prev) && (ma5_today > ma25_today);
   const cond2 = (ma25_prev < ma75_prev) && (ma25_today > ma75_today);
@@ -545,21 +667,21 @@ export function isMonowakareCrossUp(daily) {
 
 export function isMonowakareCrossDown(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 76) throw new Error("Not enough candles for Monowakare Cross Down");
+  if (dates.length < 76) return false;
 
-  const todayCandles = {};
-  dates.forEach(d => todayCandles[d] = daily[d]);
+  const ma5_today  = safeCalcMA(daily, 5);
+  const ma25_today = safeCalcMA(daily, 25);
+  const ma75_today = safeCalcMA(daily, 75);
 
   const prevCandles = {};
   dates.slice(0, -1).forEach(d => prevCandles[d] = daily[d]);
 
-  const ma5_today  = calcMA(todayCandles, 5);
-  const ma25_today = calcMA(todayCandles, 25);
-  const ma75_today = calcMA(todayCandles, 75);
+  const ma5_prev   = safeCalcMA(prevCandles, 5);
+  const ma25_prev  = safeCalcMA(prevCandles, 25);
+  const ma75_prev  = safeCalcMA(prevCandles, 75);
 
-  const ma5_prev   = calcMA(prevCandles, 5);
-  const ma25_prev  = calcMA(prevCandles, 25);
-  const ma75_prev  = calcMA(prevCandles, 75);
+  if ([ma5_today, ma25_today, ma75_today, ma5_prev, ma25_prev, ma75_prev].some(x => x === null))
+    return false;
 
   const cond1 = (ma5_prev > ma25_prev) && (ma5_today < ma25_today);
   const cond2 = (ma25_prev > ma75_prev) && (ma25_today < ma75_today);
@@ -567,13 +689,10 @@ export function isMonowakareCrossDown(daily) {
   return cond1 && cond2;
 }
 
-// ---------------------------------------------------------
-// heuristics_conditions.js — 完全統合版 Part 4-3
-// ---------------------------------------------------------
+// =========================================================
+// Rule9（日足）SAFE 実装
+// =========================================================
 
-// =========================================================
-// Rule9（日足）完全実装
-// =========================================================
 export function computeRule9Daily(daily) {
   const dates = Object.keys(daily).sort();
   const n = dates.length;
@@ -584,7 +703,7 @@ export function computeRule9Daily(daily) {
   const ma5 = {};
   const ma100 = {};
 
-  // ★ 修正：MA が計算できる本数に達するまで null を入れる
+  // MA が計算できる本数に達するまで null を入れる
   for (let i = 0; i < n; i++) {
     const sub = {};
     for (let j = 0; j <= i; j++) sub[dates[j]] = daily[dates[j]];
@@ -620,7 +739,7 @@ export function computeRule9Daily(daily) {
     const todayMA5 = ma5[d];
     const todayMA100 = ma100[d];
 
-    // ★ 修正：MA が null の場合は判定不能 → スキップ
+    // MA が null の場合は判定不能 → スキップ
     if (prevMA5 === null || todayMA5 === null || prevMA100 === null || todayMA100 === null) {
       prevClose = c;
       continue;
@@ -720,7 +839,7 @@ export function computeRule9Daily(daily) {
 }
 
 // =========================================================
-// Rule9（週足）完全実装（あなたの提供コードを統合）
+// Rule9（週足）SAFE 実装
 // =========================================================
 
 export function computeRule9Weekly(weekly) {
@@ -733,7 +852,7 @@ export function computeRule9Weekly(weekly) {
   const ma5 = {};
   const ma100 = {};
 
-  // ★ 日足と同じ修正
+  // 日足と同じ修正
   for (let i = 0; i < n; i++) {
     const sub = {};
     for (let j = 0; j <= i; j++) sub[dates[j]] = weekly[dates[j]];
@@ -769,7 +888,7 @@ export function computeRule9Weekly(weekly) {
     const todayMA5 = ma5[d];
     const todayMA100 = ma100[d];
 
-    // ★ MA が null のときはスキップ
+    // MA が null のときはスキップ
     if (prevMA5 === null || todayMA5 === null || prevMA100 === null || todayMA100 === null) {
       prevClose = c;
       continue;
@@ -869,25 +988,25 @@ export function computeRule9Weekly(weekly) {
 }
 
 // =========================================================
-// Rule9 ラッパー関数（heuristics.js 用）
+// Rule9 ラッパー関数（SAFE）
 // =========================================================
 
-// ---- 日足：上昇 Rule9 ----
+// 日足：上昇 Rule9
 export const isRule9DailyUp9  = d => computeRule9Daily(d).direction === "up"   && computeRule9Daily(d).over9;
 export const isRule9DailyUp17 = d => computeRule9Daily(d).direction === "up"   && computeRule9Daily(d).over17;
 export const isRule9DailyUp23 = d => computeRule9Daily(d).direction === "up"   && computeRule9Daily(d).over23;
 
-// ---- 日足：下降 Rule9 ----
+// 日足：下降 Rule9
 export const isRule9DailyDown9  = d => computeRule9Daily(d).direction === "down" && computeRule9Daily(d).over9;
 export const isRule9DailyDown17 = d => computeRule9Daily(d).direction === "down" && computeRule9Daily(d).over17;
 export const isRule9DailyDown23 = d => computeRule9Daily(d).direction === "down" && computeRule9Daily(d).over23;
 
-// ---- 週足：上昇 Rule9 ----
+// 週足：上昇 Rule9
 export const isRule9WeeklyUp9  = w => computeRule9Weekly(w).direction === "up"   && computeRule9Weekly(w).over9;
 export const isRule9WeeklyUp17 = w => computeRule9Weekly(w).direction === "up"   && computeRule9Weekly(w).over17;
 export const isRule9WeeklyUp23 = w => computeRule9Weekly(w).direction === "up"   && computeRule9Weekly(w).over23;
 
-// ---- 週足：下降 Rule9 ----
+// 週足：下降 Rule9
 export const isRule9WeeklyDown9  = w => computeRule9Weekly(w).direction === "down" && computeRule9Weekly(w).over9;
 export const isRule9WeeklyDown17 = w => computeRule9Weekly(w).direction === "down" && computeRule9Weekly(w).over17;
 export const isRule9WeeklyDown23 = w => computeRule9Weekly(w).direction === "down" && computeRule9Weekly(w).over23;
