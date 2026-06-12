@@ -63,16 +63,14 @@ async function fetchCandles(symbol, interval, range) {
     const timestamps = item.timestamp;
     const q = item.indicators.quote[0];
 
-    if (!timestamps || timestamps.length === 0) {
-      return { error: "Not enough historical data" };
-    }
-    
     if (!timestamps || timestamps.length < 10) {
       return { error: "Too few candles returned from Yahoo API" };
     }
-
+    if (!q || !q.close || q.close.length < 10) {
+      return { error: "Too few quote entries returned from Yahoo API" };
+    }
+    
     let result = {};
-
     for (let i = 0; i < timestamps.length; i++) {
       const ts = timestamps[i];
       const date = new Date(ts * 1000);
