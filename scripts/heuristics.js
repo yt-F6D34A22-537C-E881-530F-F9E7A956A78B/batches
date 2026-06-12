@@ -54,6 +54,11 @@ async function fetchCandles(symbol, interval, range) {
   try {
     const res = await fetch(url);
     const json = await res.json();
+    
+    // --- APIレスポンスの生データをログ出力（デバッグ用） ---
+    console.log("=== RAW API RESPONSE ===");
+    console.log(JSON.stringify(json, null, 2));
+    console.log("=== END RAW API RESPONSE ===");
 
     if (!json.chart || !json.chart.result) {
       return { error: json.chart?.error?.description || "Unknown error from Yahoo Finance" };
