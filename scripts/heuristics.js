@@ -6,7 +6,7 @@ import path from "path";
 // ---------------------------------------------------------
 // 1. Excel から銘柄コードを読み込む（パス修正）
 // ---------------------------------------------------------
-const workbook = xlsx.readFile("../data/data_j.xlsx");
+const workbook = xlsx.readFile("../../data/data_j.xlsx");
 const sheet = workbook.Sheets["Sheet1"];
 const rows = xlsx.utils.sheet_to_json(sheet);
 
@@ -221,9 +221,9 @@ async function main() {
     await new Promise(r => setTimeout(r, 500));
   }
 
-  fs.writeFileSync("../data/heuristics.json", JSON.stringify(finalData, null, 2));
+  fs.writeFileSync("../../data/heuristics.json", JSON.stringify(finalData, null, 2));
 
-  const backupDir = "../data/backup";
+  const backupDir = "../../data/backup";
   if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
 
   const now = new Date(Date.now() + 9 * 60 * 60 * 1000);
@@ -238,7 +238,7 @@ async function main() {
     pad(now.getSeconds());
 
   const backupFile = path.join(backupDir, `heuristics.json.${timestamp}`);
-  fs.copyFileSync("../data/heuristics.json", backupFile);
+  fs.copyFileSync("../../data/heuristics.json", backupFile);
 
   const files = fs
     .readdirSync(backupDir)
