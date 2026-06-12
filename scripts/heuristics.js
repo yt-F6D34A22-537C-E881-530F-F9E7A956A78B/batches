@@ -245,22 +245,31 @@ async function main() {
     }
   
     // --- ローソク足が少なすぎる場合もスキップ ---
-    if (Object.keys(daily).length < 120 ||
-        Object.keys(weekly).length < 120 ||
-        Object.keys(monthly).length < 120) {
-      
-      console.log(`Skipping ${symbol} due to insufficient candles.`, {
-        daily: Object.keys(daily).length,
-        weekly: Object.keys(weekly).length,
-        monthly: Object.keys(monthly).length
-      });
-
-      // テストモードでは即終了
-      if (symbols.length === 1) {
-        console.log("Test mode: exiting early due to insufficient candles.");
-        return;
-      }
-      
+    const needDaily   = 100; // Rule9 daily
+    const needWeekly  = 100; // Rule9 weekly
+    const needMonthly = 75;  // MA75, PO, RPO, etc.
+    
+    const dailyCount   = Object.keys(daily).length;
+    const weeklyCount  = Object.keys(weekly).length;
+    const monthlyCount = Object.keys(monthly).length;
+    
+    // 判定
+    const insufficient =
+      dailyCount   < needDaily ||
+      weeklyCount  < needWeekly ||
+      monthlyCount < needMonthly;
+    
+    if (insufficient) {
+      const dailyMsg   = `${dailyCount}  ${dailyCount   >= needDaily   ? ">" : "<"} ${needDaily} required`;
+      const weeklyMsg  = `${weeklyCount} ${weeklyCount  >= needWeekly  ? ">" : "<"} ${needWeekly} required`;
+      const monthlyMsg = `${monthlyCount} ${monthlyCount >= needMonthly ? ">" : "<"} ${needMonthly} required`;
+    
+      console.log(`Skipping ${symbol} due to insufficient candles. {`);
+      console.log(`  daily:   ${dailyMsg},`);
+      console.log(`  weekly:  ${weeklyMsg},`);
+      console.log(`  monthly: ${monthlyMsg}`);
+      console.log(`}`);
+    
       finalData[symbol] = { error: "insufficient candles" };
       continue;
     }
