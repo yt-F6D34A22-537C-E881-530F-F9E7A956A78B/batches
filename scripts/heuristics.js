@@ -4,9 +4,9 @@ import xlsx from "xlsx";
 import path from "path";
 
 // ---------------------------------------------------------
-// 1. Excel から銘柄コードを読み込む
+// 1. Excel から銘柄コードを読み込む（パス修正）
 // ---------------------------------------------------------
-const workbook = xlsx.readFile("data/data_j.xlsx");
+const workbook = xlsx.readFile("../data/data_j.xlsx");
 const sheet = workbook.Sheets["Sheet1"];
 const rows = xlsx.utils.sheet_to_json(sheet);
 
@@ -70,10 +70,9 @@ async function fetchCandles(symbol, interval, range) {
 }
 
 // ---------------------------------------------------------
-// 3. heuristics_conditions.js（完全版）から現行関数だけ import
+// 3. heuristics_conditions.js（現行関数のみ import）
 // ---------------------------------------------------------
 import {
-  // MA 系
   isMaSlopeUpDaily, isMaSlopeDownDaily,
   isMaSlopeUpWeekly, isMaSlopeDownWeekly,
   isMaSlopeUpMonthly, isMaSlopeDownMonthly,
@@ -84,44 +83,29 @@ import {
   isMaCongestionUp, isMaCongestionDown,
   isMaSpreadUp, isMaSpreadDown,
   isMa100TrendUp, isMa100TrendDown,
-
-  // 下半身
   isKahanshin, isGyakuKahanshin,
-
-  // 5日線更新
   is5MaHighUpdate, is5MaLowUpdate,
-
-  // 酒田五法
   isSakataTripleTop, isSakataTripleBottom,
   isSakataSankuUp, isSakataSankuDown,
   isSakataSanpeiUp, isSakataSanpeiDown,
   isSakataSanpoUp, isSakataSanpoDown,
-
-  // 三尊 / W底 / N大
   isHeadAndShoulders,
   isDoubleBottom,
   isNichiDai, isGyakuNichiDai,
-
-  // ものわかれ
   isMonowakareUp, isMonowakareDown,
   isMonowakareCrossUp, isMonowakareCrossDown,
-
-  // Rule9（日足・週足）
   computeRule9Daily, computeRule9Weekly,
   isRule9DailyUp9, isRule9DailyUp17, isRule9DailyUp23,
   isRule9DailyDown9, isRule9DailyDown17, isRule9DailyDown23,
   isRule9WeeklyUp9, isRule9WeeklyUp17, isRule9WeeklyUp23,
   isRule9WeeklyDown9, isRule9WeeklyDown17, isRule9WeeklyDown23,
-
 } from "../heuristics_conditions.js";
 
 // ---------------------------------------------------------
-// 4. 条件実行まとめ（現行関数のみ）
+// 4. 条件実行まとめ
 // ---------------------------------------------------------
 function runAllConditions(daily, weekly, monthly) {
   return {
-
-    // 1-1 移動平均線の傾き
     TECH_MA_SLOPE_UP_DAILY: isMaSlopeUpDaily(daily),
     TECH_MA_SLOPE_DOWN_DAILY: isMaSlopeDownDaily(daily),
     TECH_MA_SLOPE_UP_WEEKLY: isMaSlopeUpWeekly(weekly),
@@ -129,7 +113,6 @@ function runAllConditions(daily, weekly, monthly) {
     TECH_MA_SLOPE_UP_MONTHLY: isMaSlopeUpMonthly(monthly),
     TECH_MA_SLOPE_DOWN_MONTHLY: isMaSlopeDownMonthly(monthly),
 
-    // 1-2 パーフェクトオーダー
     TECH_MA_PO_DAILY: isPerfectOrderDaily(daily),
     TECH_MA_RPO_DAILY: isReversePerfectOrderDaily(daily),
     TECH_MA_PO_WEEKLY: isPerfectOrderWeekly(weekly),
@@ -137,31 +120,24 @@ function runAllConditions(daily, weekly, monthly) {
     TECH_MA_PO_MONTHLY: isPerfectOrderMonthly(monthly),
     TECH_MA_RPO_MONTHLY: isReversePerfectOrderMonthly(monthly),
 
-    // 1-3 前夜
     TECH_MA_PRE_PO: isPrePerfectOrder(daily),
     TECH_MA_PRE_RPO: isPreReversePerfectOrder(daily),
 
-    // 1-4 密集
     TECH_MA_CONGESTION_UP: isMaCongestionUp(daily),
     TECH_MA_CONGESTION_DOWN: isMaCongestionDown(daily),
 
-    // 1-5 間隔
     TECH_MA_SPREAD_UP: isMaSpreadUp(daily),
     TECH_MA_SPREAD_DOWN: isMaSpreadDown(daily),
 
-    // 1-6 100日線
     TECH_MA100_TREND_UP: isMa100TrendUp(daily),
     TECH_MA100_TREND_DOWN: isMa100TrendDown(daily),
 
-    // 2-1 下半身
     TECH_KAHANSHIN: isKahanshin(daily),
     TECH_GYAKU_KAHANSHIN: isGyakuKahanshin(daily),
 
-    // 2-2 5日線更新
     TECH_5MA_HIGH_UPDATE: is5MaHighUpdate(daily),
     TECH_5MA_LOW_UPDATE: is5MaLowUpdate(daily),
 
-    // 3-1 酒田五法
     TECH_SAKATA_TRIPLE_TOP: isSakataTripleTop(daily),
     TECH_SAKATA_TRIPLE_BOTTOM: isSakataTripleBottom(daily),
     TECH_SAKATA_SANKU_UP: isSakataSankuUp(daily),
@@ -171,25 +147,16 @@ function runAllConditions(daily, weekly, monthly) {
     TECH_SAKATA_SANPO_UP: isSakataSanpoUp(daily),
     TECH_SAKATA_SANPO_DOWN: isSakataSanpoDown(daily),
 
-    // 3-2 三尊
     TECH_HEAD_AND_SHOULDERS: isHeadAndShoulders(daily),
-
-    // 3-3 W底
     TECH_DOUBLE_BOTTOM: isDoubleBottom(daily),
-
-    // 3-4 N大
     TECH_NICHI_DAI: isNichiDai(daily),
     TECH_GYAKU_NICHI_DAI: isGyakuNichiDai(daily),
 
-    // 4-1 ものわかれ
     TECH_MONOWAKARE_UP: isMonowakareUp(daily),
     TECH_MONOWAKARE_DOWN: isMonowakareDown(daily),
-
-    // 4-2 ものわかれ（赤青交差）
     TECH_MONOWAKARE_CROSS_UP: isMonowakareCrossUp(daily),
     TECH_MONOWAKARE_CROSS_DOWN: isMonowakareCrossDown(daily),
 
-    // 5. Rule9（日足・週足）
     TECH_RULE9_DAILY: computeRule9Daily(daily),
     TECH_RULE9_WEEKLY: computeRule9Weekly(weekly),
 
@@ -212,7 +179,7 @@ function runAllConditions(daily, weekly, monthly) {
 }
 
 // ---------------------------------------------------------
-// 5. メイン処理
+// 5. メイン処理（パス修正済み）
 // ---------------------------------------------------------
 async function main() {
   let finalData = {};
@@ -229,9 +196,9 @@ async function main() {
     await new Promise(r => setTimeout(r, 500));
   }
 
-  fs.writeFileSync("data/heuristics.json", JSON.stringify(finalData, null, 2));
+  fs.writeFileSync("../data/heuristics.json", JSON.stringify(finalData, null, 2));
 
-  const backupDir = "data/backup";
+  const backupDir = "../data/backup";
   if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
 
   const now = new Date(Date.now() + 9 * 60 * 60 * 1000);
@@ -246,7 +213,7 @@ async function main() {
     pad(now.getSeconds());
 
   const backupFile = path.join(backupDir, `heuristics.json.${timestamp}`);
-  fs.copyFileSync("data/heuristics.json", backupFile);
+  fs.copyFileSync("../data/heuristics.json", backupFile);
 
   const files = fs
     .readdirSync(backupDir)
