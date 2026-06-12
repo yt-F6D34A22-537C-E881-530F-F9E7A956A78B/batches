@@ -4,7 +4,7 @@ import xlsx from "xlsx";
 import path from "path";
 
 // ---------------------------------------------------------
-// 1. Excel から銘柄コードを読み込む（fetch.js と同じ）
+// 1. Excel から銘柄コードを読み込む
 // ---------------------------------------------------------
 const workbook = xlsx.readFile("data/data_j.xlsx");
 const sheet = workbook.Sheets["Sheet1"];
@@ -42,7 +42,6 @@ async function fetchCandles(symbol, interval, range) {
       return { error: "Not enough historical data" };
     }
 
-    // fetch.js と同じ形式で整形
     let result = {};
 
     for (let i = 0; i < timestamps.length; i++) {
@@ -71,66 +70,57 @@ async function fetchCandles(symbol, interval, range) {
 }
 
 // ---------------------------------------------------------
-// 3. 全テクニカル条件の実行（isXxx 系）
+// 3. heuristics_conditions.js（完全版）から現行関数だけ import
 // ---------------------------------------------------------
-// ※ 実際の関数は別ファイルで定義する想定
-//    ここでは import だけ記述（あなたの実装に合わせて調整可能）
-
 import {
-  isMaSlopeUpDaily,
-  isMaSlopeDownDaily,
-  isMaSlopeUpWeekly,
-  isMaSlopeDownWeekly,
-  isMaSlopeUpMonthly,
-  isMaSlopeDownMonthly,
-  isPerfectOrderDaily,
-  isReversePerfectOrderDaily,
-  isPerfectOrderWeekly,
-  isReversePerfectOrderWeekly,
-  isPerfectOrderMonthly,
-  isReversePerfectOrderMonthly,
-  isPrePerfectOrder,
-  isPreReversePerfectOrder,
-  isMaCongestionUp,
-  isMaCongestionDown,
-  isMaSpreadUp,
-  isMaSpreadDown,
-  isMa100TrendUp,
-  isMa100TrendDown,
-  isShimohanshin,
-  isGyakushimohanshin,
-  is5MaHighUpdate,
-  is5MaLowUpdate,
-  isSakataTripleTop,
-  isSakataTripleBottom,
-  isSakataSankuUp,
-  isSakataSankuDown,
-  isSakataSanpeiUp,
-  isSakataSanpeiDown,
-  isSakataSanpoUp,
-  isSakataSanpoDown,
+  // MA 系
+  isMaSlopeUpDaily, isMaSlopeDownDaily,
+  isMaSlopeUpWeekly, isMaSlopeDownWeekly,
+  isMaSlopeUpMonthly, isMaSlopeDownMonthly,
+  isPerfectOrderDaily, isReversePerfectOrderDaily,
+  isPerfectOrderWeekly, isReversePerfectOrderWeekly,
+  isPerfectOrderMonthly, isReversePerfectOrderMonthly,
+  isPrePerfectOrder, isPreReversePerfectOrder,
+  isMaCongestionUp, isMaCongestionDown,
+  isMaSpreadUp, isMaSpreadDown,
+  isMa100TrendUp, isMa100TrendDown,
+
+  // 下半身
+  isKahanshin, isGyakuKahanshin,
+
+  // 5日線更新
+  is5MaHighUpdate, is5MaLowUpdate,
+
+  // 酒田五法
+  isSakataTripleTop, isSakataTripleBottom,
+  isSakataSankuUp, isSakataSankuDown,
+  isSakataSanpeiUp, isSakataSanpeiDown,
+  isSakataSanpoUp, isSakataSanpoDown,
+
+  // 三尊 / W底 / N大
   isHeadAndShoulders,
   isDoubleBottom,
-  isNichiDai,
-  isGyakuNichiDai,
-  isMonowakareUp,
-  isMonowakareDown,
-  isMonowakareCrossUp,
-  isMonowakareCrossDown,
-  isRule9Up,
-  isRule9Down,
-  isBbZoneBreakDown,
-  isCycleUp,
-  isCycleDown,
-  isSentimentOverheat,
-  isStayBox
-} from "./heuristics_conditions/index.js";
+  isNichiDai, isGyakuNichiDai,
+
+  // ものわかれ
+  isMonowakareUp, isMonowakareDown,
+  isMonowakareCrossUp, isMonowakareCrossDown,
+
+  // Rule9（日足・週足）
+  computeRule9Daily, computeRule9Weekly,
+  isRule9DailyUp9, isRule9DailyUp17, isRule9DailyUp23,
+  isRule9DailyDown9, isRule9DailyDown17, isRule9DailyDown23,
+  isRule9WeeklyUp9, isRule9WeeklyUp17, isRule9WeeklyUp23,
+  isRule9WeeklyDown9, isRule9WeeklyDown17, isRule9WeeklyDown23,
+
+} from "../heuristics_conditions.js";
 
 // ---------------------------------------------------------
-// 4. 条件実行まとめ
+// 4. 条件実行まとめ（現行関数のみ）
 // ---------------------------------------------------------
 function runAllConditions(daily, weekly, monthly) {
   return {
+
     // 1-1 移動平均線の傾き
     TECH_MA_SLOPE_UP_DAILY: isMaSlopeUpDaily(daily),
     TECH_MA_SLOPE_DOWN_DAILY: isMaSlopeDownDaily(daily),
@@ -164,8 +154,8 @@ function runAllConditions(daily, weekly, monthly) {
     TECH_MA100_TREND_DOWN: isMa100TrendDown(daily),
 
     // 2-1 下半身
-    TECH_SHIMOHANSHIN: isShimohanshin(daily),
-    TECH_GYAKU_SHIMOHANSHIN: isGyakushimohanshin(daily),
+    TECH_KAHANSHIN: isKahanshin(daily),
+    TECH_GYAKU_KAHANSHIN: isGyakuKahanshin(daily),
 
     // 2-2 5日線更新
     TECH_5MA_HIGH_UPDATE: is5MaHighUpdate(daily),
@@ -196,25 +186,28 @@ function runAllConditions(daily, weekly, monthly) {
     TECH_MONOWAKARE_DOWN: isMonowakareDown(daily),
 
     // 4-2 ものわかれ（赤青交差）
-    TECH_MONOWAKARE_CROSS_UP: isMonowakareCrossUp(daily, weekly, monthly),
-    TECH_MONOWAKARE_CROSS_DOWN: isMonowakareCrossDown(daily, weekly, monthly),
+    TECH_MONOWAKARE_CROSS_UP: isMonowakareCrossUp(daily),
+    TECH_MONOWAKARE_CROSS_DOWN: isMonowakareCrossDown(daily),
 
-    // 5. 9の法則
-    TECH_RULE9_UP: isRule9Up(daily),
-    TECH_RULE9_DOWN: isRule9Down(daily),
+    // 5. Rule9（日足・週足）
+    TECH_RULE9_DAILY: computeRule9Daily(daily),
+    TECH_RULE9_WEEKLY: computeRule9Weekly(weekly),
 
-    // 6. ボリンジャー
-    TECH_BB_ZONE_BREAK_DOWN: isBbZoneBreakDown(daily),
+    TECH_RULE9_DAILY_UP_9: isRule9DailyUp9(daily),
+    TECH_RULE9_DAILY_UP_17: isRule9DailyUp17(daily),
+    TECH_RULE9_DAILY_UP_23: isRule9DailyUp23(daily),
 
-    // 7. サイクル
-    TECH_CYCLE_UP: isCycleUp(daily),
-    TECH_CYCLE_DOWN: isCycleDown(daily),
+    TECH_RULE9_DAILY_DOWN_9: isRule9DailyDown9(daily),
+    TECH_RULE9_DAILY_DOWN_17: isRule9DailyDown17(daily),
+    TECH_RULE9_DAILY_DOWN_23: isRule9DailyDown23(daily),
 
-    // 7-2 話題性
-    TECH_SENTIMENT_OVERHEAT: isSentimentOverheat(daily),
+    TECH_RULE9_WEEKLY_UP_9: isRule9WeeklyUp9(weekly),
+    TECH_RULE9_WEEKLY_UP_17: isRule9WeeklyUp17(weekly),
+    TECH_RULE9_WEEKLY_UP_23: isRule9WeeklyUp23(weekly),
 
-    // 8. ステイ
-    TECH_STAY_BOX: isStayBox(daily)
+    TECH_RULE9_WEEKLY_DOWN_9: isRule9WeeklyDown9(weekly),
+    TECH_RULE9_WEEKLY_DOWN_17: isRule9WeeklyDown17(weekly),
+    TECH_RULE9_WEEKLY_DOWN_23: isRule9WeeklyDown23(weekly),
   };
 }
 
@@ -233,20 +226,13 @@ async function main() {
 
     finalData[symbol] = runAllConditions(daily, weekly, monthly);
 
-    await new Promise(r => setTimeout(r, 500)); // fetch.js と同じ
+    await new Promise(r => setTimeout(r, 500));
   }
 
-  // heuristics.json を保存
   fs.writeFileSync("data/heuristics.json", JSON.stringify(finalData, null, 2));
 
-  // ---------------------------------------------------------
-  // バックアップ処理（fetch.js と完全同じ方式）
-  // ---------------------------------------------------------
   const backupDir = "data/backup";
-
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
-  }
+  if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
 
   const now = new Date(Date.now() + 9 * 60 * 60 * 1000);
   const pad = n => String(n).padStart(2, "0");
@@ -262,9 +248,6 @@ async function main() {
   const backupFile = path.join(backupDir, `heuristics.json.${timestamp}`);
   fs.copyFileSync("data/heuristics.json", backupFile);
 
-  // ---------------------------------------------------------
-  // バックアップは 8 個だけ保持
-  // ---------------------------------------------------------
   const files = fs
     .readdirSync(backupDir)
     .filter(f => f.startsWith("heuristics.json."))
@@ -272,8 +255,7 @@ async function main() {
 
   while (files.length > 8) {
     const oldFile = files.shift();
-    const oldPath = path.join(backupDir, oldFile);
-    fs.unlinkSync(oldPath);
+    fs.unlinkSync(path.join(backupDir, oldFile));
   }
 
   console.log("heuristics.json generation completed.");
