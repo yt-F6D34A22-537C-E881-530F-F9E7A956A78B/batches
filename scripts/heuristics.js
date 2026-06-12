@@ -54,11 +54,6 @@ async function fetchCandles(symbol, interval, range) {
   try {
     const res = await fetch(url);
     const json = await res.json();
-    
-    // --- APIレスポンスの生データをログ出力（デバッグ用） ---
-    console.log("=== RAW API RESPONSE ===");
-    console.log(JSON.stringify(json, null, 2));
-    console.log("=== END RAW API RESPONSE ===");
 
     if (!json.chart || !json.chart.result) {
       return { error: json.chart?.error?.description || "Unknown error from Yahoo Finance" };
@@ -93,15 +88,6 @@ async function fetchCandles(symbol, interval, range) {
         v: q.volume[i]
       };
     }
-
-    const keys = Object.keys(result);
-    console.log("=== FETCHED CANDLES SUMMARY ===");
-    console.log(`symbol=${symbol}, interval=${interval}, range=${range}`);
-    console.log(`result keys length = ${keys.length}`);
-    console.log("first 5 keys:", keys.slice(0, 5));
-    console.log("sample candles:", keys.slice(0, 5).map(k => result[k]));
-    console.log("=== END FETCHED CANDLES SUMMARY ===");
-
     
     return result;
 
@@ -263,13 +249,6 @@ async function main() {
       finalData[symbol] = { error: "insufficient candles" };
       continue;
     }
-
-    console.log("=== DAILY BEFORE CONDITIONS ===");
-    const dKeys = Object.keys(daily);
-    console.log(`daily keys length = ${dKeys.length}`);
-    console.log("first 5 daily keys:", dKeys.slice(0, 5));
-    console.log("sample daily candles:", dKeys.slice(0, 5).map(k => daily[k]));
-    console.log("=== END DAILY BEFORE CONDITIONS ===");
 
     finalData[symbol] = runAllConditions(daily, weekly, monthly);
 
