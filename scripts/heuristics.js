@@ -287,13 +287,26 @@ async function main() {
   }
 
   // ---------------------------------------------------------
-  // ★ heuristics_YYYYMMDD.json として保存
+  // ★ 保存先フォルダ（data/heuristics/YYYYMM）を作成
   // ---------------------------------------------------------
-  const outFile = `data/heuristics_${latestDateGlobal}.json`;
+  const yyyymm = latestDateGlobal.slice(0, 6);
+  const heuristicsDir = `data/heuristics/${yyyymm}`;
+
+  if (!fs.existsSync("data/heuristics")) {
+    fs.mkdirSync("data/heuristics", { recursive: true });
+  }
+  if (!fs.existsSync(heuristicsDir)) {
+    fs.mkdirSync(heuristicsDir, { recursive: true });
+  }
+
+  // ---------------------------------------------------------
+  // ★ heuristics_YYYYMMDD.json を保存
+  // ---------------------------------------------------------
+  const outFile = `${heuristicsDir}/heuristics_${latestDateGlobal}.json`;
   fs.writeFileSync(outFile, JSON.stringify(finalData, null, 2));
 
   // ---------------------------------------------------------
-  // ★ バックアップ（heuristics_YYYYMMDD.json.TIMESTAMP）
+  // ★ バックアップ（data/backup/heuristics_YYYYMMDD.json.TIMESTAMP）
   // ---------------------------------------------------------
   const backupDir = "data/backup";
   if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
@@ -312,11 +325,14 @@ async function main() {
   const backupFile = path.join(backupDir, `heuristics_${latestDateGlobal}.json.${timestamp}`);
   fs.copyFileSync(outFile, backupFile);
 
+  // ---------------------------------------------------------
+  // ★ バックアップ最新 8 件だけ残す
+  // ---------------------------------------------------------
   const files = fs
     .readdirSync(backupDir)
     .filter(f => f.startsWith("heuristics_") && f.includes(".json."))
     .sort();
-  
+
   while (files.length > 8) {
     const oldFile = files.shift();
     fs.unlinkSync(path.join(backupDir, oldFile));
