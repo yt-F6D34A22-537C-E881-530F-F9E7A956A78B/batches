@@ -1,4 +1,4 @@
-name: 【heuristics.yml】Generate heuristics.json (経験則スクリーニング)
+name: 【heuristics.yml】Generate heuristics_YYYYMMDD.json (経験則スクリーニング)
 
 permissions:
   contents: write
@@ -42,7 +42,7 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add data/heuristics.json data/backup/ || true
-          git commit -m "Update heuristics.json and backup" || echo "No changes"
+          git add data/heuristics_*.json data/backup/ || true
+          git commit -m "Update heuristics_YYYYMMDD.json and backup" || echo "No changes"
           git pull --rebase || true
           git push
