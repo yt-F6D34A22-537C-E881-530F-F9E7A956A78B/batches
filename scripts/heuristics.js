@@ -314,9 +314,9 @@ async function main() {
 
   const files = fs
     .readdirSync(backupDir)
-    .filter(f => f.startsWith(`heuristics_${latestDateGlobal}.json.`))
+    .filter(f => f.startsWith("heuristics_") && f.includes(".json."))
     .sort();
-
+  
   while (files.length > 8) {
     const oldFile = files.shift();
     fs.unlinkSync(path.join(backupDir, oldFile));
