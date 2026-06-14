@@ -4,7 +4,7 @@ import xlsx from "xlsx";
 import path from "path";
 
 // ---------------------------------------------------------
-// 1. Excel から銘柄コードを読み込む（パス修正）
+// 1. Excel から銘柄コードを読み込む
 // ---------------------------------------------------------
 const workbook = xlsx.readFile("data/data_j.xlsx");
 const sheet = workbook.Sheets["Sheet1"];
@@ -84,7 +84,7 @@ async function fetchCandles(symbol, interval, range) {
     if (!q || !q.close || q.close.length < 10) {
       return { error: "Too few quote entries returned from Yahoo API" };
     }
-    
+
     let result = {};
     for (let i = 0; i < timestamps.length; i++) {
       const ts = timestamps[i];
@@ -103,7 +103,7 @@ async function fetchCandles(symbol, interval, range) {
         v: q.volume[i]
       };
     }
-    
+
     return result;
 
   } catch (err) {
@@ -112,7 +112,7 @@ async function fetchCandles(symbol, interval, range) {
 }
 
 // ---------------------------------------------------------
-// 3. heuristics_conditions.js（現行関数のみ import）
+// 3. heuristics_conditions.js
 // ---------------------------------------------------------
 import {
   isMaSlopeUpDaily, isMaSlopeDownDaily,
@@ -221,10 +221,11 @@ function runAllConditions(daily, weekly, monthly) {
 }
 
 // ---------------------------------------------------------
-// 5. メイン処理（パス修正済み）
+// 5. メイン処理
 // ---------------------------------------------------------
 async function main() {
   let finalData = {};
+  let latestDateGlobal = null;
 
   for (const symbol of symbols) {
     console.log(`Processing ${symbol} ...`);
@@ -258,20 +259,26 @@ async function main() {
       dailyCount   < needDaily ||
       weeklyCount  < needWeekly ||
       monthlyCount < needMonthly;
-    
+
     if (insufficient) {
       const dailyMsg   = `${dailyCount}  ${dailyCount   >= needDaily   ? ">" : "<"} ${needDaily} required`;
       const weeklyMsg  = `${weeklyCount} ${weeklyCount  >= needWeekly  ? ">" : "<"} ${needWeekly} required`;
       const monthlyMsg = `${monthlyCount} ${monthlyCount >= needMonthly ? ">" : "<"} ${needMonthly} required`;
-    
+
       console.log(`Skipping ${symbol} due to insufficient candles. {`);
       console.log(`  daily:   ${dailyMsg},`);
       console.log(`  weekly:  ${weeklyMsg},`);
       console.log(`  monthly: ${monthlyMsg}`);
       console.log(`}`);
-    
+
       finalData[symbol] = { error: "insufficient candles" };
       continue;
+    }
+
+    // ★ 最新日付を更新
+    const latestDate = Object.keys(daily).sort().pop();
+    if (!latestDateGlobal || latestDate > latestDateGlobal) {
+      latestDateGlobal = latestDate;
     }
 
     finalData[symbol] = runAllConditions(daily, weekly, monthly);
@@ -279,8 +286,15 @@ async function main() {
     await new Promise(r => setTimeout(r, 500));
   }
 
-  fs.writeFileSync("data/heuristics.json", JSON.stringify(finalData, null, 2));
+  // ---------------------------------------------------------
+  // ★ heuristics_YYYYMMDD.json として保存
+  // ---------------------------------------------------------
+  const outFile = `data/heuristics_${latestDateGlobal}.json`;
+  fs.writeFileSync(outFile, JSON.stringify(finalData, null, 2));
 
+  // ---------------------------------------------------------
+  // ★ バックアップ（heuristics_YYYYMMDD.json.TIMESTAMP）
+  // ---------------------------------------------------------
   const backupDir = "data/backup";
   if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
 
@@ -295,12 +309,12 @@ async function main() {
     pad(now.getMinutes()) +
     pad(now.getSeconds());
 
-  const backupFile = path.join(backupDir, `heuristics.json.${timestamp}`);
-  fs.copyFileSync("data/heuristics.json", backupFile);
+  const backupFile = path.join(backupDir, `heuristics_${latestDateGlobal}.json.${timestamp}`);
+  fs.copyFileSync(outFile, backupFile);
 
   const files = fs
     .readdirSync(backupDir)
-    .filter(f => f.startsWith("heuristics.json."))
+    .filter(f => f.startsWith(`heuristics_${latestDateGlobal}.json.`))
     .sort();
 
   while (files.length > 8) {
@@ -308,7 +322,7 @@ async function main() {
     fs.unlinkSync(path.join(backupDir, oldFile));
   }
 
-  console.log("heuristics.json generation completed.");
+  console.log(`heuristics_${latestDateGlobal}.json generation completed.`);
 }
 
 main();
