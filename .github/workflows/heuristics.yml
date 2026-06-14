@@ -34,6 +34,7 @@ jobs:
         run: |
           mkdir -p data
           mkdir -p data/backup
+          mkdir -p data/heuristics
 
       - name: Run heuristics script
         run: node scripts/heuristics.js
@@ -42,7 +43,7 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add data/heuristics_*.json data/backup/ || true
+          git add data/heuristics/**/heuristics_*.json data/backup/ || true
           git commit -m "Update heuristics_YYYYMMDD.json and backup" || echo "No changes"
           git pull --rebase || true
           git push
