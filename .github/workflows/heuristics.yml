@@ -45,5 +45,5 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add data/heuristics/**/heuristics_*.json data/backup/ || true
           git commit -m "Update heuristics_YYYYMMDD.json and backup" || echo "No changes"
-          git pull --rebase || true
+          git push --force-with-lease origin main
           git push
