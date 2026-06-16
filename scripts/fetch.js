@@ -6,12 +6,12 @@ import path from "path";
 // -----------------------------
 // 1. Excel から銘柄コードを読み込む（純コードのまま）
 // -----------------------------
-const workbook = xlsx.readFile("../data/data_j.xlsx");
+const workbook = xlsx.readFile("data/data_j.xlsx");
 const sheet = workbook.Sheets["Sheet1"];
 const rows = xlsx.utils.sheet_to_json(sheet);
 
 let symbols = rows
-  .map(r => String(r["コード"]).trim())   // ← 純コード
+  .map(r => String(r["コード"]).trim())
   .filter(code => code && code !== "undefined");
 
 if (symbols.length === 0) {
@@ -87,12 +87,12 @@ async function main() {
   // -----------------------------
   // 4. data.json を洗い替え
   // -----------------------------
-  fs.writeFileSync("../data/data.json", JSON.stringify(finalData, null, 2));
+  fs.writeFileSync("data/data.json", JSON.stringify(finalData, null, 2));
 
   // -----------------------------
-  // 5. バックアップ処理（相対パス & JST）
+  // 5. バックアップ処理
   // -----------------------------
-  const backupDir = "../data/backup";
+  const backupDir = "data/backup";
 
   if (!fs.existsSync(backupDir)) {
     fs.mkdirSync(backupDir, { recursive: true });
@@ -110,7 +110,7 @@ async function main() {
     pad(now.getSeconds());
 
   const backupFile = path.join(backupDir, `data.json.${timestamp}`);
-  fs.copyFileSync("../data/data.json", backupFile);
+  fs.copyFileSync("data/data.json", backupFile);
 
   // -----------------------------
   // 6. バックアップは 8 個だけ保持
