@@ -4,16 +4,15 @@ import xlsx from "xlsx";
 import path from "path";
 
 // -----------------------------
-// 1. Excel から銘柄コードを読み込む
+// 1. Excel から銘柄コードを読み込む（純コードのまま）
 // -----------------------------
 const workbook = xlsx.readFile("data/data_j.xlsx");
 const sheet = workbook.Sheets["Sheet1"];
 const rows = xlsx.utils.sheet_to_json(sheet);
 
 let symbols = rows
-  .map(r => String(r["コード"]).trim())
-  .filter(code => code && code !== "undefined")
-  .map(code => `${code}.T`);
+  .map(r => String(r["コード"]).trim())   // ← 純コード
+  .filter(code => code && code !== "undefined");
 
 if (symbols.length === 0) {
   console.log("ERROR: Excel から銘柄コードが読み取れませんでした。");
@@ -23,7 +22,8 @@ if (symbols.length === 0) {
 // -----------------------------
 // 2. Yahoo Finance API（10日分取得）
 // -----------------------------
-async function fetchSymbol(symbol) {
+async function fetchSymbol(code) {
+  const symbol = `${code}.T`;  // ← Yahoo API 用に .T を付ける
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=10d`;
 
   try {
@@ -78,9 +78,9 @@ async function fetchSymbol(symbol) {
 async function main() {
   let finalData = {};
 
-  for (const symbol of symbols) {
-    const data = await fetchSymbol(symbol);
-    finalData[symbol] = data;
+  for (const code of symbols) {
+    const data = await fetchSymbol(code);
+    finalData[code] = data;
     await new Promise(r => setTimeout(r, 500));
   }
 
