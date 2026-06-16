@@ -39,5 +39,4 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add data/data_j.xlsx data/backup/ || true
           git commit -m "Auto-update JPX data_j.xlsx + backup" || echo "No changes"
-          git pull --rebase || true
-          git push
+          git push --force-with-lease origin main
