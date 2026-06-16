@@ -46,4 +46,3 @@ jobs:
           git add data/heuristics/**/heuristics_*.json data/backup/ || true
           git commit -m "Update heuristics_YYYYMMDD.json and backup" || echo "No changes"
           git push --force-with-lease origin main
-          git push
