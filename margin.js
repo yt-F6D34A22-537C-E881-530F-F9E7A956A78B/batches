@@ -336,7 +336,7 @@ async function fetchJpxDaily() {
 }
 
 // ============================================================
-// 5. 日々公表で週次を上書き（Python 版と同等）
+// 5. 日々公表で週次を上書き
 // ============================================================
 function applyDailyToWeekly(jpxMap, dailyMap) {
   for (const [code4, d] of Object.entries(dailyMap)) {
@@ -366,7 +366,6 @@ function applyDailyToWeekly(jpxMap, dailyMap) {
 
 // ============================================================
 // 6. margin.json 統合（規制 + 日々公表 + 上書き対応）
-//    - Python 版のロジックを忠実に移植
 // ============================================================
 function buildMarginJson(kubunMap, regulationMap, BUY_BAN, SELL_BAN, jpxMap) {
   const margin = {};
@@ -416,16 +415,16 @@ function buildMarginJson(kubunMap, regulationMap, BUY_BAN, SELL_BAN, jpxMap) {
 // 7. バックアップ作成
 // ============================================================
 function backupMargin() {
-  ensureDir("data/backup");
+  ensureDir("../data/backup");
   const ts = timestamp();
-  fs.copyFileSync("data/margin.json", `data/backup/margin.json.${ts}`);
+  fs.copyFileSync("../data/margin.json", `../data/backup/margin.json.${ts}`);
 }
 
 // ============================================================
-// 8. 古いバックアップ削除（3日超）
+// 8. 古いバックアップ削除
 // ============================================================
 function cleanupBackups() {
-  const dir = "data/backup";
+  const dir = "../data/backup";
   if (!fs.existsSync(dir)) return;
 
   const files = fs.readdirSync(dir);
@@ -456,7 +455,7 @@ function cleanupBackups() {
 // 9. Main
 // ============================================================
 async function main() {
-  ensureDir("data");
+  ensureDir("../data");
 
   const kubunMap = await fetchKubunMap();
   const { regulationMap, BUY_BAN_KEYWORDS, SELL_BAN_KEYWORDS } =
@@ -479,9 +478,9 @@ async function main() {
   for (const code of Object.keys(margin).sort()) {
     sorted[code] = margin[code];
   }
-  
-  fs.writeFileSync("data/margin.json", JSON.stringify(sorted, null, 2), "utf-8");
-  
+
+  fs.writeFileSync("../data/margin.json", JSON.stringify(sorted, null, 2), "utf-8");
+
   backupMargin();
   cleanupBackups();
 }
