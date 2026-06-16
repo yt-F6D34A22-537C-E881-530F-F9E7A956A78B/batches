@@ -43,6 +43,4 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add data/data.json data/backup/ || true
           git commit -m "Update data.json and backup" || echo "No changes"
-          # リモートの変更を取り込む
-          git pull --rebase || true
-          git push
+          git push --force-with-lease origin main
