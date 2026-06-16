@@ -12,58 +12,56 @@ const rows = xlsx.utils.sheet_to_json(sheet);
 
 let symbols = rows
   .map(r => String(r["コード"]).trim())
-  .filter(code => code && code !== "undefined")
-  .map(code => `${code}.T`);
+  .filter(code => code && code !== "undefined");
 
 if (symbols.length === 0) {
   console.log("ERROR: Excel から銘柄コードが読み取れませんでした。");
   process.exit(1);
 }
 
+// // ---------------------------------------------------------
+// // ★ テストモード（複数銘柄で動作確認したいときに使用）
+// // ---------------------------------------------------------
 
+// // テストしたい銘柄コードを複数指定（例：7203.T）
+// // 有効化したいときは↓のコメントアウトを外すだけでOK
+// const TEST_SYMBOLS = [
+//   // データ少ない
+//   "5585", "5132", "5026", "4259",
 
-// ---------------------------------------------------------
-// ★ テストモード（複数銘柄で動作確認したいときに使用）
-// ---------------------------------------------------------
+//   // 上昇トレンド
+//   "7203", "8306", "6861",
 
-// テストしたい銘柄コードを複数指定（例：7203.T）
-// 有効化したいときは↓のコメントアウトを外すだけでOK
-const TEST_SYMBOLS = [
-  // データ少ない
-  "5585.T", "5132.T", "5026.T", "4259.T",
+//   // 下降トレンド
+//   "4755", "9984",
 
-  // 上昇トレンド
-  "7203.T", "8306.T", "6861.T",
-
-  // 下降トレンド
-  "4755.T", "9984.T",
-
-  // ボラ高
-  "1514.T", "4165.T", "7373.T",
+//   // ボラ高
+//   "1514", "4165", "7373",
   
-  // 必要に応じて追加
-];
+//   // 必要に応じて追加
+// ];
 
-console.log("=== TEST MODE ENABLED ===");
-console.log(`Target symbols: ${TEST_SYMBOLS.join(", ")}`);
+// console.log("=== TEST MODE ENABLED ===");
+// console.log(`Target symbols: ${TEST_SYMBOLS.join(", ")}`);
 
-// symbols を複数銘柄に絞る
-symbols = symbols.filter(s => TEST_SYMBOLS.includes(s));
+// // symbols を複数銘柄に絞る
+// symbols = symbols.filter(code => TEST_SYMBOLS.includes(code));
 
-if (symbols.length === 0) {
-  console.log(`ERROR: TEST_SYMBOLS の銘柄が Excel に 1 つも存在しません。`);
-  process.exit(1);
-}
-// ---------------------------------------------------------
-// ★ テストモード（複数銘柄）↑↑ここまで。
-// ---------------------------------------------------------
+// if (symbols.length === 0) {
+//   console.log(`ERROR: TEST_SYMBOLS の銘柄が Excel に 1 つも存在しません。`);
+//   process.exit(1);
+// }
+// // ---------------------------------------------------------
+// // ★ テストモード（複数銘柄）↑↑ここまで。
+// // ---------------------------------------------------------
 
 
 
 // ---------------------------------------------------------
 // 2. Yahoo Finance API（足種別に取得）
 // ---------------------------------------------------------
-async function fetchCandles(symbol, interval, range) {
+async function fetchCandles(code, interval, range) {
+  const symbol = `${code}.T`;  // ← Yahoo API 用に .T を付ける
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
 
   try {
@@ -227,21 +225,21 @@ async function main() {
   let finalData = {};
   let latestDateGlobal = null;
 
-  for (const symbol of symbols) {
-    console.log(`Processing ${symbol} ...`);
+  for (const code of symbols) {
+    console.log(`Processing ${code} ...`);
 
-    const daily = await fetchCandles(symbol, "1d", "1y");
-    const weekly = await fetchCandles(symbol, "1wk", "5y");
-    const monthly = await fetchCandles(symbol, "1mo", "10y");
+    const daily = await fetchCandles(code, "1d", "1y");
+    const weekly = await fetchCandles(code, "1wk", "5y");
+    const monthly = await fetchCandles(code, "1mo", "10y");
 
     // --- データ不足チェック（fetchCandles の error を検出） ---
     if (daily.error || weekly.error || monthly.error) {
-      console.log(`Skipping ${symbol} due to fetch error:`, {
+      console.log(`Skipping ${code} due to fetch error:`, {
         daily: daily.error,
         weekly: weekly.error,
         monthly: monthly.error
       });
-      finalData[symbol] = { error: "fetch error" };
+      finalData[code] = { error: "fetch error" };
       continue;
     }
   
@@ -265,13 +263,13 @@ async function main() {
       const weeklyMsg  = `${weeklyCount} ${weeklyCount  >= needWeekly  ? ">" : "<"} ${needWeekly} required`;
       const monthlyMsg = `${monthlyCount} ${monthlyCount >= needMonthly ? ">" : "<"} ${needMonthly} required`;
 
-      console.log(`Skipping ${symbol} due to insufficient candles. {`);
+      console.log(`Skipping ${code} due to insufficient candles. {`);
       console.log(`  daily:   ${dailyMsg},`);
       console.log(`  weekly:  ${weeklyMsg},`);
       console.log(`  monthly: ${monthlyMsg}`);
       console.log(`}`);
-
-      finalData[symbol] = { error: "insufficient candles" };
+      
+      finalData[code] = { error: "insufficient candles" };
       continue;
     }
 
@@ -281,7 +279,7 @@ async function main() {
       latestDateGlobal = latestDate;
     }
 
-    finalData[symbol] = runAllConditions(daily, weekly, monthly);
+    finalData[code] = runAllConditions(daily, weekly, monthly);
 
     await new Promise(r => setTimeout(r, 500));
   }
