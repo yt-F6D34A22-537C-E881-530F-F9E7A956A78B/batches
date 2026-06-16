@@ -197,7 +197,7 @@ async function fetchRakutenRegulation() {
 
     const code = normalizeNFKC(String(rawCode));
 
-    // 市場フィルタ（Python 版と同じく "東京" を含むかどうか）
+    // 市場フィルタ
     let marketFlag = false;
     if (market) {
       const m = normalizeNFKC(String(market)).replace(/ /g, "").replace(/　/g, "");
@@ -415,16 +415,16 @@ function buildMarginJson(kubunMap, regulationMap, BUY_BAN, SELL_BAN, jpxMap) {
 // 7. バックアップ作成
 // ============================================================
 function backupMargin() {
-  ensureDir("../data/backup");
+  ensureDir("data/backup");
   const ts = timestamp();
-  fs.copyFileSync("../data/margin.json", `../data/backup/margin.json.${ts}`);
+  fs.copyFileSync("data/margin.json", `data/backup/margin.json.${ts}`);
 }
 
 // ============================================================
-// 8. 古いバックアップ削除
+// 8. 古いバックアップ削除（3日超）
 // ============================================================
 function cleanupBackups() {
-  const dir = "../data/backup";
+  const dir = "data/backup";
   if (!fs.existsSync(dir)) return;
 
   const files = fs.readdirSync(dir);
@@ -455,7 +455,7 @@ function cleanupBackups() {
 // 9. Main
 // ============================================================
 async function main() {
-  ensureDir("../data");
+  ensureDir("data");
 
   const kubunMap = await fetchKubunMap();
   const { regulationMap, BUY_BAN_KEYWORDS, SELL_BAN_KEYWORDS } =
@@ -479,7 +479,7 @@ async function main() {
     sorted[code] = margin[code];
   }
 
-  fs.writeFileSync("../data/margin.json", JSON.stringify(sorted, null, 2), "utf-8");
+  fs.writeFileSync("data/margin.json", JSON.stringify(sorted, null, 2), "utf-8");
 
   backupMargin();
   cleanupBackups();
