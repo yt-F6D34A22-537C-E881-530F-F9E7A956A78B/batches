@@ -31,7 +31,7 @@ jobs:
         run: mkdir -p data
 
       - name: Run JPX fetch script
-        run: node download-jpx-xlsx.js
+        run: node scripts/download-jpx-xlsx.js
 
       - name: Commit & Push
         run: |
