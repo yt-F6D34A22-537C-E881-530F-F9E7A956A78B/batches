@@ -29,7 +29,7 @@ async function getXlsUrl() {
 }
 
 // ---------------------------------------------
-// 2. ../data/data_j.xls をダウンロード
+// 2. data/data_j.xls をダウンロード
 // ---------------------------------------------
 async function downloadXls(url) {
   const res = await fetch(url);
@@ -37,12 +37,12 @@ async function downloadXls(url) {
 
   const buffer = await res.buffer();
 
-  if (!fs.existsSync("../data")) {
-    fs.mkdirSync("../data", { recursive: true });
+  if (!fs.existsSync("data")) {
+    fs.mkdirSync("data", { recursive: true });
   }
 
-  fs.writeFileSync("../data/data_j.xls", buffer);
-  console.log("✔ ../data/data_j.xls を保存しました");
+  fs.writeFileSync("data/data_j.xls", buffer);
+  console.log("✔ data/data_j.xls を保存しました");
 }
 
 // ---------------------------------------------
@@ -52,22 +52,22 @@ function convertToXlsx() {
   console.log("✔ LibreOffice で XLS → XLSX 変換中…");
 
   execSync(
-    `libreoffice --headless --convert-to xlsx ../data/data_j.xls --outdir ../data`,
+    `libreoffice --headless --convert-to xlsx data/data_j.xls --outdir data`,
     { stdio: "inherit" }
   );
 
-  if (!fs.existsSync("../data/data_j.xlsx")) {
+  if (!fs.existsSync("data/data_j.xlsx")) {
     throw new Error("data/data_j.xlsx が生成されませんでした");
   }
 
-  console.log("✔ ../data/data_j.xlsx を生成しました");
+  console.log("✔ data/data_j.xlsx を生成しました");
 }
 
 // ---------------------------------------------
-// 4. バックアップ作成（../data/backup）
+// 4. バックアップ作成（data/backup）
 // ---------------------------------------------
 function backupFiles() {
-  const backupDir = "../data/backup";
+  const backupDir = "data/backup";
   if (!fs.existsSync(backupDir)) {
     fs.mkdirSync(backupDir, { recursive: true });
   }
@@ -83,8 +83,8 @@ function backupFiles() {
     pad(now.getMinutes()) +
     pad(now.getSeconds());
 
-  const srcXls = "../data/data_j.xls";
-  const srcXlsx = "../data/data_j.xlsx";
+  const srcXls = "data/data_j.xls";
+  const srcXlsx = "data/data_j.xlsx";
 
   const dstXls = path.join(backupDir, `data_j.xls.${timestamp}`);
   const dstXlsx = path.join(backupDir, `data_j.xlsx.${timestamp}`);
@@ -99,7 +99,7 @@ function backupFiles() {
 // 5. 古いバックアップ削除（3日以上）
 // ---------------------------------------------
 function cleanupBackups() {
-  const backupDir = "../data/backup";
+  const backupDir = "data/backup";
   const files = fs.readdirSync(backupDir);
 
   const pattern = /(data_j\.(xls|xlsx))\.(\d{8}_\d{6})$/;
