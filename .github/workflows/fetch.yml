@@ -35,7 +35,7 @@ jobs:
           mkdir -p data
 
       - name: Run fetch script
-        run: node fetch.js
+        run: node scripts/fetch.js
 
       - name: Commit and push changes
         run: |
