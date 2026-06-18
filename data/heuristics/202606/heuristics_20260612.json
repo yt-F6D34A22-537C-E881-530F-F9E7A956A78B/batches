@@ -1,5 +1,5 @@
 {
-  "1514.T": {
+  "1514": {
     "TECH_MA_SLOPE_UP_DAILY": false,
     "TECH_MA_SLOPE_DOWN_DAILY": true,
     "TECH_MA_SLOPE_UP_WEEKLY": false,
@@ -67,13 +67,13 @@
     "TECH_RULE9_WEEKLY_DOWN_17": false,
     "TECH_RULE9_WEEKLY_DOWN_23": false
   },
-  "4165.T": {
+  "4165": {
     "error": "insufficient candles"
   },
-  "4259.T": {
+  "4259": {
     "error": "insufficient candles"
   },
-  "4755.T": {
+  "4755": {
     "TECH_MA_SLOPE_UP_DAILY": false,
     "TECH_MA_SLOPE_DOWN_DAILY": true,
     "TECH_MA_SLOPE_UP_WEEKLY": false,
@@ -141,13 +141,13 @@
     "TECH_RULE9_WEEKLY_DOWN_17": false,
     "TECH_RULE9_WEEKLY_DOWN_23": false
   },
-  "5026.T": {
+  "5026": {
     "error": "insufficient candles"
   },
-  "5132.T": {
+  "5132": {
     "error": "insufficient candles"
   },
-  "6861.T": {
+  "6861": {
     "TECH_MA_SLOPE_UP_DAILY": false,
     "TECH_MA_SLOPE_DOWN_DAILY": true,
     "TECH_MA_SLOPE_UP_WEEKLY": true,
@@ -215,7 +215,7 @@
     "TECH_RULE9_WEEKLY_DOWN_17": false,
     "TECH_RULE9_WEEKLY_DOWN_23": false
   },
-  "7203.T": {
+  "7203": {
     "TECH_MA_SLOPE_UP_DAILY": false,
     "TECH_MA_SLOPE_DOWN_DAILY": true,
     "TECH_MA_SLOPE_UP_WEEKLY": false,
@@ -283,10 +283,10 @@
     "TECH_RULE9_WEEKLY_DOWN_17": false,
     "TECH_RULE9_WEEKLY_DOWN_23": false
   },
-  "7373.T": {
+  "7373": {
     "error": "insufficient candles"
   },
-  "8306.T": {
+  "8306": {
     "TECH_MA_SLOPE_UP_DAILY": true,
     "TECH_MA_SLOPE_DOWN_DAILY": false,
     "TECH_MA_SLOPE_UP_WEEKLY": true,
@@ -354,7 +354,7 @@
     "TECH_RULE9_WEEKLY_DOWN_17": false,
     "TECH_RULE9_WEEKLY_DOWN_23": false
   },
-  "9984.T": {
+  "9984": {
     "TECH_MA_SLOPE_UP_DAILY": true,
     "TECH_MA_SLOPE_DOWN_DAILY": false,
     "TECH_MA_SLOPE_UP_WEEKLY": true,
