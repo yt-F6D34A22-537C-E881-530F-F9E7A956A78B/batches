@@ -5,7 +5,7 @@ permissions:
 
 on:
   schedule:
-    - cron: "0 23 * * *"  # JST 08:00（fetch の 1 時間後）
+    # - cron: "0 23 * * *"  # JST 08:00（fetch の 1 時間後）
     - cron: "0 8 * * *"   # JST 17:00（fetch の 1 時間後）
     - cron: "0 10 * * *"  # JST 19:00（fetch の 1 時間後）
     - cron: "0 12 * * *"  # JST 21:00（fetch の 1 時間後）
