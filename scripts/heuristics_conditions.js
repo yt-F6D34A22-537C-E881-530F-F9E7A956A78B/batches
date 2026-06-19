@@ -79,19 +79,19 @@ function isMaSlopeDown(candles, period) {
   return maToday < maPrev;
 }
 
-export const isMaSlopeUpDaily = d => isMaSlopeUp(d, 25);
-export const isMaSlopeDownDaily = d => isMaSlopeDown(d, 25);
-export const isMaSlopeUpWeekly = w => isMaSlopeUp(w, 13);
-export const isMaSlopeDownWeekly = w => isMaSlopeDown(w, 13);
-export const isMaSlopeUpMonthly = m => isMaSlopeUp(m, 12);
-export const isMaSlopeDownMonthly = m => isMaSlopeDown(m, 12);
+const isMaSlopeUpDaily = d => isMaSlopeUp(d, 25);
+const isMaSlopeDownDaily = d => isMaSlopeDown(d, 25);
+const isMaSlopeUpWeekly = w => isMaSlopeUp(w, 13);
+const isMaSlopeDownWeekly = w => isMaSlopeDown(w, 13);
+const isMaSlopeUpMonthly = m => isMaSlopeUp(m, 12);
+const isMaSlopeDownMonthly = m => isMaSlopeDown(m, 12);
 
 
 /* ==========================================================================================
    MA POSITION（株価 > 短期 > 中期 > 長期）
 ========================================================================================== */
 
-export function isMaPositionDaily(daily) {
+function isMaPositionDaily(daily) {
   const maS = safeCalcMA(daily, 5);
   const maM = safeCalcMA(daily, 25);
   const maL = safeCalcMA(daily, 75);
@@ -106,7 +106,7 @@ export function isMaPositionDaily(daily) {
   return "flat";
 }
 
-export function isMaPositionWeekly(weekly) {
+function isMaPositionWeekly(weekly) {
   const maS = safeCalcMA(weekly, 5);
   const maM = safeCalcMA(weekly, 13);
   const maL = safeCalcMA(weekly, 26);
@@ -121,7 +121,7 @@ export function isMaPositionWeekly(weekly) {
   return "flat";
 }
 
-export function isMaPositionMonthly(monthly) {
+function isMaPositionMonthly(monthly) {
   const maS = safeCalcMA(monthly, 5);
   const maM = safeCalcMA(monthly, 12);
   const maL = safeCalcMA(monthly, 24);
@@ -160,27 +160,16 @@ function isReversePerfectOrder(candles, shortP, midP, longP) {
 }
 
 // 日足
-export function isPerfectOrderDaily(daily) {
-  return isPerfectOrder(daily, 5, 25, 75);
-}
-export function isReversePerfectOrderDaily(daily) {
-  return isReversePerfectOrder(daily, 5, 25, 75);
-}
+const isPerfectOrderDaily = d => isPerfectOrder(d, 5, 25, 75);
+const isReversePerfectOrderDaily = d => isReversePerfectOrder(d, 5, 25, 75);
 
 // 週足
-export function isPerfectOrderWeekly(weekly) {
-  return isPerfectOrder(weekly, 5, 13, 26);
-}
-export function isReversePerfectOrderWeekly(weekly) {
-  return isReversePerfectOrder(weekly, 5, 13, 26);
-}
+const isPerfectOrderWeekly = w => isPerfectOrder(w, 5, 13, 26);
+const isReversePerfectOrderWeekly = w => isReversePerfectOrder(w, 5, 13, 26);
 
 // 月足
-export function isPerfectOrderMonthly(monthly) {
-  return isPerfectOrder(monthly, 5, 12, 24);
-}
-export function isReversePerfectOrderMonthly(monthly) {
-  return isReversePerfectOrder(monthly, 5, 12, 24);
+const isPerfectOrderMonthly = m => isPerfectOrder(m, 5, 12, 24);
+const isReversePerfectOrderMonthly = m => isReversePerfectOrder(m, 5, 12, 24);
 
 
 /* ==========================================================================================
@@ -201,7 +190,7 @@ function countReverseForRPO(maS, maM, maL) {
   return r;
 }
 
-export function isPrePerfectOrderDaily(daily) {
+function isPrePerfectOrderDaily(daily) {
   const ma5 = safeCalcMA(daily, 5);
   const ma25 = safeCalcMA(daily, 25);
   const ma75 = safeCalcMA(daily, 75);
@@ -209,7 +198,7 @@ export function isPrePerfectOrderDaily(daily) {
   return countReverseForPO(ma5, ma25, ma75) === 1;
 }
 
-export function isPreReversePerfectOrderDaily(daily) {
+function isPreReversePerfectOrderDaily(daily) {
   const ma5 = safeCalcMA(daily, 5);
   const ma25 = safeCalcMA(daily, 25);
   const ma75 = safeCalcMA(daily, 75);
@@ -217,7 +206,7 @@ export function isPreReversePerfectOrderDaily(daily) {
   return countReverseForRPO(ma5, ma25, ma75) === 1;
 }
 
-export function isPrePerfectOrderWeekly(weekly) {
+function isPrePerfectOrderWeekly(weekly) {
   const ma5 = safeCalcMA(weekly, 5);
   const ma13 = safeCalcMA(weekly, 13);
   const ma26 = safeCalcMA(weekly, 26);
@@ -225,7 +214,7 @@ export function isPrePerfectOrderWeekly(weekly) {
   return countReverseForPO(ma5, ma13, ma26) === 1;
 }
 
-export function isPreReversePerfectOrderWeekly(weekly) {
+function isPreReversePerfectOrderWeekly(weekly) {
   const ma5 = safeCalcMA(weekly, 5);
   const ma13 = safeCalcMA(weekly, 13);
   const ma26 = safeCalcMA(weekly, 26);
@@ -233,7 +222,7 @@ export function isPreReversePerfectOrderWeekly(weekly) {
   return countReverseForRPO(ma5, ma13, ma26) === 1;
 }
 
-export function isPrePerfectOrderMonthly(monthly) {
+function isPrePerfectOrderMonthly(monthly) {
   const ma5 = safeCalcMA(monthly, 5);
   const ma12 = safeCalcMA(monthly, 12);
   const ma24 = safeCalcMA(monthly, 24);
@@ -241,7 +230,7 @@ export function isPrePerfectOrderMonthly(monthly) {
   return countReverseForPO(ma5, ma12, ma24) === 1;
 }
 
-export function isPreReversePerfectOrderMonthly(monthly) {
+function isPreReversePerfectOrderMonthly(monthly) {
   const ma5 = safeCalcMA(monthly, 5);
   const ma12 = safeCalcMA(monthly, 12);
   const ma24 = safeCalcMA(monthly, 24);
@@ -254,7 +243,7 @@ export function isPreReversePerfectOrderMonthly(monthly) {
    MA 密集（5/10/20）
 ========================================================================================== */
 
-export function isMaCongestion(daily) {
+function isMaCongestion(daily) {
   const ma5 = safeCalcMA(daily, 5);
   const ma10 = safeCalcMA(daily, 10);
   const ma20 = safeCalcMA(daily, 20);
@@ -272,7 +261,7 @@ export function isMaCongestion(daily) {
    MA 間隔（Spread）
 ========================================================================================== */
 
-export function isMaSpreadUp(daily) {
+function isMaSpreadUp(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 26) return "flat";
 
@@ -301,7 +290,7 @@ export function isMaSpreadUp(daily) {
    MA100 トレンド
 ========================================================================================== */
 
-export function isMa100Trend(daily) {
+function isMa100Trend(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 102) return "flat";
 
@@ -333,7 +322,7 @@ export function isMa100Trend(daily) {
    下半身 / 逆下半身
 ========================================================================================== */
 
-export function isKahanshin(daily) {
+function isKahanshin(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 6) return false;
 
@@ -355,7 +344,7 @@ export function isKahanshin(daily) {
   return ma5_today > ma5_prev && o < c && cPrev < ma5_prev && c > ma5_today;
 }
 
-export function isGyakuKahanshin(daily) {
+function isGyakuKahanshin(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 6) return false;
 
@@ -382,7 +371,7 @@ export function isGyakuKahanshin(daily) {
    5日線更新
 ========================================================================================== */
 
-export function is5MaHighUpdate(daily) {
+function is5MaHighUpdate(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 10) return false;
 
@@ -404,7 +393,7 @@ export function is5MaHighUpdate(daily) {
   return ma5_today > Math.max(...maList);
 }
 
-export function is5MaLowUpdate(daily) {
+function is5MaLowUpdate(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 10) return false;
 
@@ -431,7 +420,7 @@ export function is5MaLowUpdate(daily) {
    酒田五法（三山 / 三川 / 三空 / 三兵 / 三法）
 ========================================================================================== */
 
-export function isSakataTripleTop(daily) {
+function isSakataTripleTop(daily) {
   const arr = safeLast(daily, 5);
   if (!arr) return false;
 
@@ -446,7 +435,7 @@ export function isSakataTripleTop(daily) {
   );
 }
 
-export function isSakataTripleBottom(daily) {
+function isSakataTripleBottom(daily) {
   const arr = safeLast(daily, 5);
   if (!arr) return false;
 
@@ -461,7 +450,7 @@ export function isSakataTripleBottom(daily) {
   );
 }
 
-export function isSakataSankuUp(daily) {
+function isSakataSankuUp(daily) {
   const arr = safeLast(daily, 4);
   if (!arr) return false;
 
@@ -469,7 +458,7 @@ export function isSakataSankuUp(daily) {
   return c2.o > c1.h && c3.o > c2.h && c4.o > c3.h;
 }
 
-export function isSakataSankuDown(daily) {
+function isSakataSankuDown(daily) {
   const arr = safeLast(daily, 4);
   if (!arr) return false;
 
@@ -477,7 +466,7 @@ export function isSakataSankuDown(daily) {
   return c2.o < c1.l && c3.o < c2.l && c4.o < c3.l;
 }
 
-export function isSakataSanpeiUp(daily) {
+function isSakataSanpeiUp(daily) {
   const arr = safeLast(daily, 3);
   if (!arr) return false;
 
@@ -497,7 +486,7 @@ export function isSakataSanpeiUp(daily) {
   );
 }
 
-export function isSakataSanpeiDown(daily) {
+function isSakataSanpeiDown(daily) {
   const arr = safeLast(daily, 3);
   if (!arr) return false;
 
@@ -517,7 +506,7 @@ export function isSakataSanpeiDown(daily) {
   );
 }
 
-export function isSakataSanpoUp(daily) {
+function isSakataSanpoUp(daily) {
   const arr = safeLast(daily, 5);
   if (!arr) return false;
 
@@ -528,7 +517,7 @@ export function isSakataSanpoUp(daily) {
   return bull(c1) && small(c2) && small(c3) && small(c4) && bull(c5) && c5.c > c1.c;
 }
 
-export function isSakataSanpoDown(daily) {
+function isSakataSanpoDown(daily) {
   const arr = safeLast(daily, 5);
   if (!arr) return false;
 
@@ -544,7 +533,7 @@ export function isSakataSanpoDown(daily) {
    三尊（Head and Shoulders）
 ========================================================================================== */
 
-export function isHeadAndShoulders(daily) {
+function isHeadAndShoulders(daily) {
   const arr = safeLast(daily, 5);
   if (!arr) return false;
 
@@ -570,7 +559,7 @@ export function isHeadAndShoulders(daily) {
    W底（Double Bottom）
 ========================================================================================== */
 
-export function isDoubleBottom(daily) {
+function isDoubleBottom(daily) {
   const arr = safeLast(daily, 5);
   if (!arr) return false;
 
@@ -595,7 +584,7 @@ export function isDoubleBottom(daily) {
    N大（上昇 N / 下降 N）
 ========================================================================================== */
 
-export function isNichiDai(daily) {
+function isNichiDai(daily) {
   const arr = safeLast(daily, 4);
   if (!arr) return false;
 
@@ -613,7 +602,7 @@ export function isNichiDai(daily) {
   return cond1 && cond2 && cond3;
 }
 
-export function isGyakuNichiDai(daily) {
+function isGyakuNichiDai(daily) {
   const arr = safeLast(daily, 4);
   if (!arr) return false;
 
@@ -636,7 +625,7 @@ export function isGyakuNichiDai(daily) {
    ものわかれ（Monowakare）
 ========================================================================================== */
 
-export function isMonowakareUp(daily) {
+function isMonowakareUp(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 26) return false;
 
@@ -663,7 +652,7 @@ export function isMonowakareUp(daily) {
   return cond1 && cond2;
 }
 
-export function isMonowakareDown(daily) {
+function isMonowakareDown(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 26) return false;
 
@@ -695,7 +684,7 @@ export function isMonowakareDown(daily) {
    ものわかれ（赤青交差：5MA × 20MA）
 ========================================================================================== */
 
-export function isMonowakareRedBlueCrossUp(daily) {
+function isMonowakareRedBlueCrossUp(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 76) return false;
 
@@ -719,7 +708,7 @@ export function isMonowakareRedBlueCrossUp(daily) {
   return cond1 && cond2;
 }
 
-export function isMonowakareRedBlueCrossDown(daily) {
+function isMonowakareRedBlueCrossDown(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 76) return false;
 
@@ -747,7 +736,7 @@ export function isMonowakareRedBlueCrossDown(daily) {
    Rule9（日足 / 週足）SAFE（direction / count のみ）
 ========================================================================================== */
 
-export function computeRule9Daily(daily) {
+function computeRule9Daily(daily) {
   const dates = Object.keys(daily).sort();
   const n = dates.length;
   if (n < 3) return { direction: null, count: 0 };
@@ -871,7 +860,7 @@ export function computeRule9Daily(daily) {
   return { direction: ruleDir, count: ruleCount };
 }
 
-export function computeRule9Weekly(weekly) {
+function computeRule9Weekly(weekly) {
   const dates = Object.keys(weekly).sort();
   const n = dates.length;
   if (n < 3) return { direction: null, count: 0 };
@@ -1036,7 +1025,7 @@ function getBbZone(candles) {
   return "0σ";
 }
 
-export function getBbZoneBreak(candles) {
+function getBbZoneBreak(candles) {
   const dates = Object.keys(candles).sort();
   if (dates.length < 22) return null;
 
@@ -1051,16 +1040,16 @@ export function getBbZoneBreak(candles) {
   return null;
 }
 
-export const isBbZoneBreakDaily = d => getBbZoneBreak(d) !== null;
-export const isBbZoneBreakWeekly = w => getBbZoneBreak(w) !== null;
-export const isBbZoneBreakMonthly = m => getBbZoneBreak(m) !== null;
+const isBbZoneBreakDaily = d => getBbZoneBreak(d) !== null;
+const isBbZoneBreakWeekly = w => getBbZoneBreak(w) !== null;
+const isBbZoneBreakMonthly = m => getBbZoneBreak(m) !== null;
 
 
 /* ==========================================================================================
    BOX RANGE（横ばい）
 ========================================================================================== */
 
-export function isBoxRange(daily) {
+function isBoxRange(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 120) return false;
 
@@ -1105,7 +1094,7 @@ export function isBoxRange(daily) {
    OVERHEAT（過熱）— TODO（仕様未確定）
 ========================================================================================== */
 
-export function isOverheat(daily) {
+function isOverheat(daily) {
   // TODO: 2026-06-19 泰長より仕様未確定。
   // RSI / 乖離率 / BB / MA など複数候補があるため、
   // 現時点では骨組みのみ実装し、常に false を返す。
@@ -1117,7 +1106,7 @@ export function isOverheat(daily) {
    グランビル（上昇 / 下降）
 ========================================================================================== */
 
-export function computeGranville(daily) {
+function computeGranville(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 80) return { direction: null, count: null };
 
@@ -1167,7 +1156,7 @@ export function computeGranville(daily) {
    In-In Harami（陰の陰はらみ）
 ========================================================================================== */
 
-export function isInInHarami(daily) {
+function isInInHarami(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 2) return false;
 
@@ -1201,7 +1190,7 @@ export function isInInHarami(daily) {
    戻り待ち売り後（Return Sell End）
 ========================================================================================== */
 
-export function isReturnSellEnd(daily) {
+function isReturnSellEnd(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 60) return false;
 
@@ -1248,7 +1237,7 @@ export function isReturnSellEnd(daily) {
    下降相場の終わり（Down Trend End）
 ========================================================================================== */
 
-export function isDownTrendEnd(daily) {
+function isDownTrendEnd(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 75) return false;
 
@@ -1282,7 +1271,7 @@ export function isDownTrendEnd(daily) {
    赤と青の交差（Red Blue Cross）
 ========================================================================================== */
 
-export function isRedBlueCross(daily) {
+function isRedBlueCross(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 25) return false;
 
@@ -1324,7 +1313,7 @@ export function isRedBlueCross(daily) {
    揉み合い（Momiai）
 ========================================================================================== */
 
-export function isMomiai(daily) {
+function isMomiai(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 100) return false;
 
@@ -1396,7 +1385,7 @@ export function isMomiai(daily) {
  *     そこから42営業日経過している（サイクルの前半〜中盤）。
  */
 
-export function computeCycleProgress(daily) {
+function computeCycleProgress(daily) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 60) return null;
 
@@ -1454,20 +1443,25 @@ function findFushimeLevel(daily, mode = "up") {
   return { price: target, tryCount: tries };
 }
 
-export function computeFushimeUp(daily) {
+function computeFushimeUp(daily) {
   return findFushimeLevel(daily, "up");
 }
 
-export function computeFushimeDown(daily) {
+function computeFushimeDown(daily) {
   return findFushimeLevel(daily, "down");
 }
 
 
 /* ==========================================================================================
-   エクスポート（全関数）
+   CommonJS エクスポート
 ========================================================================================== */
 
-export default {
+module.exports = {
+  calcMA,
+  safeCalcMA,
+  safeLast,
+  safeGetPrevCandles,
+
   isMaSlopeUpDaily,
   isMaSlopeDownDaily,
   isMaSlopeUpWeekly,
