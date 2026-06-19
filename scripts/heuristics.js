@@ -2,12 +2,12 @@
  * heuristics.js — heuristics_YYYYMMDD.json 生成
  ********************************************************************************************/
 
-import fetch from "node-fetch";
-import fs from "fs";
-import xlsx from "xlsx";
-import path from "path";
+const fetch = require("node-fetch");
+const fs = require("fs");
+const xlsx = require("xlsx");
+const path = require("path");
 
-import hc from "./heuristics_conditions.js";
+const hc = require("./heuristics_conditions.js");
 
 /* ==========================================================================================
    1. Excel から銘柄コードを読み込む
