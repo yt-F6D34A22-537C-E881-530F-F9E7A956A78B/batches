@@ -1,13 +1,5 @@
 name: 【heuristics.yml】Generate heuristics_YYYYMMDD.json (経験則スクリーニング)
 
-permissions:
-  contents: write
-
-# 複数のworkflowの同時実行を禁止
-concurrency:
-  group: auto-update
-  cancel-in-progress: false
-
 on:
   schedule:
     # - cron: "0 23 * * *"  # JST 08:00（fetch の 1 時間後）
@@ -15,6 +7,14 @@ on:
     - cron: "0 10 * * *"  # JST 19:00（fetch の 1 時間後）
     - cron: "0 12 * * *"  # JST 21:00（fetch の 1 時間後）
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+# 複数のworkflowの同時実行を禁止
+concurrency:
+  group: auto-update
+  cancel-in-progress: false
 
 jobs:
   heuristics:
