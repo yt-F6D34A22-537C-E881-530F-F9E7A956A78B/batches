@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+# 複数のworkflowの同時実行を禁止
+concurrency:
+  group: auto-update
+  cancel-in-progress: false
+
 jobs:
   fetch-convert-commit:
     runs-on: ubuntu-latest
