@@ -3,6 +3,11 @@ name: 【heuristics.yml】Generate heuristics_YYYYMMDD.json (経験則スクリ�
 permissions:
   contents: write
 
+# 複数のworkflowの同時実行を禁止
+concurrency:
+  group: auto-update
+  cancel-in-progress: false
+
 on:
   schedule:
     # - cron: "0 23 * * *"  # JST 08:00（fetch の 1 時間後）
