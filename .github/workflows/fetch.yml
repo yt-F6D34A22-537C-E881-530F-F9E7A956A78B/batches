@@ -1,13 +1,5 @@
 name: 【fetch.yml】Fetch Yahoo Finance Chart Data
 
-permissions:
-  contents: write
-
-# 複数のworkflowの同時実行を禁止
-concurrency:
-  group: auto-update
-  cancel-in-progress: false
-
 on:
   schedule:
     - cron: "0 22 * * *"  # JST 07:00 = UTC 22:00（前日）
@@ -15,6 +7,14 @@ on:
     - cron: "0 9 * * *"   # JST 18:00 = UTC 09:00
     - cron: "0 11 * * *"  # JST 20:00 = UTC 11:00
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+# 複数のworkflowの同時実行を禁止
+concurrency:
+  group: auto-update
+  cancel-in-progress: false
 
 jobs:
   fetch:
