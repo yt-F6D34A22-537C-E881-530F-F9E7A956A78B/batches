@@ -1,11 +1,18 @@
+/********************************************************************************************
+ * heuristics.js — heuristics_YYYYMMDD.json 生成
+ ********************************************************************************************/
+
 import fetch from "node-fetch";
 import fs from "fs";
 import xlsx from "xlsx";
 import path from "path";
 
-// ---------------------------------------------------------
-// 1. Excel から銘柄コードを読み込む
-// ---------------------------------------------------------
+import hc from "./heuristics_conditions.js";
+
+/* ==========================================================================================
+   1. Excel から銘柄コードを読み込む
+========================================================================================== */
+
 const workbook = xlsx.readFile("data/data_j.xlsx");
 const sheet = workbook.Sheets["Sheet1"];
 const rows = xlsx.utils.sheet_to_json(sheet);
@@ -55,11 +62,10 @@ if (symbols.length === 0) {
 // // ★ テストモード（複数銘柄）↑↑ここまで。
 // // ---------------------------------------------------------
 
+/* ==========================================================================================
+   2. Yahoo Finance API（足種別に取得）
+========================================================================================== */
 
-
-// ---------------------------------------------------------
-// 2. Yahoo Finance API（足種別に取得）
-// ---------------------------------------------------------
 async function fetchCandles(code, interval, range) {
   const symbol = `${code}.T`;  // ← Yahoo API 用に .T を付ける
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
@@ -103,124 +109,139 @@ async function fetchCandles(code, interval, range) {
     }
 
     return result;
-
   } catch (err) {
     return { error: "Network or fetch error" };
   }
 }
 
-// ---------------------------------------------------------
-// 3. heuristics_conditions.js
-// ---------------------------------------------------------
-import {
-  isMaSlopeUpDaily, isMaSlopeDownDaily,
-  isMaSlopeUpWeekly, isMaSlopeDownWeekly,
-  isMaSlopeUpMonthly, isMaSlopeDownMonthly,
-  isPerfectOrderDaily, isReversePerfectOrderDaily,
-  isPerfectOrderWeekly, isReversePerfectOrderWeekly,
-  isPerfectOrderMonthly, isReversePerfectOrderMonthly,
-  isPrePerfectOrder, isPreReversePerfectOrder,
-  isMaCongestionUp, isMaCongestionDown,
-  isMaSpreadUp, isMaSpreadDown,
-  isMa100TrendUp, isMa100TrendDown,
-  isKahanshin, isGyakuKahanshin,
-  is5MaHighUpdate, is5MaLowUpdate,
-  isSakataTripleTop, isSakataTripleBottom,
-  isSakataSankuUp, isSakataSankuDown,
-  isSakataSanpeiUp, isSakataSanpeiDown,
-  isSakataSanpoUp, isSakataSanpoDown,
-  isHeadAndShoulders,
-  isDoubleBottom,
-  isNichiDai, isGyakuNichiDai,
-  isMonowakareUp, isMonowakareDown,
-  isMonowakareCrossUp, isMonowakareCrossDown,
-  computeRule9Daily, computeRule9Weekly,
-  isRule9DailyUp9, isRule9DailyUp17, isRule9DailyUp23,
-  isRule9DailyDown9, isRule9DailyDown17, isRule9DailyDown23,
-  isRule9WeeklyUp9, isRule9WeeklyUp17, isRule9WeeklyUp23,
-  isRule9WeeklyDown9, isRule9WeeklyDown17, isRule9WeeklyDown23,
-} from "./heuristics_conditions.js";
 
-// ---------------------------------------------------------
-// 4. 条件実行まとめ
-// ---------------------------------------------------------
+/* ==========================================================================================
+   3. 条件実行まとめ
+========================================================================================== */
+
 function runAllConditions(daily, weekly, monthly) {
+  const slope = (up, down) => (up ? "up" : down ? "down" : "flat");
+  const mono = (up, down) => (up ? "up" : down ? "down" : "flat");
+
+  const rule9Daily = hc.computeRule9Daily(daily);
+  const rule9Weekly = hc.computeRule9Weekly(weekly);
+
+  const fushimeUp = hc.computeFushimeUp(daily);
+  const fushimeDown = hc.computeFushimeDown(daily);
+
+  const granville = hc.computeGranville(daily);
+  const cycle = hc.computeCycleProgress(daily);
+
   return {
-    TECH_MA_SLOPE_UP_DAILY: isMaSlopeUpDaily(daily),
-    TECH_MA_SLOPE_DOWN_DAILY: isMaSlopeDownDaily(daily),
-    TECH_MA_SLOPE_UP_WEEKLY: isMaSlopeUpWeekly(weekly),
-    TECH_MA_SLOPE_DOWN_WEEKLY: isMaSlopeDownWeekly(weekly),
-    TECH_MA_SLOPE_UP_MONTHLY: isMaSlopeUpMonthly(monthly),
-    TECH_MA_SLOPE_DOWN_MONTHLY: isMaSlopeDownMonthly(monthly),
+    /* MA SLOPE */
+    TECH_MA_SLOPE_DAILY: slope(hc.isMaSlopeUpDaily(daily), hc.isMaSlopeDownDaily(daily)),
+    TECH_MA_SLOPE_WEEKLY: slope(hc.isMaSlopeUpWeekly(weekly), hc.isMaSlopeDownWeekly(weekly)),
+    TECH_MA_SLOPE_MONTHLY: slope(hc.isMaSlopeUpMonthly(monthly), hc.isMaSlopeDownMonthly(monthly)),
 
-    TECH_MA_PO_DAILY: isPerfectOrderDaily(daily),
-    TECH_MA_RPO_DAILY: isReversePerfectOrderDaily(daily),
-    TECH_MA_PO_WEEKLY: isPerfectOrderWeekly(weekly),
-    TECH_MA_RPO_WEEKLY: isReversePerfectOrderWeekly(weekly),
-    TECH_MA_PO_MONTHLY: isPerfectOrderMonthly(monthly),
-    TECH_MA_RPO_MONTHLY: isReversePerfectOrderMonthly(monthly),
+    /* MA POSITION */
+    TECH_MA_POSITION_DAILY: hc.isMaPositionDaily(daily),
+    TECH_MA_POSITION_WEEKLY: hc.isMaPositionWeekly(weekly),
+    TECH_MA_POSITION_MONTHLY: hc.isMaPositionMonthly(monthly),
 
-    TECH_MA_PRE_PO: isPrePerfectOrder(daily),
-    TECH_MA_PRE_RPO: isPreReversePerfectOrder(daily),
+    /* PERFECT ORDER */
+    TECH_PERFECT_ORDER_DAILY: hc.isPerfectOrderDaily(daily),
+    TECH_PERFECT_ORDER_WEEKLY: hc.isPerfectOrderWeekly(weekly),
+    TECH_PERFECT_ORDER_MONTHLY: hc.isPerfectOrderMonthly(monthly),
 
-    TECH_MA_CONGESTION_UP: isMaCongestionUp(daily),
-    TECH_MA_CONGESTION_DOWN: isMaCongestionDown(daily),
+    TECH_REVERSE_PERFECT_ORDER_DAILY: hc.isReversePerfectOrderDaily(daily),
+    TECH_REVERSE_PERFECT_ORDER_WEEKLY: hc.isReversePerfectOrderWeekly(weekly),
+    TECH_REVERSE_PERFECT_ORDER_MONTHLY: hc.isReversePerfectOrderMonthly(monthly),
 
-    TECH_MA_SPREAD_UP: isMaSpreadUp(daily),
-    TECH_MA_SPREAD_DOWN: isMaSpreadDown(daily),
+    /* PRE-PO / PRE-RPO */
+    TECH_PRE_PERFECT_ORDER_DAILY: hc.isPrePerfectOrderDaily(daily),
+    TECH_PRE_PERFECT_ORDER_WEEKLY: hc.isPrePerfectOrderWeekly(weekly),
+    TECH_PRE_PERFECT_ORDER_MONTHLY: hc.isPrePerfectOrderMonthly(monthly),
 
-    TECH_MA100_TREND_UP: isMa100TrendUp(daily),
-    TECH_MA100_TREND_DOWN: isMa100TrendDown(daily),
+    TECH_PRE_REVERSE_PERFECT_ORDER_DAILY: hc.isPreReversePerfectOrderDaily(daily),
+    TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY: hc.isPreReversePerfectOrderWeekly(weekly),
+    TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY: hc.isPreReversePerfectOrderMonthly(monthly),
 
-    TECH_KAHANSHIN: isKahanshin(daily),
-    TECH_GYAKU_KAHANSHIN: isGyakuKahanshin(daily),
+    /* MA CONGESTION */
+    TECH_MA_CONGESTION: hc.isMaCongestion(daily),
 
-    TECH_5MA_HIGH_UPDATE: is5MaHighUpdate(daily),
-    TECH_5MA_LOW_UPDATE: is5MaLowUpdate(daily),
+    /* MA SPREAD */
+    TECH_MA_SPREAD: slope(
+      hc.isMaSpreadUp(daily) === "up",
+      hc.isMaSpreadUp(daily) === "down"
+    ),
 
-    TECH_SAKATA_TRIPLE_TOP: isSakataTripleTop(daily),
-    TECH_SAKATA_TRIPLE_BOTTOM: isSakataTripleBottom(daily),
-    TECH_SAKATA_SANKU_UP: isSakataSankuUp(daily),
-    TECH_SAKATA_SANKU_DOWN: isSakataSankuDown(daily),
-    TECH_SAKATA_SANPEI_UP: isSakataSanpeiUp(daily),
-    TECH_SAKATA_SANPEI_DOWN: isSakataSanpeiDown(daily),
-    TECH_SAKATA_SANPO_UP: isSakataSanpoUp(daily),
-    TECH_SAKATA_SANPO_DOWN: isSakataSanpoDown(daily),
+    /* MA100 TREND */
+    TECH_MA100_TREND: hc.isMa100Trend(daily),
 
-    TECH_HEAD_AND_SHOULDERS: isHeadAndShoulders(daily),
-    TECH_DOUBLE_BOTTOM: isDoubleBottom(daily),
-    TECH_NICHI_DAI: isNichiDai(daily),
-    TECH_GYAKU_NICHI_DAI: isGyakuNichiDai(daily),
+    /* 下半身 */
+    TECH_KAHANSHIN: hc.isKahanshin(daily),
+    TECH_GYAKU_KAHANSHIN: hc.isGyakuKahanshin(daily),
 
-    TECH_MONOWAKARE_UP: isMonowakareUp(daily),
-    TECH_MONOWAKARE_DOWN: isMonowakareDown(daily),
-    TECH_MONOWAKARE_CROSS_UP: isMonowakareCrossUp(daily),
-    TECH_MONOWAKARE_CROSS_DOWN: isMonowakareCrossDown(daily),
+    /* 5MA UPDATE */
+    TECH_5MA_UPDATE: slope(
+      hc.is5MaHighUpdate(daily),
+      hc.is5MaLowUpdate(daily)
+    ),
 
-    TECH_RULE9_DAILY: computeRule9Daily(daily),
-    TECH_RULE9_WEEKLY: computeRule9Weekly(weekly),
+    /* 酒田五法 */
+    TECH_SAKATA_TRIPLE_TOP: hc.isSakataTripleTop(daily) ? 1 : null,
+    TECH_SAKATA_TRIPLE_BOTTOM: hc.isSakataTripleBottom(daily) ? 1 : null,
+    TECH_SAKATA_SANKU_UP: hc.isSakataSankuUp(daily) ? 1 : null,
+    TECH_SAKATA_SANKU_DOWN: hc.isSakataSankuDown(daily) ? 1 : null,
+    TECH_SAKATA_SANPEI_UP: hc.isSakataSanpeiUp(daily) ? 1 : null,
+    TECH_SAKATA_SANPEI_DOWN: hc.isSakataSanpeiDown(daily) ? 1 : null,
+    TECH_SAKATA_SANPO_UP: hc.isSakataSanpoUp(daily) ? 1 : null,
+    TECH_SAKATA_SANPO_DOWN: hc.isSakataSanpoDown(daily) ? 1 : null,
 
-    TECH_RULE9_DAILY_UP_9: isRule9DailyUp9(daily),
-    TECH_RULE9_DAILY_UP_17: isRule9DailyUp17(daily),
-    TECH_RULE9_DAILY_UP_23: isRule9DailyUp23(daily),
+    /* パターン */
+    TECH_HEAD_AND_SHOULDERS: hc.isHeadAndShoulders(daily),
+    TECH_DOUBLE_BOTTOM: hc.isDoubleBottom(daily),
+    TECH_NICHI_DAI: hc.isNichiDai(daily),
+    TECH_GYAKU_NICHI_DAI: hc.isGyakuNichiDai(daily),
 
-    TECH_RULE9_DAILY_DOWN_9: isRule9DailyDown9(daily),
-    TECH_RULE9_DAILY_DOWN_17: isRule9DailyDown17(daily),
-    TECH_RULE9_DAILY_DOWN_23: isRule9DailyDown23(daily),
+    TECH_MONOWAKARE: mono(hc.isMonowakareUp(daily), hc.isMonowakareDown(daily)),
+    TECH_MONOWAKARE_RED_BLUE_CROSS: mono(
+      hc.isMonowakareRedBlueCrossUp(daily),
+      hc.isMonowakareRedBlueCrossDown(daily)
+    ),
 
-    TECH_RULE9_WEEKLY_UP_9: isRule9WeeklyUp9(weekly),
-    TECH_RULE9_WEEKLY_UP_17: isRule9WeeklyUp17(weekly),
-    TECH_RULE9_WEEKLY_UP_23: isRule9WeeklyUp23(weekly),
+    /* Rule9 */
+    TECH_RULE9_DAILY: rule9Daily,
+    TECH_RULE9_WEEKLY: rule9Weekly,
 
-    TECH_RULE9_WEEKLY_DOWN_9: isRule9WeeklyDown9(weekly),
-    TECH_RULE9_WEEKLY_DOWN_17: isRule9WeeklyDown17(weekly),
-    TECH_RULE9_WEEKLY_DOWN_23: isRule9WeeklyDown23(weekly),
+    /* BB ZONE BREAK（boolean） */
+    TECH_BB_ZONE_BREAK_DAILY: hc.isBbZoneBreakDaily(daily),
+    TECH_BB_ZONE_BREAK_WEEKLY: hc.isBbZoneBreakWeekly(weekly),
+    TECH_BB_ZONE_BREAK_MONTHLY: hc.isBbZoneBreakMonthly(monthly),
+
+    /* BOX RANGE */
+    TECH_BOX_RANGE: hc.isBoxRange(daily),
+
+    /* OVERHEAT */
+    TECH_OVERHEAT: hc.isOverheat(daily),
+
+    /* GRANVILLE */
+    TECH_GRANVILLE: granville,
+
+    /* In-In / ReturnSellEnd / DownTrendEnd / Momiai */
+    TECH_IN_IN_HARAMI: hc.isInInHarami(daily),
+    TECH_RETURN_SELL_END: hc.isReturnSellEnd(daily),
+    TECH_DOWN_TREND_END: hc.isDownTrendEnd(daily),
+    TECH_MOMIAI: hc.isMomiai(daily),
+
+    /* Cycle Progress（number|null） */
+    TECH_CYCLE_PROGRESS: cycle ? cycle.daysFromLastSwing : null,
+
+    /* Fushime */
+    TECH_FUSHIME_UP: fushimeUp,
+    TECH_FUSHIME_DOWN: fushimeDown
   };
 }
 
-// ---------------------------------------------------------
-// 5. メイン処理
-// ---------------------------------------------------------
+/* ==========================================================================================
+   4. メイン処理
+========================================================================================== */
+
 async function main() {
   let finalData = {};
   let latestDateGlobal = null;
@@ -254,13 +275,11 @@ async function main() {
     
     // 判定
     const insufficient =
-      dailyCount   < needDaily ||
-      weeklyCount  < needWeekly ||
-      monthlyCount < needMonthly;
+      dailyCount < needDaily || weeklyCount < needWeekly || monthlyCount < needMonthly;
 
     if (insufficient) {
-      const dailyMsg   = `${dailyCount}  ${dailyCount   >= needDaily   ? ">" : "<"} ${needDaily} required`;
-      const weeklyMsg  = `${weeklyCount} ${weeklyCount  >= needWeekly  ? ">" : "<"} ${needWeekly} required`;
+      const dailyMsg = `${dailyCount}  ${dailyCount >= needDaily ? ">" : "<"} ${needDaily} required`;
+      const weeklyMsg = `${weeklyCount} ${weeklyCount >= needWeekly ? ">" : "<"} ${needWeekly} required`;
       const monthlyMsg = `${monthlyCount} ${monthlyCount >= needMonthly ? ">" : "<"} ${needMonthly} required`;
 
       console.log(`Skipping ${code} due to insufficient candles. {`);
@@ -268,12 +287,11 @@ async function main() {
       console.log(`  weekly:  ${weeklyMsg},`);
       console.log(`  monthly: ${monthlyMsg}`);
       console.log(`}`);
-      
       finalData[code] = { error: "insufficient candles" };
       continue;
     }
 
-    // ★ 最新日付を更新
+    // 最新日付を更新
     const latestDate = Object.keys(daily).sort().pop();
     if (!latestDateGlobal || latestDate > latestDateGlobal) {
       latestDateGlobal = latestDate;
@@ -284,28 +302,16 @@ async function main() {
     await new Promise(r => setTimeout(r, 500));
   }
 
-  // ---------------------------------------------------------
-  // ★ 保存先フォルダ（data/heuristics/YYYYMM）を作成
-  // ---------------------------------------------------------
+  /* 保存先フォルダ（data/heuristics/YYYYMM）を作成 */
   const yyyymm = latestDateGlobal.slice(0, 6);
   const heuristicsDir = `data/heuristics/${yyyymm}`;
+  if (!fs.existsSync(heuristicsDir)) fs.mkdirSync(heuristicsDir, { recursive: true });
 
-  if (!fs.existsSync("data/heuristics")) {
-    fs.mkdirSync("data/heuristics", { recursive: true });
-  }
-  if (!fs.existsSync(heuristicsDir)) {
-    fs.mkdirSync(heuristicsDir, { recursive: true });
-  }
-
-  // ---------------------------------------------------------
-  // ★ heuristics_YYYYMMDD.json を保存
-  // ---------------------------------------------------------
+  /* heuristics_YYYYMMDD.json を保存 */
   const outFile = `${heuristicsDir}/heuristics_${latestDateGlobal}.json`;
   fs.writeFileSync(outFile, JSON.stringify(finalData, null, 2));
 
-  // ---------------------------------------------------------
-  // ★ バックアップ（data/backup/heuristics_YYYYMMDD.json.TIMESTAMP）
-  // ---------------------------------------------------------
+  /* バックアップ処理（data/backup/heuristics_YYYYMMDD.json.TIMESTAMP） */
   const backupDir = "data/backup";
   if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
 
@@ -315,7 +321,8 @@ async function main() {
   const timestamp =
     now.getFullYear().toString() +
     pad(now.getMonth() + 1) +
-    pad(now.getDate()) + "_" +
+    pad(now.getDate()) +
+    "_" +
     pad(now.getHours()) +
     pad(now.getMinutes()) +
     pad(now.getSeconds());
@@ -323,9 +330,7 @@ async function main() {
   const backupFile = path.join(backupDir, `heuristics_${latestDateGlobal}.json.${timestamp}`);
   fs.copyFileSync(outFile, backupFile);
 
-  // ---------------------------------------------------------
-  // ★ バックアップ最新 8 件だけ残す
-  // ---------------------------------------------------------
+  /* バックアップ最新 8 件だけ残す */
   const files = fs
     .readdirSync(backupDir)
     .filter(f => f.startsWith("heuristics_") && f.includes(".json."))
