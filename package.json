@@ -1,0 +1,13 @@
+{
+  "name": "batches",
+  "version": "1.0.0",
+  "description": "Technical screening and heuristics generation scripts for JPX stocks.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "heuristics": "node scripts/heuristics.js",
+    "fetch": "node scripts/fetch.js",
+    "margin": "node scripts/margin.js",
+    "download-jpx": "node scripts/download-jpx-xlsx.js"
+  }
+}
