@@ -1456,7 +1456,7 @@ function computeFushimeDown(daily) {
    エクスポート
 ========================================================================================== */
 
-export = {
+export {
   calcMA,
   safeCalcMA,
   safeLast,
