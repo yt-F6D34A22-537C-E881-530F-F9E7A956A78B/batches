@@ -7,7 +7,7 @@ import fs from "fs";
 import xlsx from "xlsx";
 import path from "path";
 
-import hc from "./heuristics_conditions.js";
+import * as hc from "./heuristics_conditions.js";
 
 /* ==========================================================================================
    1. Excel から銘柄コードを読み込む
