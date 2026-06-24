@@ -1462,6 +1462,7 @@ export {
   safeLast,
   safeGetPrevCandles,
 
+  /* 移動平均線の傾き */
   isMaSlopeUpDaily,
   isMaSlopeDownDaily,
   isMaSlopeUpWeekly,
@@ -1469,36 +1470,49 @@ export {
   isMaSlopeUpMonthly,
   isMaSlopeDownMonthly,
 
+  /* 移動平均線の位置 */
   isMaPositionDaily,
   isMaPositionWeekly,
   isMaPositionMonthly,
 
+  /* パーフェクトオーダー */
   isPerfectOrderDaily,
   isPerfectOrderWeekly,
   isPerfectOrderMonthly,
 
+  /* 逆パーフェクトオーダー */
   isReversePerfectOrderDaily,
   isReversePerfectOrderWeekly,
   isReversePerfectOrderMonthly,
 
+  /* パーフェクトオーダー前夜 */
   isPrePerfectOrderDaily,
   isPrePerfectOrderWeekly,
   isPrePerfectOrderMonthly,
 
+  /* 逆パーフェクトオーダー前夜 */
   isPreReversePerfectOrderDaily,
   isPreReversePerfectOrderWeekly,
   isPreReversePerfectOrderMonthly,
 
+  /* 移動平均線の収束 */
   isMaCongestion,
+
+  /* 移動平均線の拡散 */
   isMaSpreadUp,
+
+  /* 100MAトレンド */
   isMa100Trend,
 
+  /* 下半身・逆下半身 */
   isKahanshin,
   isGyakuKahanshin,
 
+  /* 5MA更新 */
   is5MaHighUpdate,
   is5MaLowUpdate,
 
+  /* 酒田五法 */
   isSakataTripleTop,
   isSakataTripleBottom,
   isSakataSankuUp,
@@ -1508,36 +1522,46 @@ export {
   isSakataSanpoUp,
   isSakataSanpoDown,
 
+  /* パターン */
   isHeadAndShoulders,
   isDoubleBottom,
   isNichiDai,
   isGyakuNichiDai,
-
-  isMonowakareUp,
-  isMonowakareDown,
-  isMonowakareRedBlueCrossUp,
-  isMonowakareRedBlueCrossDown,
-
-  computeRule9Daily,
-  computeRule9Weekly,
-
-  isBbZoneBreakDaily,
-  isBbZoneBreakWeekly,
-  isBbZoneBreakMonthly,
-
-  isBoxRange,
-  isOverheat,
-
-  computeGranville,
-
   isInInHarami,
+  isRedBlueCross,
   isReturnSellEnd,
   isDownTrendEnd,
   isRedBlueCross,
   isMomiai,
 
+  /* 物別れ */
+  isMonowakareUp,
+  isMonowakareDown,
+  isMonowakareRedBlueCrossUp,
+  isMonowakareRedBlueCrossDown,
+
+  /* 9の法則 */
+  computeRule9Daily,
+  computeRule9Weekly,
+
+  /* BBゾーンブレイク */
+  isBbZoneBreakDaily,
+  isBbZoneBreakWeekly,
+  isBbZoneBreakMonthly,
+
+  /* ボックスレンジ */
+  isBoxRange,
+
+  /* 過熱 */
+  isOverheat,
+
+  /* グランビル */
+  computeGranville,
+
+  /* トレンドサイクル進行度 */
   computeCycleProgress,
 
+  /* 節目 */
   computeFushimeUp,
   computeFushimeDown
 };
