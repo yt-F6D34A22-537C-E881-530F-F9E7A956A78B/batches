@@ -205,6 +205,7 @@ function runAllConditions(daily, weekly, monthly) {
     TECH_NICHI_DAI: hc.isNichiDai(daily),
     TECH_GYAKU_NICHI_DAI: hc.isGyakuNichiDai(daily),
     TECH_IN_IN_HARAMI: hc.isInInHarami(daily),
+    TECH_RED_BLUE_CROSS : hc.isRedBlueCross(daily),
     TECH_RETURN_SELL_END: hc.isReturnSellEnd(daily),
     TECH_DOWN_TREND_END: hc.isDownTrendEnd(daily),
     TECH_MOMIAI: hc.isMomiai(daily),
