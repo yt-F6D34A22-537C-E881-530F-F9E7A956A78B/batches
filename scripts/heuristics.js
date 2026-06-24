@@ -137,51 +137,53 @@ function runAllConditions(daily, weekly, monthly) {
   const cycle = hc.computeCycleProgress(daily);
 
   return {
-    /* MA SLOPE */
+    /* 移動平均線の傾き */
     TECH_MA_SLOPE_DAILY: slope(hc.isMaSlopeUpDaily(daily), hc.isMaSlopeDownDaily(daily)),
     TECH_MA_SLOPE_WEEKLY: slope(hc.isMaSlopeUpWeekly(weekly), hc.isMaSlopeDownWeekly(weekly)),
     TECH_MA_SLOPE_MONTHLY: slope(hc.isMaSlopeUpMonthly(monthly), hc.isMaSlopeDownMonthly(monthly)),
 
-    /* MA POSITION */
+    /* 移動平均線の位置 */
     TECH_MA_POSITION_DAILY: hc.isMaPositionDaily(daily),
     TECH_MA_POSITION_WEEKLY: hc.isMaPositionWeekly(weekly),
     TECH_MA_POSITION_MONTHLY: hc.isMaPositionMonthly(monthly),
 
-    /* PERFECT ORDER */
+    /* パーフェクトオーダー */
     TECH_PERFECT_ORDER_DAILY: hc.isPerfectOrderDaily(daily),
     TECH_PERFECT_ORDER_WEEKLY: hc.isPerfectOrderWeekly(weekly),
     TECH_PERFECT_ORDER_MONTHLY: hc.isPerfectOrderMonthly(monthly),
 
+    /* 逆パーフェクトオーダー */
     TECH_REVERSE_PERFECT_ORDER_DAILY: hc.isReversePerfectOrderDaily(daily),
     TECH_REVERSE_PERFECT_ORDER_WEEKLY: hc.isReversePerfectOrderWeekly(weekly),
     TECH_REVERSE_PERFECT_ORDER_MONTHLY: hc.isReversePerfectOrderMonthly(monthly),
 
-    /* PRE-PO / PRE-RPO */
+    /* パーフェクトオーダー前夜 */
     TECH_PRE_PERFECT_ORDER_DAILY: hc.isPrePerfectOrderDaily(daily),
     TECH_PRE_PERFECT_ORDER_WEEKLY: hc.isPrePerfectOrderWeekly(weekly),
     TECH_PRE_PERFECT_ORDER_MONTHLY: hc.isPrePerfectOrderMonthly(monthly),
 
+    /* 逆パーフェクトオーダー前夜 */
     TECH_PRE_REVERSE_PERFECT_ORDER_DAILY: hc.isPreReversePerfectOrderDaily(daily),
     TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY: hc.isPreReversePerfectOrderWeekly(weekly),
     TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY: hc.isPreReversePerfectOrderMonthly(monthly),
 
-    /* MA CONGESTION */
+    /* 移動平均線の収束 */
     TECH_MA_CONGESTION: hc.isMaCongestion(daily),
 
-    /* MA SPREAD */
+    /* 移動平均線の拡散 */
     TECH_MA_SPREAD: slope(
       hc.isMaSpreadUp(daily) === "up",
       hc.isMaSpreadUp(daily) === "down"
     ),
 
-    /* MA100 TREND */
+    /* 100MAトレンド */
     TECH_MA100_TREND: hc.isMa100Trend(daily),
 
-    /* 下半身 */
+    /* 下半身・逆下半身 */
     TECH_KAHANSHIN: hc.isKahanshin(daily),
     TECH_GYAKU_KAHANSHIN: hc.isGyakuKahanshin(daily),
 
-    /* 5MA UPDATE */
+    /* 5MA更新 */
     TECH_5MA_UPDATE: slope(
       hc.is5MaHighUpdate(daily),
       hc.is5MaLowUpdate(daily)
@@ -202,41 +204,40 @@ function runAllConditions(daily, weekly, monthly) {
     TECH_DOUBLE_BOTTOM: hc.isDoubleBottom(daily),
     TECH_NICHI_DAI: hc.isNichiDai(daily),
     TECH_GYAKU_NICHI_DAI: hc.isGyakuNichiDai(daily),
+    TECH_IN_IN_HARAMI: hc.isInInHarami(daily),
+    TECH_RETURN_SELL_END: hc.isReturnSellEnd(daily),
+    TECH_DOWN_TREND_END: hc.isDownTrendEnd(daily),
+    TECH_MOMIAI: hc.isMomiai(daily),
 
+    /* 物別れ */
     TECH_MONOWAKARE: mono(hc.isMonowakareUp(daily), hc.isMonowakareDown(daily)),
     TECH_MONOWAKARE_RED_BLUE_CROSS: mono(
       hc.isMonowakareRedBlueCrossUp(daily),
       hc.isMonowakareRedBlueCrossDown(daily)
     ),
 
-    /* Rule9 */
+    /* 9の法則 */
     TECH_RULE9_DAILY: rule9Daily,
     TECH_RULE9_WEEKLY: rule9Weekly,
 
-    /* BB ZONE BREAK（boolean） */
+    /* BBゾーンブレイク */
     TECH_BB_ZONE_BREAK_DAILY: hc.isBbZoneBreakDaily(daily),
     TECH_BB_ZONE_BREAK_WEEKLY: hc.isBbZoneBreakWeekly(weekly),
     TECH_BB_ZONE_BREAK_MONTHLY: hc.isBbZoneBreakMonthly(monthly),
 
-    /* BOX RANGE */
+    /* ボックスレンジ */
     TECH_BOX_RANGE: hc.isBoxRange(daily),
 
-    /* OVERHEAT */
+    /* 過熱 */
     TECH_OVERHEAT: hc.isOverheat(daily),
 
-    /* GRANVILLE */
+    /* グランビル */
     TECH_GRANVILLE: granville,
 
-    /* In-In / ReturnSellEnd / DownTrendEnd / Momiai */
-    TECH_IN_IN_HARAMI: hc.isInInHarami(daily),
-    TECH_RETURN_SELL_END: hc.isReturnSellEnd(daily),
-    TECH_DOWN_TREND_END: hc.isDownTrendEnd(daily),
-    TECH_MOMIAI: hc.isMomiai(daily),
-
-    /* Cycle Progress（number|null） */
+    /* トレンドサイクル進行度 */
     TECH_CYCLE_PROGRESS: cycle ? cycle.daysFromLastSwing : null,
 
-    /* Fushime */
+    /* 節目 */
     TECH_FUSHIME_UP: fushimeUp,
     TECH_FUSHIME_DOWN: fushimeDown
   };
