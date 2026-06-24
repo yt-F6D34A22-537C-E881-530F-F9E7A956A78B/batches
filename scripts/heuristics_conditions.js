@@ -173,7 +173,7 @@ const isReversePerfectOrderMonthly = m => isReversePerfectOrder(m, 5, 12, 24);
 
 
 /* ==========================================================================================
-   PRE-PO / PRE-RPO
+   パーフェクトオーダー前夜 / 逆パーフェクトオーダー前夜
 ========================================================================================== */
 
 function countReverseForPO(maS, maM, maL) {
@@ -240,7 +240,7 @@ function isPreReversePerfectOrderMonthly(monthly) {
 
 
 /* ==========================================================================================
-   MA 密集（5/10/20）
+   移動平均線の収束（5/10/20）
 ========================================================================================== */
 
 function isMaCongestion(daily) {
@@ -258,7 +258,7 @@ function isMaCongestion(daily) {
 
 
 /* ==========================================================================================
-   MA 間隔（Spread）
+   移動平均線の拡散
 ========================================================================================== */
 
 function isMaSpreadUp(daily) {
@@ -287,7 +287,7 @@ function isMaSpreadUp(daily) {
 
 
 /* ==========================================================================================
-   MA100 トレンド
+   100MAトレンド
 ========================================================================================== */
 
 function isMa100Trend(daily) {
@@ -368,7 +368,7 @@ function isGyakuKahanshin(daily) {
 
 
 /* ==========================================================================================
-   5日線更新
+   5MA更新
 ========================================================================================== */
 
 function is5MaHighUpdate(daily) {
@@ -530,6 +530,9 @@ function isSakataSanpoDown(daily) {
 
 
 /* ==========================================================================================
+   パターン
+========================================================================================== */
+/* ==========================================================================================
    三尊（Head and Shoulders）
 ========================================================================================== */
 
@@ -581,7 +584,7 @@ function isDoubleBottom(daily) {
 
 
 /* ==========================================================================================
-   N大（上昇 N / 下降 N）
+   N大 / 逆N大
 ========================================================================================== */
 
 function isNichiDai(daily) {
@@ -620,9 +623,205 @@ function isGyakuNichiDai(daily) {
   return cond1 && cond2 && cond3;
 }
 
+/* ==========================================================================================
+   陰の陰はらみ
+========================================================================================== */
+
+function isInInHarami(daily) {
+  const dates = Object.keys(daily).sort();
+  if (dates.length < 2) return false;
+
+  const last = dates[dates.length - 1];
+  const prev = dates[dates.length - 2];
+
+  const c1 = daily[prev];
+  const c2 = daily[last];
+
+  if (!(c1.c < c1.o && c2.c < c2.o)) return false;
+
+  const body1High = Math.max(c1.o, c1.c);
+  const body1Low = Math.min(c1.o, c1.c);
+  const body2High = Math.max(c2.o, c2.c);
+  const body2Low = Math.min(c2.o, c2.c);
+
+  const inside = body2High <= body1High && body2Low >= body1Low;
+
+  const lookback = Math.min(10, dates.length);
+  const lows = dates.slice(-lookback).map(d => daily[d].l);
+  const recentMin = Math.min(...lows);
+  const recentMax = Math.max(...lows);
+
+  const downBias = recentMin < recentMax * 0.97;
+
+  return inside && downBias;
+}
+
 
 /* ==========================================================================================
-   ものわかれ（Monowakare）
+   戻り待ち売り後
+========================================================================================== */
+
+function isReturnSellEnd(daily) {
+  const dates = Object.keys(daily).sort();
+  if (dates.length < 60) return false;
+
+  const closes = dates.map(d => daily[d].c);
+
+  const recent = closes.slice(-40);
+  if (recent[0] <= recent[recent.length - 1]) return false;
+
+  let lowerLowCount = 0;
+  let currentLow = recent[0];
+  for (let i = 1; i < recent.length; i++) {
+    if (recent[i] < currentLow) {
+      lowerLowCount++;
+      currentLow = recent[i];
+    }
+  }
+  if (lowerLowCount < 3) return false;
+
+  const last5 = dates.slice(-5);
+  const last5Closes = last5.map(d => daily[d].c);
+  let higherLow = true;
+  let higherHigh = true;
+  let minPrev = last5Closes[0];
+  let maxPrev = last5Closes[0];
+  for (let i = 1; i < last5Closes.length; i++) {
+    if (last5Closes[i] <= minPrev) higherLow = false;
+    if (last5Closes[i] <= maxPrev) higherHigh = false;
+    minPrev = Math.min(minPrev, last5Closes[i]);
+    maxPrev = Math.max(maxPrev, last5Closes[i]);
+  }
+
+  if (!(higherLow && higherHigh)) return false;
+
+  const ma25 = safeCalcMA(daily, 25);
+  if (ma25 === null) return false;
+  const last = dates[dates.length - 1];
+  const cLast = daily[last].c;
+
+  return cLast > ma25;
+}
+
+
+/* ==========================================================================================
+   下降相場の終わり
+========================================================================================== */
+
+function isDownTrendEnd(daily) {
+  const dates = Object.keys(daily).sort();
+  if (dates.length < 75) return false;
+
+  const closes = dates.map(d => daily[d].c);
+  const recent = closes.slice(-40);
+
+  if (recent[0] <= recent[recent.length - 1]) return false;
+
+  let lowerLowCount = 0;
+  let currentLow = recent[0];
+  for (let i = 1; i < recent.length; i++) {
+    if (recent[i] < currentLow) {
+      lowerLowCount++;
+      currentLow = recent[i];
+    }
+  }
+  if (lowerLowCount < 3) return false;
+
+  const ma75 = safeCalcMA(daily, 75);
+  if (ma75 === null) return false;
+  const last = dates[dates.length - 1];
+  const cLast = daily[last].c;
+
+  const near = Math.abs(cLast - ma75) / ma75 <= 0.02;
+
+  return near;
+}
+
+
+/* ==========================================================================================
+   赤と青の交差
+========================================================================================== */
+
+function isRedBlueCross(daily) {
+  const dates = Object.keys(daily).sort();
+  if (dates.length < 25) return false;
+
+  const last = dates[dates.length - 1];
+
+  const prevCandles = {};
+  dates.slice(0, -1).forEach(d => (prevCandles[d] = daily[d]));
+
+  const ma5_prev = safeCalcMA(prevCandles, 5);
+  const ma20_prev = safeCalcMA(prevCandles, 20);
+  const ma5_curr = safeCalcMA(daily, 5);
+  const ma20_curr = safeCalcMA(daily, 20);
+
+  if ([ma5_prev, ma20_prev, ma5_curr, ma20_curr].some(x => x === null)) return false;
+
+  const crossed =
+    (ma5_prev < ma20_prev && ma5_curr > ma20_curr) ||
+    (ma5_prev > ma20_prev && ma5_curr < ma20_curr);
+
+  if (!crossed) return false;
+
+  const prev2Candles = {};
+  dates.slice(0, -2).forEach(d => (prev2Candles[d] = daily[d]));
+  const ma5_prev2 = safeCalcMA(prev2Candles, 5);
+  const ma20_prev2 = safeCalcMA(prev2Candles, 20);
+  if (ma5_prev2 === null || ma20_prev2 === null) return false;
+
+  const slope5 = ma5_curr - ma5_prev2;
+  const slope20 = ma20_curr - ma20_prev2;
+
+  if (slope5 === 0 || slope20 === 0) return false;
+  if (slope5 * slope20 <= 0) return false;
+
+  return true;
+}
+
+
+/* ==========================================================================================
+   揉み合い
+========================================================================================== */
+
+function isMomiai(daily) {
+  const dates = Object.keys(daily).sort();
+  if (dates.length < 100) return false;
+
+  const ma60 = safeCalcMA(daily, 60);
+  const ma100 = safeCalcMA(daily, 100);
+  if (ma60 === null || ma100 === null) return false;
+
+  const lower = Math.min(ma60, ma100);
+  const upper = Math.max(ma60, ma100);
+
+  const recent = dates.slice(-20);
+
+  for (const d of recent) {
+    const c = daily[d].c;
+
+    const slice = {};
+    dates.slice(0, dates.indexOf(d) + 1).forEach(x => (slice[x] = daily[x]));
+    const ma5 = safeCalcMA(slice, 5);
+    const ma20 = safeCalcMA(slice, 20);
+
+    if (ma5 === null || ma20 === null) return false;
+
+    if (!(c >= lower && c <= upper)) return false;
+    if (!(ma5 >= lower && ma5 <= upper)) return false;
+    if (!(ma20 >= lower && ma20 <= upper)) return false;
+  }
+
+  const closes = recent.map(d => daily[d].c);
+  const maxC = Math.max(...closes);
+  const minC = Math.min(...closes);
+  if ((maxC - minC) / ((maxC + minC) / 2) >= 0.05) return false;
+
+  return true;
+}
+
+/* ==========================================================================================
+   ものわかれ
 ========================================================================================== */
 
 function isMonowakareUp(daily) {
@@ -733,7 +932,7 @@ function isMonowakareRedBlueCrossDown(daily) {
 }
 
 /* ==========================================================================================
-   Rule9（日足 / 週足）SAFE（direction / count のみ）
+   9の法則
 ========================================================================================== */
 
 function computeRule9Daily(daily) {
@@ -997,7 +1196,7 @@ function computeRule9Weekly(weekly) {
 }
 
 /* ==========================================================================================
-   ボリンジャーバンド ゾーン判定（0σ / 1σ / 2σ / 3σ）
+   BBゾーンブレイク（0σ / 1σ / 2σ / 3σ）
 ========================================================================================== */
 
 function getBbZone(candles) {
@@ -1046,7 +1245,7 @@ const isBbZoneBreakMonthly = m => getBbZoneBreak(m) !== null;
 
 
 /* ==========================================================================================
-   BOX RANGE（横ばい）
+   ボックスレンジ（横ばい）
 ========================================================================================== */
 
 function isBoxRange(daily) {
@@ -1091,7 +1290,7 @@ function isBoxRange(daily) {
 
 
 /* ==========================================================================================
-   OVERHEAT（過熱）— TODO（仕様未確定）
+   過熱 — TODO（仕様未確定）
 ========================================================================================== */
 
 function isOverheat(daily) {
@@ -1103,7 +1302,7 @@ function isOverheat(daily) {
 
 
 /* ==========================================================================================
-   グランビル（上昇 / 下降）
+   グランビル
 ========================================================================================== */
 
 function computeGranville(daily) {
@@ -1150,203 +1349,6 @@ function computeGranville(daily) {
   if (c < ma75 * 0.95) return { direction: "down", count: 3 };
 
   return { direction: null, count: null };
-}
-
-/* ==========================================================================================
-   In-In Harami（陰の陰はらみ）
-========================================================================================== */
-
-function isInInHarami(daily) {
-  const dates = Object.keys(daily).sort();
-  if (dates.length < 2) return false;
-
-  const last = dates[dates.length - 1];
-  const prev = dates[dates.length - 2];
-
-  const c1 = daily[prev];
-  const c2 = daily[last];
-
-  if (!(c1.c < c1.o && c2.c < c2.o)) return false;
-
-  const body1High = Math.max(c1.o, c1.c);
-  const body1Low = Math.min(c1.o, c1.c);
-  const body2High = Math.max(c2.o, c2.c);
-  const body2Low = Math.min(c2.o, c2.c);
-
-  const inside = body2High <= body1High && body2Low >= body1Low;
-
-  const lookback = Math.min(10, dates.length);
-  const lows = dates.slice(-lookback).map(d => daily[d].l);
-  const recentMin = Math.min(...lows);
-  const recentMax = Math.max(...lows);
-
-  const downBias = recentMin < recentMax * 0.97;
-
-  return inside && downBias;
-}
-
-
-/* ==========================================================================================
-   戻り待ち売り後（Return Sell End）
-========================================================================================== */
-
-function isReturnSellEnd(daily) {
-  const dates = Object.keys(daily).sort();
-  if (dates.length < 60) return false;
-
-  const closes = dates.map(d => daily[d].c);
-
-  const recent = closes.slice(-40);
-  if (recent[0] <= recent[recent.length - 1]) return false;
-
-  let lowerLowCount = 0;
-  let currentLow = recent[0];
-  for (let i = 1; i < recent.length; i++) {
-    if (recent[i] < currentLow) {
-      lowerLowCount++;
-      currentLow = recent[i];
-    }
-  }
-  if (lowerLowCount < 3) return false;
-
-  const last5 = dates.slice(-5);
-  const last5Closes = last5.map(d => daily[d].c);
-  let higherLow = true;
-  let higherHigh = true;
-  let minPrev = last5Closes[0];
-  let maxPrev = last5Closes[0];
-  for (let i = 1; i < last5Closes.length; i++) {
-    if (last5Closes[i] <= minPrev) higherLow = false;
-    if (last5Closes[i] <= maxPrev) higherHigh = false;
-    minPrev = Math.min(minPrev, last5Closes[i]);
-    maxPrev = Math.max(maxPrev, last5Closes[i]);
-  }
-
-  if (!(higherLow && higherHigh)) return false;
-
-  const ma25 = safeCalcMA(daily, 25);
-  if (ma25 === null) return false;
-  const last = dates[dates.length - 1];
-  const cLast = daily[last].c;
-
-  return cLast > ma25;
-}
-
-
-/* ==========================================================================================
-   下降相場の終わり（Down Trend End）
-========================================================================================== */
-
-function isDownTrendEnd(daily) {
-  const dates = Object.keys(daily).sort();
-  if (dates.length < 75) return false;
-
-  const closes = dates.map(d => daily[d].c);
-  const recent = closes.slice(-40);
-
-  if (recent[0] <= recent[recent.length - 1]) return false;
-
-  let lowerLowCount = 0;
-  let currentLow = recent[0];
-  for (let i = 1; i < recent.length; i++) {
-    if (recent[i] < currentLow) {
-      lowerLowCount++;
-      currentLow = recent[i];
-    }
-  }
-  if (lowerLowCount < 3) return false;
-
-  const ma75 = safeCalcMA(daily, 75);
-  if (ma75 === null) return false;
-  const last = dates[dates.length - 1];
-  const cLast = daily[last].c;
-
-  const near = Math.abs(cLast - ma75) / ma75 <= 0.02;
-
-  return near;
-}
-
-
-/* ==========================================================================================
-   赤と青の交差（Red Blue Cross）
-========================================================================================== */
-
-function isRedBlueCross(daily) {
-  const dates = Object.keys(daily).sort();
-  if (dates.length < 25) return false;
-
-  const last = dates[dates.length - 1];
-
-  const prevCandles = {};
-  dates.slice(0, -1).forEach(d => (prevCandles[d] = daily[d]));
-
-  const ma5_prev = safeCalcMA(prevCandles, 5);
-  const ma20_prev = safeCalcMA(prevCandles, 20);
-  const ma5_curr = safeCalcMA(daily, 5);
-  const ma20_curr = safeCalcMA(daily, 20);
-
-  if ([ma5_prev, ma20_prev, ma5_curr, ma20_curr].some(x => x === null)) return false;
-
-  const crossed =
-    (ma5_prev < ma20_prev && ma5_curr > ma20_curr) ||
-    (ma5_prev > ma20_prev && ma5_curr < ma20_curr);
-
-  if (!crossed) return false;
-
-  const prev2Candles = {};
-  dates.slice(0, -2).forEach(d => (prev2Candles[d] = daily[d]));
-  const ma5_prev2 = safeCalcMA(prev2Candles, 5);
-  const ma20_prev2 = safeCalcMA(prev2Candles, 20);
-  if (ma5_prev2 === null || ma20_prev2 === null) return false;
-
-  const slope5 = ma5_curr - ma5_prev2;
-  const slope20 = ma20_curr - ma20_prev2;
-
-  if (slope5 === 0 || slope20 === 0) return false;
-  if (slope5 * slope20 <= 0) return false;
-
-  return true;
-}
-
-
-/* ==========================================================================================
-   揉み合い（Momiai）
-========================================================================================== */
-
-function isMomiai(daily) {
-  const dates = Object.keys(daily).sort();
-  if (dates.length < 100) return false;
-
-  const ma60 = safeCalcMA(daily, 60);
-  const ma100 = safeCalcMA(daily, 100);
-  if (ma60 === null || ma100 === null) return false;
-
-  const lower = Math.min(ma60, ma100);
-  const upper = Math.max(ma60, ma100);
-
-  const recent = dates.slice(-20);
-
-  for (const d of recent) {
-    const c = daily[d].c;
-
-    const slice = {};
-    dates.slice(0, dates.indexOf(d) + 1).forEach(x => (slice[x] = daily[x]));
-    const ma5 = safeCalcMA(slice, 5);
-    const ma20 = safeCalcMA(slice, 20);
-
-    if (ma5 === null || ma20 === null) return false;
-
-    if (!(c >= lower && c <= upper)) return false;
-    if (!(ma5 >= lower && ma5 <= upper)) return false;
-    if (!(ma20 >= lower && ma20 <= upper)) return false;
-  }
-
-  const closes = recent.map(d => daily[d].c);
-  const maxC = Math.max(...closes);
-  const minC = Math.min(...closes);
-  if ((maxC - minC) / ((maxC + minC) / 2) >= 0.05) return false;
-
-  return true;
 }
 
 
@@ -1417,7 +1419,7 @@ function computeCycleProgress(daily) {
 
 
 /* ==========================================================================================
-   節目（Fushime Up / Down）
+   節目
 ========================================================================================== */
 
 function findFushimeLevel(daily, mode = "up") {
@@ -1531,7 +1533,6 @@ export {
   isRedBlueCross,
   isReturnSellEnd,
   isDownTrendEnd,
-  isRedBlueCross,
   isMomiai,
 
   /* 物別れ */
