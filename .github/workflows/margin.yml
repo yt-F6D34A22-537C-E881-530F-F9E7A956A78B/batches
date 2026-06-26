@@ -38,11 +38,31 @@ jobs:
       - name: Run margin.js
         run: node scripts/margin.js
 
-      - name: Commit & Push
+      - name: Commit and push changes
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git pull --rebase origin main
-          git add data/margin.json data/backup/ || true
-          git commit -m "Auto-update margin.json + backup" || echo "No changes"
-          git push origin main
+
+          git add data/margin.json data/backup/
+
+          git commit -m "Auto-update margin.json + backup" || exit 0
+
+          git push origin main || (
+            echo "Push rejected. Fetching latest main..."
+
+            echo "=== Git status ==="
+            git status
+
+            echo "=== HEAD ==="
+            git rev-parse HEAD
+
+            echo "=== origin/main ==="
+            git ls-remote origin refs/heads/main
+
+            echo "=== Recent commits ==="
+            git log --oneline --decorate -5
+
+            git fetch origin
+            git rebase origin/main
+            git push origin main
+          )
