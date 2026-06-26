@@ -48,7 +48,27 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git pull --rebase origin main
-          git add data/data.json data/backup/ || true
-          git commit -m "Update data.json and backup" || echo "No changes"
-          git push origin main
+
+          git add data/data.json data/backup/
+
+          git commit -m "Update data.json and backup" || exit 0
+
+          git push origin main || (
+            echo "Push rejected. Fetching latest main..."
+
+            echo "=== Git status ==="
+            git status
+
+            echo "=== HEAD ==="
+            git rev-parse HEAD
+
+            echo "=== origin/main ==="
+            git ls-remote origin refs/heads/main
+
+            echo "=== Recent commits ==="
+            git log --oneline --decorate -5
+
+            git fetch origin
+            git rebase origin/main
+            git push origin main
+          )
