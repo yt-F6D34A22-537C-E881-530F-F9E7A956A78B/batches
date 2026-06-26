@@ -2,10 +2,10 @@ name: 【heuristics.yml】Generate heuristics_YYYYMMDD.json (経験則スクリ�
 
 on:
   schedule:
-    # - cron: "0 0 * * *"  # JST 09:00（fetch の 2 時間後）
-    - cron: "0 9 * * *"   # JST 18:00（fetch の 2 時間後）
-    - cron: "0 11 * * *"  # JST 20:00（fetch の 2 時間後）
-    - cron: "0 13 * * *"  # JST 22:00（fetch の 2 時間後）
+    # - cron: "0 23 * * *"  # JST 08:00（fetch の 1 時間後）
+    - cron: "0 8 * * *"   # JST 17:00（fetch の 1 時間後）
+    - cron: "0 10 * * *"  # JST 19:00（fetch の 1 時間後）
+    - cron: "0 12 * * *"  # JST 21:00（fetch の 1 時間後）
   workflow_dispatch:
 
 permissions:
@@ -50,7 +50,27 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git pull --rebase origin main
-          git add data/heuristics/**/heuristics_*.json data/backup/ || true
-          git commit -m "Update heuristics_YYYYMMDD.json and backup" || echo "No changes"
-          git push origin main
+
+          git add data/heuristics/**/heuristics_*.json data/backup/
+
+          git commit -m "Update heuristics_YYYYMMDD.json and backup" || exit 0
+
+          git push origin main || (
+            echo "Push rejected. Fetching latest main..."
+
+            echo "=== Git status ==="
+            git status
+
+            echo "=== HEAD ==="
+            git rev-parse HEAD
+
+            echo "=== origin/main ==="
+            git ls-remote origin refs/heads/main
+
+            echo "=== Recent commits ==="
+            git log --oneline --decorate -5
+
+            git fetch origin
+            git rebase origin/main
+            git push origin main
+          )
