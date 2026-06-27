@@ -35,7 +35,7 @@ jobs:
           node-version: "24"
 
       - name: Install dependencies
-        run: npm install node-fetch@3 xlsx
+        run: npm install --no-save node-fetch@3 xlsx
 
       - name: Ensure data directory exists
         run: |
