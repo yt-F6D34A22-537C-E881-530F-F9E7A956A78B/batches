@@ -125,46 +125,46 @@ async function fetchCandles(code, interval, range) {
 
 function runAllConditions(daily, weekly, monthly) {
   const slope = (up, down) => (up ? "up" : down ? "down" : "flat");
-  const mono = (up, down) => (up ? "up" : down ? "down" : "flat");
+  const mono  = (up, down) => (up ? "up" : down ? "down" : "flat");
 
-  const rule9Daily = hc.computeRule9Daily(daily);
+  const rule9Daily  = hc.computeRule9Daily(daily);
   const rule9Weekly = hc.computeRule9Weekly(weekly);
 
-  const fushimeUp = hc.computeFushimeUp(daily);
+  const fushimeUp   = hc.computeFushimeUp(daily);
   const fushimeDown = hc.computeFushimeDown(daily);
 
   const granville = hc.computeGranville(daily);
-  const cycle = hc.computeCycleProgress(daily);
+  const cycle     = hc.computeCycleProgress(daily);
 
   return {
     /* 移動平均線の傾き */
-    TECH_MA_SLOPE_DAILY: slope(hc.isMaSlopeUpDaily(daily), hc.isMaSlopeDownDaily(daily)),
-    TECH_MA_SLOPE_WEEKLY: slope(hc.isMaSlopeUpWeekly(weekly), hc.isMaSlopeDownWeekly(weekly)),
+    TECH_MA_SLOPE_DAILY:   slope(hc.isMaSlopeUpDaily(daily),   hc.isMaSlopeDownDaily(daily)),
+    TECH_MA_SLOPE_WEEKLY:  slope(hc.isMaSlopeUpWeekly(weekly), hc.isMaSlopeDownWeekly(weekly)),
     TECH_MA_SLOPE_MONTHLY: slope(hc.isMaSlopeUpMonthly(monthly), hc.isMaSlopeDownMonthly(monthly)),
 
     /* 移動平均線の位置 */
-    TECH_MA_POSITION_DAILY: hc.isMaPositionDaily(daily),
-    TECH_MA_POSITION_WEEKLY: hc.isMaPositionWeekly(weekly),
+    TECH_MA_POSITION_DAILY:   hc.isMaPositionDaily(daily),
+    TECH_MA_POSITION_WEEKLY:  hc.isMaPositionWeekly(weekly),
     TECH_MA_POSITION_MONTHLY: hc.isMaPositionMonthly(monthly),
 
     /* パーフェクトオーダー */
-    TECH_PERFECT_ORDER_DAILY: hc.isPerfectOrderDaily(daily),
-    TECH_PERFECT_ORDER_WEEKLY: hc.isPerfectOrderWeekly(weekly),
+    TECH_PERFECT_ORDER_DAILY:   hc.isPerfectOrderDaily(daily),
+    TECH_PERFECT_ORDER_WEEKLY:  hc.isPerfectOrderWeekly(weekly),
     TECH_PERFECT_ORDER_MONTHLY: hc.isPerfectOrderMonthly(monthly),
 
     /* 逆パーフェクトオーダー */
-    TECH_REVERSE_PERFECT_ORDER_DAILY: hc.isReversePerfectOrderDaily(daily),
-    TECH_REVERSE_PERFECT_ORDER_WEEKLY: hc.isReversePerfectOrderWeekly(weekly),
+    TECH_REVERSE_PERFECT_ORDER_DAILY:   hc.isReversePerfectOrderDaily(daily),
+    TECH_REVERSE_PERFECT_ORDER_WEEKLY:  hc.isReversePerfectOrderWeekly(weekly),
     TECH_REVERSE_PERFECT_ORDER_MONTHLY: hc.isReversePerfectOrderMonthly(monthly),
 
     /* パーフェクトオーダー前夜 */
-    TECH_PRE_PERFECT_ORDER_DAILY: hc.isPrePerfectOrderDaily(daily),
-    TECH_PRE_PERFECT_ORDER_WEEKLY: hc.isPrePerfectOrderWeekly(weekly),
+    TECH_PRE_PERFECT_ORDER_DAILY:   hc.isPrePerfectOrderDaily(daily),
+    TECH_PRE_PERFECT_ORDER_WEEKLY:  hc.isPrePerfectOrderWeekly(weekly),
     TECH_PRE_PERFECT_ORDER_MONTHLY: hc.isPrePerfectOrderMonthly(monthly),
 
     /* 逆パーフェクトオーダー前夜 */
-    TECH_PRE_REVERSE_PERFECT_ORDER_DAILY: hc.isPreReversePerfectOrderDaily(daily),
-    TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY: hc.isPreReversePerfectOrderWeekly(weekly),
+    TECH_PRE_REVERSE_PERFECT_ORDER_DAILY:   hc.isPreReversePerfectOrderDaily(daily),
+    TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY:  hc.isPreReversePerfectOrderWeekly(weekly),
     TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY: hc.isPreReversePerfectOrderMonthly(monthly),
 
     /* 移動平均線の収束 */
@@ -180,7 +180,7 @@ function runAllConditions(daily, weekly, monthly) {
     TECH_MA100_TREND: hc.isMa100Trend(daily),
 
     /* 下半身・逆下半身 */
-    TECH_KAHANSHIN: hc.isKahanshin(daily),
+    TECH_KAHANSHIN:       hc.isKahanshin(daily),
     TECH_GYAKU_KAHANSHIN: hc.isGyakuKahanshin(daily),
 
     /* 5MA更新 */
@@ -190,40 +190,40 @@ function runAllConditions(daily, weekly, monthly) {
     ),
 
     /* 酒田五法 */
-    TECH_SAKATA_TRIPLE_TOP: hc.isSakataTripleTop(daily) ? 1 : null,
+    TECH_SAKATA_TRIPLE_TOP:    hc.isSakataTripleTop(daily)    ? 1 : null,
     TECH_SAKATA_TRIPLE_BOTTOM: hc.isSakataTripleBottom(daily) ? 1 : null,
-    TECH_SAKATA_SANKU_UP: hc.isSakataSankuUp(daily) ? 1 : null,
-    TECH_SAKATA_SANKU_DOWN: hc.isSakataSankuDown(daily) ? 1 : null,
-    TECH_SAKATA_SANPEI_UP: hc.isSakataSanpeiUp(daily) ? 1 : null,
-    TECH_SAKATA_SANPEI_DOWN: hc.isSakataSanpeiDown(daily) ? 1 : null,
-    TECH_SAKATA_SANPO_UP: hc.isSakataSanpoUp(daily) ? 1 : null,
-    TECH_SAKATA_SANPO_DOWN: hc.isSakataSanpoDown(daily) ? 1 : null,
+    TECH_SAKATA_SANKU_UP:      hc.isSakataSankuUp(daily)      ? 1 : null,
+    TECH_SAKATA_SANKU_DOWN:    hc.isSakataSankuDown(daily)    ? 1 : null,
+    TECH_SAKATA_SANPEI_UP:     hc.isSakataSanpeiUp(daily)     ? 1 : null,
+    TECH_SAKATA_SANPEI_DOWN:   hc.isSakataSanpeiDown(daily)   ? 1 : null,
+    TECH_SAKATA_SANPO_UP:      hc.isSakataSanpoUp(daily)      ? 1 : null,
+    TECH_SAKATA_SANPO_DOWN:    hc.isSakataSanpoDown(daily)    ? 1 : null,
 
     /* パターン */
     TECH_HEAD_AND_SHOULDERS: hc.isHeadAndShoulders(daily),
-    TECH_DOUBLE_BOTTOM: hc.isDoubleBottom(daily),
-    TECH_NICHI_DAI: hc.isNichiDai(daily),
-    TECH_GYAKU_NICHI_DAI: hc.isGyakuNichiDai(daily),
-    TECH_IN_IN_HARAMI: hc.isInInHarami(daily),
-    TECH_RED_BLUE_CROSS : hc.isRedBlueCross(daily),
-    TECH_RETURN_SELL_END: hc.isReturnSellEnd(daily),
-    TECH_DOWN_TREND_END: hc.isDownTrendEnd(daily),
-    TECH_MOMIAI: hc.isMomiai(daily),
+    TECH_DOUBLE_BOTTOM:      hc.isDoubleBottom(daily),
+    TECH_NICHI_DAI:          hc.isNichiDai(daily),
+    TECH_GYAKU_NICHI_DAI:    hc.isGyakuNichiDai(daily),
+    TECH_IN_IN_HARAMI:       hc.isInInHarami(daily),
+    TECH_RED_BLUE_CROSS:     hc.isRedBlueCross(daily, weekly, monthly),
+    TECH_RETURN_SELL_END:    hc.isReturnSellEnd(daily),
+    TECH_DOWN_TREND_END:     hc.isDownTrendEnd(daily),
+    TECH_MOMIAI:             hc.isMomiai(daily),
 
     /* 物別れ */
     TECH_MONOWAKARE: mono(hc.isMonowakareUp(daily), hc.isMonowakareDown(daily)),
     TECH_MONOWAKARE_RED_BLUE_CROSS: mono(
-      hc.isMonowakareRedBlueCrossUp(daily),
-      hc.isMonowakareRedBlueCrossDown(daily)
+      hc.isMonowakareRedBlueCrossUp(daily, weekly, monthly),
+      hc.isMonowakareRedBlueCrossDown(daily, weekly, monthly)
     ),
 
     /* 9の法則 */
-    TECH_RULE9_DAILY: rule9Daily,
+    TECH_RULE9_DAILY:  rule9Daily,
     TECH_RULE9_WEEKLY: rule9Weekly,
 
     /* BBゾーンブレイク */
-    TECH_BB_ZONE_BREAK_DAILY: hc.isBbZoneBreakDaily(daily),
-    TECH_BB_ZONE_BREAK_WEEKLY: hc.isBbZoneBreakWeekly(weekly),
+    TECH_BB_ZONE_BREAK_DAILY:   hc.isBbZoneBreakDaily(daily),
+    TECH_BB_ZONE_BREAK_WEEKLY:  hc.isBbZoneBreakWeekly(weekly),
     TECH_BB_ZONE_BREAK_MONTHLY: hc.isBbZoneBreakMonthly(monthly),
 
     /* ボックスレンジ */
@@ -235,11 +235,11 @@ function runAllConditions(daily, weekly, monthly) {
     /* グランビル */
     TECH_GRANVILLE: granville,
 
-    /* トレンドサイクル進行度 */
-    TECH_CYCLE_PROGRESS: cycle ? cycle.daysFromLastSwing : null,
+    /* トレンドサイクル進行度：{ direction, count, startDate, lastDate } オブジェクトをそのまま格納 */
+    TECH_CYCLE_PROGRESS: cycle ?? null,
 
     /* 節目 */
-    TECH_FUSHIME_UP: fushimeUp,
+    TECH_FUSHIME_UP:   fushimeUp,
     TECH_FUSHIME_DOWN: fushimeDown
   };
 }
@@ -255,15 +255,15 @@ async function main() {
   for (const code of symbols) {
     console.log(`Processing ${code} ...`);
 
-    const daily = await fetchCandles(code, "1d", "1y");
-    const weekly = await fetchCandles(code, "1wk", "5y");
+    const daily   = await fetchCandles(code, "1d",  "1y");
+    const weekly  = await fetchCandles(code, "1wk", "5y");
     const monthly = await fetchCandles(code, "1mo", "10y");
 
     // --- データ不足チェック（fetchCandles の error を検出） ---
     if (daily.error || weekly.error || monthly.error) {
       console.log(`Skipping ${code} due to fetch error:`, {
-        daily: daily.error,
-        weekly: weekly.error,
+        daily:   daily.error,
+        weekly:  weekly.error,
         monthly: monthly.error
       });
       finalData[code] = { error: "fetch error" };
@@ -279,13 +279,12 @@ async function main() {
     const weeklyCount  = Object.keys(weekly).length;
     const monthlyCount = Object.keys(monthly).length;
     
-    // 判定
     const insufficient =
       dailyCount < needDaily || weeklyCount < needWeekly || monthlyCount < needMonthly;
 
     if (insufficient) {
-      const dailyMsg = `${dailyCount}  ${dailyCount >= needDaily ? ">" : "<"} ${needDaily} required`;
-      const weeklyMsg = `${weeklyCount} ${weeklyCount >= needWeekly ? ">" : "<"} ${needWeekly} required`;
+      const dailyMsg   = `${dailyCount}  ${dailyCount   >= needDaily   ? ">" : "<"} ${needDaily}   required`;
+      const weeklyMsg  = `${weeklyCount} ${weeklyCount  >= needWeekly  ? ">" : "<"} ${needWeekly}  required`;
       const monthlyMsg = `${monthlyCount} ${monthlyCount >= needMonthly ? ">" : "<"} ${needMonthly} required`;
 
       console.log(`Skipping ${code} due to insufficient candles. {`);
