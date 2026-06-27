@@ -2,7 +2,7 @@ name: 【download-jpx-xlsx.yml】JPX data_j.xls fetch & convert (scraping + back
 
 on:
   schedule:
-    - cron: "7 18 * * *"   # JST 3:00（UTC 18:00）
+    - cron: "7 18 * * *"   # JST 3:07（UTC 18:07）
   workflow_dispatch:
 
 permissions:
