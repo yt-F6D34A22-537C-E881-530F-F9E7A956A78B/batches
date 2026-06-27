@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  fetch-convert-commit:
+  download_jpx_data:
     runs-on: ubuntu-latest
 
     steps:
