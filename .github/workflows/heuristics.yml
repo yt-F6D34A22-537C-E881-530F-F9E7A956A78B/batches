@@ -7,6 +7,19 @@ on:
     - cron: "7 10 * * *"  # JST 19:07（fetch の 1 時間後）
     - cron: "7 12 * * *"  # JST 21:07（fetch の 1 時間後）
   workflow_dispatch:
+    inputs:
+      date:
+        description: "単一日指定（YYYYMMDD）。from_date / to_date と同時使用不可。省略時は通常処理。"
+        required: false
+        default: ""
+      from_date:
+        description: "期間指定・開始日（YYYYMMDD）。to_date と必ずペアで指定。"
+        required: false
+        default: ""
+      to_date:
+        description: "期間指定・終了日（YYYYMMDD）。from_date と必ずペアで指定。"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -41,7 +54,20 @@ jobs:
           mkdir -p data/heuristics
 
       - name: Run heuristics script
-        run: node scripts/heuristics.js
+        run: |
+          # 実行引数を組み立てる
+          ARGS=""
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            ARGS="--date ${{ github.event.inputs.date }}"
+          elif [ -n "${{ github.event.inputs.from_date }}" ] && [ -n "${{ github.event.inputs.to_date }}" ]; then
+            ARGS="--from ${{ github.event.inputs.from_date }} --to ${{ github.event.inputs.to_date }}"
+          fi
+          echo "heuristics.js 実行引数: ${ARGS:-（なし: 通常モード）}"
+          if [ -n "${ARGS}" ]; then
+            node scripts/heuristics.js ${ARGS}
+          else
+            node scripts/heuristics.js
+          fi
 
       - name: Commit and push changes
         run: |
