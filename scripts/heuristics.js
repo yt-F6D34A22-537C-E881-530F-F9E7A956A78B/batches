@@ -10,6 +10,66 @@ import path from "path";
 import * as hc from "./heuristics_conditions.js";
 
 /* ==========================================================================================
+   0. コマンドライン引数のパース
+      --date  YYYYMMDD   : 単一日指定（その日を終端として取得）
+      --from  YYYYMMDD   : 期間指定・開始日（--to とペアで使用）
+      --to    YYYYMMDD   : 期間指定・終了日（--from とペアで使用）
+      引数なし           : 従来通り（Yahoo Finance 最新日付を自動取得）
+
+   ⚠️ このスクリプトは data/data.json を読み書きしない。
+      fetch.js とは独立して Yahoo Finance API へ直接アクセスする。
+      指定日モードでも data/data.json は一切変更されない。
+========================================================================================== */
+
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const result = { singleDate: null, fromDate: null, toDate: null };
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--date" && args[i + 1]) { result.singleDate = args[i + 1].trim(); i++; }
+    if (args[i] === "--from" && args[i + 1]) { result.fromDate   = args[i + 1].trim(); i++; }
+    if (args[i] === "--to"   && args[i + 1]) { result.toDate     = args[i + 1].trim(); i++; }
+  }
+  return result;
+}
+
+const { singleDate, fromDate, toDate } = parseArgs();
+
+// --- 引数バリデーション ---
+const DATE_RE = /^\d{8}$/;
+
+if (singleDate && !DATE_RE.test(singleDate)) {
+  console.log(`ERROR: --date の形式が不正です（YYYYMMDD で指定してください）: ${singleDate}`);
+  process.exit(1);
+}
+if (fromDate && !DATE_RE.test(fromDate)) {
+  console.log(`ERROR: --from の形式が不正です（YYYYMMDD で指定してください）: ${fromDate}`);
+  process.exit(1);
+}
+if (toDate && !DATE_RE.test(toDate)) {
+  console.log(`ERROR: --to の形式が不正です（YYYYMMDD で指定してください）: ${toDate}`);
+  process.exit(1);
+}
+if ((fromDate && !toDate) || (!fromDate && toDate)) {
+  console.log("ERROR: --from と --to は両方指定してください。");
+  process.exit(1);
+}
+if (fromDate && toDate && fromDate > toDate) {
+  console.log(`ERROR: --from（${fromDate}）は --to（${toDate}）以前である必要があります。`);
+  process.exit(1);
+}
+if (singleDate && (fromDate || toDate)) {
+  console.log("ERROR: --date と --from/--to は同時に指定できません。");
+  process.exit(1);
+}
+
+// --- 実行モードを確定 ---
+const RUN_MODE = singleDate ? "single" : (fromDate ? "range" : "normal");
+
+console.log(`=== Run mode: ${RUN_MODE} ===`);
+if (RUN_MODE === "single") console.log(`Target date: ${singleDate}`);
+if (RUN_MODE === "range")  console.log(`Target range: ${fromDate} ～ ${toDate}`);
+
+/* ==========================================================================================
    1. Excel から銘柄コードを読み込む
 ========================================================================================== */
 
@@ -68,11 +128,58 @@ if (symbols.length === 0) {
 
 /* ==========================================================================================
    2. Yahoo Finance API（足種別に取得）
+
+   ⚠️ この関数は data/data.json を読み書きしない。
+      通常モード・指定日モードともに Yahoo Finance API へ直接アクセスする。
 ========================================================================================== */
 
-async function fetchCandles(code, interval, range) {
+/**
+ * YYYYMMDD 文字列を「翌日 00:00 JST の UNIX 秒」に変換する（period2 に使用）。
+ * 指定日自体を含めるために翌日 00:00 JST（= 当日 15:00 UTC）を終端とする。
+ */
+function toUnixEndOfDay(yyyymmdd) {
+  const y = parseInt(yyyymmdd.slice(0, 4), 10);
+  const m = parseInt(yyyymmdd.slice(4, 6), 10) - 1;
+  const d = parseInt(yyyymmdd.slice(6, 8), 10);
+  // 翌日 00:00 JST = UTC で (翌日 00:00) - 9h
+  const utcMs = Date.UTC(y, m, d + 1) - 9 * 60 * 60 * 1000;
+  return Math.floor(utcMs / 1000);
+}
+
+// 通常モード時の range 設定（既存動作を維持）
+const FETCH_RANGES = {
+  "1d":  "1y",
+  "1wk": "5y",
+  "1mo": "10y"
+};
+
+// 指定日モード時の period1 オフセット（日数）
+// 祝日・連休を考慮して必要足数より余裕を持たせる
+const PERIOD1_OFFSET_DAYS = {
+  "1d":  400,  // 1y（約250営業日）+ 余裕
+  "1wk": 1900, // 5y + 余裕
+  "1mo": 3700  // 10y + 余裕
+};
+
+/**
+ * @param {string} code        - 銘柄コード（4桁）
+ * @param {string} interval    - "1d" | "1wk" | "1mo"
+ * @param {string|null} targetDate - YYYYMMDD（指定日モード）または null（通常モード）
+ */
+async function fetchCandles(code, interval, targetDate = null) {
   const symbol = `${code}.T`;  // ← Yahoo API 用に .T を付ける
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+
+  let url;
+  if (targetDate) {
+    // 指定日モード: period1/period2 で期間を固定し、指定日を終端とする
+    const period2 = toUnixEndOfDay(targetDate);
+    const period1 = period2 - PERIOD1_OFFSET_DAYS[interval] * 24 * 60 * 60;
+    url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&period1=${period1}&period2=${period2}`;
+  } else {
+    // 通常モード: 従来通り range 指定
+    const range = FETCH_RANGES[interval];
+    url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+  }
 
   try {
     const res = await fetch(url);
@@ -245,19 +352,27 @@ function runAllConditions(daily, weekly, monthly) {
 }
 
 /* ==========================================================================================
-   4. メイン処理
+   4. 1日分の heuristics を生成する
+      targetDate が null の場合は通常モード（Yahoo Finance 最新日付を自動取得）。
+      targetDate が YYYYMMDD の場合は指定日モード（period2 で終端を固定）。
+      休場日など有効データが取得できない場合は null を返す。
 ========================================================================================== */
 
-async function main() {
+/**
+ * @param {string|null} targetDate - YYYYMMDD または null
+ * @returns {Promise<string|null>} - 生成した heuristics の日付（YYYYMMDD）、スキップ時は null
+ */
+async function runForDate(targetDate) {
   let finalData = {};
   let latestDateGlobal = null;
 
   for (const code of symbols) {
     console.log(`Processing ${code} ...`);
 
-    const daily   = await fetchCandles(code, "1d",  "1y");
-    const weekly  = await fetchCandles(code, "1wk", "5y");
-    const monthly = await fetchCandles(code, "1mo", "10y");
+    // targetDate を fetchCandles に渡す（null なら通常モード）
+    const daily   = await fetchCandles(code, "1d",  targetDate);
+    const weekly  = await fetchCandles(code, "1wk", targetDate);
+    const monthly = await fetchCandles(code, "1mo", targetDate);
 
     // --- データ不足チェック（fetchCandles の error を検出） ---
     if (daily.error || weekly.error || monthly.error) {
@@ -307,6 +422,12 @@ async function main() {
     await new Promise(r => setTimeout(r, 500));
   }
 
+  // 全銘柄がスキップされた場合（休場日など有効データが存在しない）
+  if (!latestDateGlobal) {
+    console.log(`WARN: ${targetDate ?? "（通常モード）"} は有効なデータが取得できませんでした（休場日の可能性）。スキップします。`);
+    return null;
+  }
+
   /* 保存先フォルダ（data/heuristics/YYYYMM）を作成 */
   const yyyymm = latestDateGlobal.slice(0, 6);
   const heuristicsDir = `data/heuristics/${yyyymm}`;
@@ -347,6 +468,79 @@ async function main() {
   }
 
   console.log(`heuristics_${latestDateGlobal}.json generation completed.`);
+  return latestDateGlobal;
+}
+
+/* ==========================================================================================
+   5. 期間モード用：fromDate〜toDate の営業日候補を生成する
+      土日は事前に除外する。祝日は fetchCandles の結果（有効データなし）で自動スキップされる。
+========================================================================================== */
+
+/**
+ * @param {string} fromDate - YYYYMMDD
+ * @param {string} toDate   - YYYYMMDD
+ * @returns {string[]} - 土日を除いた日付の YYYYMMDD 配列
+ */
+function generateBusinessDayCandidates(fromDate, toDate) {
+  const candidates = [];
+  const cur = new Date(
+    Date.UTC(
+      parseInt(fromDate.slice(0, 4), 10),
+      parseInt(fromDate.slice(4, 6), 10) - 1,
+      parseInt(fromDate.slice(6, 8), 10)
+    )
+  );
+  const end = new Date(
+    Date.UTC(
+      parseInt(toDate.slice(0, 4), 10),
+      parseInt(toDate.slice(4, 6), 10) - 1,
+      parseInt(toDate.slice(6, 8), 10)
+    )
+  );
+
+  while (cur <= end) {
+    const dow = cur.getUTCDay(); // 0=日, 6=土
+    if (dow !== 0 && dow !== 6) {
+      const y = cur.getUTCFullYear();
+      const m = String(cur.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(cur.getUTCDate()).padStart(2, "0");
+      candidates.push(`${y}${m}${d}`);
+    }
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+
+  return candidates;
+}
+
+/* ==========================================================================================
+   6. エントリポイント
+========================================================================================== */
+
+async function main() {
+  if (RUN_MODE === "single") {
+    // --- 単一日指定モード ---
+    await runForDate(singleDate);
+
+  } else if (RUN_MODE === "range") {
+    // --- 期間指定モード ---
+    // 土日を事前除外した候補日列を生成（祝日は fetchCandles 側で有効データなしとして自動スキップ）
+    const candidates = generateBusinessDayCandidates(fromDate, toDate);
+    console.log(`期間内候補日（土日除外済み）: ${candidates.length} 日`);
+
+    for (const date of candidates) {
+      console.log(`\n=== 処理中: ${date} ===`);
+      const result = await runForDate(date);
+      if (!result) {
+        console.log(`  → ${date} はスキップされました（休場日またはデータなし）`);
+      }
+      // 日付間でも API 負荷軽減のため待機
+      await new Promise(r => setTimeout(r, 1000));
+    }
+
+  } else {
+    // --- 通常モード（引数なし、既存動作を維持） ---
+    await runForDate(null);
+  }
 }
 
 main();
