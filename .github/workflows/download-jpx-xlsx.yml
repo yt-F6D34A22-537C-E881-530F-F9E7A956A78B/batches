@@ -65,6 +65,6 @@ jobs:
             git log --oneline --decorate -5
 
             git fetch origin
-            git rebase origin/main
+            git rebase -X theirs origin/main
             git push origin main
           )
