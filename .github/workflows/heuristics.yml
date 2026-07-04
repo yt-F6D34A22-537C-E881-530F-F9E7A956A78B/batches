@@ -2,10 +2,10 @@ name: 【heuristics.yml】Generate heuristics_YYYYMMDD.json (経験則スクリ�
 
 on:
   # schedule:
-    # # - cron: "7 23 * * *"  # JST 08:07（fetch の 1 時間後）
-    # - cron: "7 8 * * *"   # JST 17:07（fetch の 1 時間後）
-    # - cron: "7 10 * * *"  # JST 19:07（fetch の 1 時間後）
-    # - cron: "7 12 * * *"  # JST 21:07（fetch の 1 時間後）
+  #   # - cron: "7 23 * * *"  # JST 08:07（fetch の 1 時間後）
+  #   - cron: "7 8 * * *"   # JST 17:07（fetch の 1 時間後）
+  #   - cron: "7 10 * * *"  # JST 19:07（fetch の 1 時間後）
+  #   - cron: "7 12 * * *"  # JST 21:07（fetch の 1 時間後）
   workflow_dispatch:
     inputs:
       date:
