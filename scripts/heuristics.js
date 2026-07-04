@@ -6,6 +6,7 @@ import fetch from "node-fetch";
 import fs from "fs";
 import xlsx from "xlsx";
 import path from "path";
+import { execSync } from "child_process";
 
 import * as hc from "./heuristics_conditions.js";
 
@@ -513,6 +514,57 @@ function generateBusinessDayCandidates(fromDate, toDate) {
 }
 
 /* ==========================================================================================
+   5.5 期間モード用：1日分の heuristics 生成完了ごとに commit & push する
+       range モードは全期間の完了を待たずに、日付単位で反映する。
+       push 失敗時は fetch → rebase -X theirs → push でリトライする
+       （.github/workflows/heuristics.yml の最終コミットステップと同一方針）。
+       git の user.name / user.email は Actions 側（.yml）で事前設定済みであることが前提。
+========================================================================================== */
+
+/**
+ * @param {string} targetDate - runForDate が返した YYYYMMDD（生成済みファイルの日付）
+ * @returns {void}
+ */
+function commitAndPushDate(targetDate) {
+  const run = (cmd) => execSync(cmd, { stdio: "inherit" });
+
+  try {
+    // 新規・更新・削除（バックアップ世代整理分の削除も含む）をまとめてステージング
+    run("git add -A -- data/heuristics data/backup");
+
+    // ステージ済み差分の有無を確認（差分なしならコミットしない）
+    let hasChanges = true;
+    try {
+      execSync("git diff --cached --quiet");
+      hasChanges = false; // 差分なし
+    } catch {
+      hasChanges = true; // 差分あり
+    }
+
+    if (!hasChanges) {
+      console.log(`[git] ${targetDate}: コミット対象の差分がないためスキップします。`);
+      return;
+    }
+
+    run(`git commit -m "Update heuristics_${targetDate}.json and backup"`);
+
+    try {
+      run("git push origin main");
+    } catch {
+      console.log(`[git] ${targetDate}: push が拒否されました。最新の main を取得してリベースします。`);
+      run("git fetch origin");
+      run("git rebase -X theirs origin/main");
+      run("git push origin main");
+    }
+
+    console.log(`[git] ${targetDate}: commit & push 完了。`);
+  } catch (err) {
+    // 1日分の commit/push に失敗しても、後続日付の処理は継続する
+    console.log(`ERROR: ${targetDate} の commit/push に失敗しました。`, err.message);
+  }
+}
+
+/* ==========================================================================================
    6. エントリポイント
 ========================================================================================== */
 
@@ -532,6 +584,9 @@ async function main() {
       const result = await runForDate(date);
       if (!result) {
         console.log(`  → ${date} はスキップされました（休場日またはデータなし）`);
+      } else {
+        // 全期間の完了を待たず、1日分できるたびに commit & push する
+        commitAndPushDate(result);
       }
       // 日付間でも API 負荷軽減のため待機
       await new Promise(r => setTimeout(r, 1000));
