@@ -1,8 +1,8 @@
 name: 【margin.yml】Margin Info Fetch
 
 on:
-  # schedule:
-    # - cron: "7 18 * * *"   # JST 3:07（UTC 18:07）
+  schedule:
+    - cron: "7 18 * * *"   # JST 3:07（UTC 18:07）
   workflow_dispatch:
 
 permissions:
