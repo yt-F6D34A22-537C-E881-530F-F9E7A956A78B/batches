@@ -1,7 +1,7 @@
 name: 【heuristics.yml】Generate heuristics_YYYYMMDD.json (経験則スクリーニング)
 
 on:
-  schedule:
+  # schedule:
     # # - cron: "7 23 * * *"  # JST 08:07（fetch の 1 時間後）
     # - cron: "7 8 * * *"   # JST 17:07（fetch の 1 時間後）
     # - cron: "7 10 * * *"  # JST 19:07（fetch の 1 時間後）
