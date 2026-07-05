@@ -1,11 +1,11 @@
 name: 【fetch.yml】Fetch Yahoo Finance Chart Data
 
 on:
-  # schedule:
-  #   - cron: "7 22 * * *"  # JST 07:07（UTC 22:07（前日））
-  #   - cron: "7 7 * * *"   # JST 16:07（UTC 07:07）
-  #   - cron: "7 9 * * *"   # JST 18:07（UTC 09:07）
-  #   - cron: "7 11 * * *"  # JST 20:07（UTC 11:07）
+  schedule:
+    - cron: "7 22 * * *"  # JST 07:07（UTC 22:07（前日））
+    - cron: "7 7 * * *"   # JST 16:07（UTC 07:07）
+    - cron: "7 9 * * *"   # JST 18:07（UTC 09:07）
+    - cron: "7 11 * * *"  # JST 20:07（UTC 11:07）
   workflow_dispatch:
 
 permissions:
