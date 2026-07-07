@@ -1,0 +1,82 @@
+name: Heuristics Backfill Trigger
+
+# 責務: 2025-07-01〜2026-06-30 のheuristicsバックフィルを、
+#       concurrency group「auto-update」を共有する既存4ワークフロー
+#       （fetch.yml / margin.yml / download-jpx-xlsx.yml / heuristics.yml）が
+#       いずれも稼働していない時間帯にのみ、range モードで heuristics.yml へ委譲する。
+#       重い処理そのもの（OHLCV取得・スコア計算・営業日判定）は
+#       heuristics.yml / heuristics.js 側の既存責務のまま変更しない。
+
+on:
+  schedule:
+    # 22:07 UTC(fetch.yml)〜翌07:07 UTC(fetch.yml)の間が唯一9時間空く時間帯のため、
+    # 前後のジョブと十分な余裕を持たせて23:37 UTC（JST 08:37）に設定
+    - cron: '37 23 * * *'  # JST 08:37
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: heuristics-backfill
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    env:
+      BACKFILL_START: '20250701'
+      BACKFILL_END: '20260630'
+      # concurrency group「auto-update」を共有する既存ワークフロー一覧
+      GUARD_TARGET_WORKFLOWS: 'fetch.yml margin.yml download-jpx-xlsx.yml heuristics.yml'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        # push を行わないため fetch-depth: 0 は不要（既存3workflowはpush前提でfetch-depth:0）
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+        # 本スクリプトは fs/path のみ使用しnpmパッケージに依存しないため、
+        # npm install ステップは不要（不要なライブラリを追加しない方針に合致）
+
+      - name: Determine resume date
+        id: determine
+        run: node scripts/heuristics_backfill_trigger.js
+
+      - name: Check if any auto-update workflow is running or queued
+        id: guard
+        if: steps.determine.outputs.from_date != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          busy=false
+          for wf in $GUARD_TARGET_WORKFLOWS; do
+            running=$(gh run list --workflow="$wf" --status=in_progress --json databaseId --jq 'length')
+            queued=$(gh run list --workflow="$wf" --status=queued --json databaseId --jq 'length')
+            if [ "$running" -gt 0 ] || [ "$queued" -gt 0 ]; then
+              echo "$wf is running or queued. Skip this cycle."
+              busy=true
+            fi
+          done
+          echo "skip=$busy" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch heuristics.yml (range mode)
+        if: steps.determine.outputs.from_date != '' && steps.guard.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run heuristics.yml \
+            -f from_date=${{ steps.determine.outputs.from_date }} \
+            -f to_date=${{ env.BACKFILL_END }}
+          {
+            echo "### Heuristics Backfill"
+            echo "Dispatched heuristics.yml: from_date=${{ steps.determine.outputs.from_date }}, to_date=${{ env.BACKFILL_END }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: No action taken
+        if: steps.determine.outputs.from_date == '' || steps.guard.outputs.skip == 'true'
+        run: |
+          echo "Backfill either already completed, or another auto-update workflow is busy. No dispatch this cycle." >> "$GITHUB_STEP_SUMMARY"
