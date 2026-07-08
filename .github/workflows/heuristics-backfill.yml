@@ -1,4 +1,4 @@
-name: Heuristics Backfill Trigger
+name: 【heuristics-backfill.yml】Trigger heuristics.yml range backfill (経験則バックフィルトリガー)
 
 # 責務: 2025-07-01〜2026-06-30 のheuristicsバックフィルを、
 #       concurrency group「auto-update」を共有する既存4ワークフロー
