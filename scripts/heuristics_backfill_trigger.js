@@ -14,8 +14,8 @@
 //     歯抜けが発生する運用＝手動での特定日再実行等が生じた場合は、本ロジックの
 //     対象外として別途手動対応する想定）。
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 const BACKFILL_START = process.env.BACKFILL_START; // 'YYYYMMDD'
 const BACKFILL_END = process.env.BACKFILL_END;     // 'YYYYMMDD'
