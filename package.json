@@ -8,6 +8,7 @@
     "heuristics": "node scripts/heuristics.js",
     "fetch": "node scripts/fetch.js",
     "margin": "node scripts/margin.js",
-    "download-jpx": "node scripts/download-jpx-xlsx.js"
+    "download-jpx": "node scripts/download-jpx-xlsx.js",
+    "market_cap": "node scripts/fetch_market_cap.js"
   }
 }
