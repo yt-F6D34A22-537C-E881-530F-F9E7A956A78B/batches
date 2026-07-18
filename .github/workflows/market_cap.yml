@@ -1,43 +1,75 @@
-name: market_cap
+name: 【market_cap.yml】Fetch Market Cap Data
 
-# 発行済株式数（市場データ）の更新。株式分割・自己株買い等がない限り
-# 短期間ではほぼ変化しないため、data.json（日次）や margin.json ほど
-# 高頻度な更新は不要と判断し、週次（毎週日曜 21:00 UTC＝日本時間 月曜 6:00）
-# に設定している。2026-07 新設（時価総額列の追加に伴う）。
+# 発行済株式数（時価総額算出用の市場データ）の更新。株式分割・自己株買い等が
+# ない限り短期間ではほぼ変化しないため、data.json（1日4回更新）ほど高頻度な
+# 更新は不要と判断し、週次（毎週日曜 21:00 UTC＝日本時間 月曜 6:00）に設定
+# している。2026-07 新設（時価総額列の追加に伴う）。fetch.yml と処理フロー・
+# 方式（checkout・Node.jsセットアップ・依存インストール・push再試行）を統一した。
 on:
   schedule:
     - cron: "0 21 * * 0"
-  workflow_dispatch: {}  # 手動実行も可能にしておく
+  workflow_dispatch:
 
+permissions:
+  contents: write
+
+# fetch.yml・margin.yml 等の既存ワークフローと同じ concurrency.group を共有し、
+# data/ 配下への同時書き込み・push衝突を防ぐ（2026-07、market_cap 専用の
+# グループから auto-update への変更。他ワークフローとの整合を優先した）。
 concurrency:
-  group: market_cap
+  group: auto-update
   cancel-in-progress: false
 
 jobs:
-  fetch:
+  fetch_market_cap:
     runs-on: ubuntu-latest
-    timeout-minutes: 300  # 約4000銘柄 × リクエスト間隔を考慮し余裕を持たせる
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          python-version: "3.12"
+          fetch-depth: 0   # ← stale info（古い main）を防ぐため必須
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
 
       - name: Install dependencies
-        run: pip install pandas requests yfinance openpyxl
+        run: npm install --no-save node-fetch@3 xlsx
 
-      - name: Fetch market cap data
-        run: python scripts/fetch_market_cap.py
-        env:
-          MARKET_CAP_OUTPUT_PATH: data/market_cap.json
-
-      - name: Commit and push if changed
+      - name: Ensure data directory exists
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p data
+
+      - name: Run fetch script
+        run: node scripts/fetch_market_cap.js
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
           git add data/market_cap.json
-          git diff --cached --quiet || git commit -m "chore: update market_cap.json"
-          git push
+
+          git commit -m "Update market_cap.json" || exit 0
+
+          git push origin main || (
+            echo "Push rejected. Fetching latest main..."
+
+            echo "=== Git status ==="
+            git status
+
+            echo "=== HEAD ==="
+            git rev-parse HEAD
+
+            echo "=== origin/main ==="
+            git ls-remote origin refs/heads/main
+
+            echo "=== Recent commits ==="
+            git log --oneline --decorate -5
+
+            git fetch origin
+            git rebase -X theirs origin/main
+            git push origin main
+          )
