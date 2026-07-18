@@ -1,0 +1,43 @@
+name: market_cap
+
+# 発行済株式数（市場データ）の更新。株式分割・自己株買い等がない限り
+# 短期間ではほぼ変化しないため、data.json（日次）や margin.json ほど
+# 高頻度な更新は不要と判断し、週次（毎週日曜 21:00 UTC＝日本時間 月曜 6:00）
+# に設定している。2026-07 新設（時価総額列の追加に伴う）。
+on:
+  schedule:
+    - cron: "0 21 * * 0"
+  workflow_dispatch: {}  # 手動実行も可能にしておく
+
+concurrency:
+  group: market_cap
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300  # 約4000銘柄 × リクエスト間隔を考慮し余裕を持たせる
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pandas requests yfinance openpyxl
+
+      - name: Fetch market cap data
+        run: python scripts/fetch_market_cap.py
+        env:
+          MARKET_CAP_OUTPUT_PATH: data/market_cap.json
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/market_cap.json
+          git diff --cached --quiet || git commit -m "chore: update market_cap.json"
+          git push
