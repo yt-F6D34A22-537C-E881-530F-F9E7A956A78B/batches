@@ -1,21 +1,21 @@
 name: 【market_cap.yml】Fetch Market Cap Data
 
-# 発行済株式数（時価総額算出用の市場データ）の更新。株式分割・自己株買い等が
-# ない限り短期間ではほぼ変化しないため、data.json（1日4回更新）ほど高頻度な
-# 更新は不要と判断し、週次（毎週日曜 21:00 UTC＝日本時間 月曜 6:00）に設定
-# している。2026-07 新設（時価総額列の追加に伴う）。fetch.yml と処理フロー・
-# 方式（checkout・Node.jsセットアップ・依存インストール・push再試行）を統一した。
+# 発行済株式数（時価総額の算出に用いる市場データ）の更新。株式分割・
+# 自己株買い等がない限り短期間ではほぼ変化しないため、data.json（日次・
+# fetch.yml）や margin.json（margin.yml）ほど高頻度な更新は不要と判断し、
+# 週次（毎週日曜 21:00 UTC＝日本時間 月曜 6:00）に設定している。
+# 2026-07 新設（時価総額列の追加に伴う）。fetch.yml の構成に合わせている。
 on:
   schedule:
-    - cron: "0 21 * * 0"
+    - cron: "0 21 * * 0"  # JST 月曜 06:00（UTC 日曜 21:00）
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# fetch.yml・margin.yml 等の既存ワークフローと同じ concurrency.group を共有し、
-# data/ 配下への同時書き込み・push衝突を防ぐ（2026-07、market_cap 専用の
-# グループから auto-update への変更。他ワークフローとの整合を優先した）。
+# 複数のworkflowの同時実行を禁止（fetch.yml/margin.yml等と同じ
+# concurrency.group を共有し、data/ 配下への同時コミット・pushによる
+# 競合を避ける。2026-07、market_cap.yml もこの共有グループへ加えた）
 concurrency:
   group: auto-update
   cancel-in-progress: false
