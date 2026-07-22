@@ -1,0 +1,165 @@
+name: 【verify-v7-quote-batch.yml】Investigate v7/finance/quote batch feasibility (案3検証・使い捨て)
+
+# 責務: fetch.js のリファクタリング案3（v7/finance/quote による複数銘柄一括取得）が
+#       実現可能かどうかを、GitHub Actionsランナー（インターネットアクセス制限なし）
+#       から検証するための調査専用ワークフロー。
+#       本番の fetch.js・main.py・他ワークフローには一切影響しない、使い捨ての
+#       検証コード（検証スクリプト自体もこのファイル内に埋め込み、リポジトリに
+#       別ファイルを追加しない）。検証が終わったらこのファイルごと削除して問題ない。
+#
+# 背景: ローカル環境で v7/finance/quote を叩いたところ HTTP 401 が返ってきた。
+#       これは Yahoo 側が crumb（ワンタイムトークン）＋セッションCookieを
+#       要求するようになった可能性が高いという仮説を、以下の3点で検証する。
+#         (a) GitHub Actions ランナーからでも同じく401になるか
+#             （呼び出し元ネットワークの問題ではなく、エンドポイント自体の
+#               認証要件の問題かどうかの切り分け）
+#         (b) crumb＋Cookieを取得した上で再試行すると成功するか
+#             （crumb取得手順はYahoo非公式・コミュニティ報告ベースの推測実装）
+#         (c) 既存の v8/finance/chart は同条件でも認証不要のままか（比較用）
+
+on:
+  workflow_dispatch:
+    inputs:
+      codes:
+        description: '検証したい証券コード（カンマ区切り）。省略時はサンプル5銘柄。'
+        required: false
+        default: '7203,9984,6758,8306,4063'
+        type: string
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+        # 依存ライブラリなし（Node標準搭載の fetch のみ使用）のため npm install は不要
+
+      - name: Write verification script
+        run: |
+          cat > verify_v7_quote_batch_v2.mjs << 'SCRIPT_EOF'
+          const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+
+          const codes = (process.argv[2] ? process.argv[2].split(",") : ["7203", "9984", "6758", "8306", "4063"])
+            .map(c => c.trim())
+            .filter(Boolean);
+          const symbols = codes.map(c => `${c}.T`).join(",");
+
+          function cookieHeaderFrom(setCookieArray) {
+            return (setCookieArray || []).map(sc => sc.split(";")[0]).join("; ");
+          }
+
+          async function tryQuote(label, extraParams = "", cookie = "") {
+            console.log(`\n--- ${label} ---`);
+            const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}${extraParams}`;
+            const res = await fetch(url, {
+              headers: {
+                "User-Agent": UA,
+                ...(cookie ? { Cookie: cookie } : {}),
+              },
+            });
+            const text = await res.text();
+            console.log(`HTTP status: ${res.status}`);
+            let json = null;
+            try { json = JSON.parse(text); } catch { console.log("JSON解析失敗。レスポンス冒頭:", text.slice(0, 300)); }
+            const results = json?.quoteResponse?.result || [];
+            console.log(`返却された銘柄数: ${results.length} / リクエストした銘柄数: ${codes.length}`);
+            if (json?.quoteResponse?.error) console.log("quoteResponse.error:", json.quoteResponse.error);
+            for (const r of results.slice(0, 3)) {
+              console.log({
+                symbol: r.symbol,
+                o: r.regularMarketOpen, h: r.regularMarketDayHigh, l: r.regularMarketDayLow,
+                v: r.regularMarketVolume, c: r.regularMarketPrice,
+              });
+            }
+            return { status: res.status, results };
+          }
+
+          async function getCrumb() {
+            console.log("\n--- crumb取得を試みる ---");
+            const cookieRes = await fetch("https://fc.yahoo.com", {
+              headers: { "User-Agent": UA },
+              redirect: "manual",
+            });
+            const setCookies = typeof cookieRes.headers.getSetCookie === "function"
+              ? cookieRes.headers.getSetCookie()
+              : [cookieRes.headers.get("set-cookie")].filter(Boolean);
+            console.log(`fc.yahoo.com からの Set-Cookie 件数: ${setCookies.length}`);
+            const cookie = cookieHeaderFrom(setCookies);
+
+            if (!cookie) {
+              console.log("Cookieを取得できませんでした。crumb取得を中断します。");
+              return null;
+            }
+
+            const crumbRes = await fetch("https://query2.finance.yahoo.com/v1/test/getcrumb", {
+              headers: { "User-Agent": UA, Cookie: cookie },
+            });
+            const crumb = (await crumbRes.text()).trim();
+            console.log(`getcrumb HTTP status: ${crumbRes.status}`);
+            console.log(`取得したcrumb: ${crumb ? `"${crumb}"（${crumb.length}文字）` : "(空)"}`);
+
+            if (!crumb || crumb.includes("<html") || crumbRes.status !== 200) {
+              console.log("有効なcrumbを取得できませんでした。");
+              return null;
+            }
+            return { crumb, cookie };
+          }
+
+          async function main() {
+            console.log("========================================");
+            console.log(`対象銘柄数: ${codes.length}件`);
+            console.log("========================================");
+
+            await tryQuote("STEP 0: crumbなしで v7/finance/quote（401の再現確認）");
+
+            const auth = await getCrumb();
+
+            if (auth) {
+              await tryQuote(
+                "STEP 2: crumb+Cookie付きで v7/finance/quote を再試行",
+                `&crumb=${encodeURIComponent(auth.crumb)}`,
+                auth.cookie
+              );
+            } else {
+              console.log("\nSTEP 2はスキップ（crumb取得に失敗したため）。");
+            }
+
+            console.log("\n========================================");
+            console.log("STEP 3: 比較用に v8/finance/chart（crumbなし）を確認");
+            console.log("========================================");
+            const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${codes[0]}.T?interval=1d&range=1d`;
+            const chartRes = await fetch(chartUrl, { headers: { "User-Agent": UA } });
+            console.log(`v8/finance/chart HTTP status: ${chartRes.status}`);
+            const chartJson = await chartRes.json().catch(() => null);
+            const item = chartJson?.chart?.result?.[0];
+            if (item) {
+              const q = item.indicators.quote[0];
+              const lastIdx = item.timestamp.length - 1;
+              console.log({ o: q.open[lastIdx], h: q.high[lastIdx], l: q.low[lastIdx], c: q.close[lastIdx], v: q.volume[lastIdx] });
+            } else {
+              console.log("v8/finance/chart もレスポンス形式が想定と異なりました。中身:", JSON.stringify(chartJson).slice(0, 300));
+            }
+          }
+
+          main().catch(err => {
+            console.error("ERROR:", err);
+            process.exit(1);
+          });
+          SCRIPT_EOF
+
+      - name: Run verification script
+        env:
+          CODES: ${{ inputs.codes }}
+        run: node verify_v7_quote_batch_v2.mjs "$CODES" | tee verify_result.txt
+
+      - name: Write step summary
+        if: always()
+        run: |
+          {
+            echo "### v7/finance/quote バッチ取得 検証結果"
+            echo '```'
+            cat verify_result.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
