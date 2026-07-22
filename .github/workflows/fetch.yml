@@ -1,5 +1,13 @@
 name: 【fetch.yml】Fetch Yahoo Finance Chart Data
 
+# 責務: Yahoo Finance から全銘柄の日足OHLCVを取得し、
+#       data/ohlcv/YYYYMM/ohlcv_YYYYMMDD.json として日付ごとに恒久保存する
+#       （2026-07、単一ファイル洗い替え方式の data.json から変更）。
+#       取得日数は起動パラメータ（workflow_dispatch の days）で指定可能。
+#       スケジュール実行（cron）では未指定として扱われ、既定値の1日分
+#       （＝当日分の更新のみ）を取得する。1より大きい日数を指定した場合は、
+#       まだ存在しない過去日分のファイルを遡及生成する（バックフィル用途）。
+
 on:
   schedule:
     - cron: "7 22 * * *"  # JST 07:07（UTC 22:07（前日））
@@ -7,6 +15,12 @@ on:
     - cron: "7 9 * * *"   # JST 18:07（UTC 09:07）
     - cron: "7 11 * * *"  # JST 20:07（UTC 11:07）
   workflow_dispatch:
+    inputs:
+      days:
+        description: '取得する日数（1〜3650）。省略時は1（直近1日分のみ取得）。'
+        required: false
+        default: '1'
+        type: string
 
 permissions:
   contents: write
@@ -19,6 +33,12 @@ concurrency:
 jobs:
   fetch_yahoo_finance:
     runs-on: ubuntu-latest
+    env:
+      # Yahoo Finance が公式にサポートする range 列挙の最大クラス「10y」に相当する日数を、
+      # range パラメータへの非公式な "Nd" 指定に対する安全側の上限として採用する
+      # （詳細は scripts/fetch.js 冒頭コメントを参照）。
+      MAX_FETCH_DAYS: '3650'
+      FETCH_DAYS: ${{ inputs.days || '1' }}
 
     steps:
       - name: Checkout repository
@@ -34,9 +54,20 @@ jobs:
       - name: Install dependencies
         run: npm install --no-save node-fetch@3 xlsx
 
+      - name: Validate days parameter
+        run: |
+          if ! [[ "$FETCH_DAYS" =~ ^[0-9]+$ ]]; then
+            echo "::error::days must be a positive integer. Got: '$FETCH_DAYS'"
+            exit 1
+          fi
+          if [ "$FETCH_DAYS" -lt 1 ] || [ "$FETCH_DAYS" -gt "$MAX_FETCH_DAYS" ]; then
+            echo "::error::days must be between 1 and $MAX_FETCH_DAYS. Got: $FETCH_DAYS"
+            exit 1
+          fi
+
       - name: Ensure data directory exists
         run: |
-          mkdir -p data
+          mkdir -p data/ohlcv
 
       - name: Run fetch script
         run: node scripts/fetch.js
@@ -46,9 +77,9 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
 
-          git add data/data.json data/backup/
+          git add data/ohlcv/ data/backup/
 
-          git commit -m "Update data.json and backup" || exit 0
+          git commit -m "Update ohlcv daily archive (days=$FETCH_DAYS) and backup" || exit 0
 
           git push origin main || (
             echo "Push rejected. Fetching latest main..."
