@@ -31,8 +31,23 @@ if (symbols.length === 0) {
 //    Yahoo Finance側のレート制限に抵触しやすくなるため、バッチ化して
 //    通信回数を抑える（fetch.js と同じ「生のfetchでYahoo Finance APIを叩く」
 //    方式は踏襲しつつ、エンドポイントと呼び出し粒度のみ用途に合わせて変更している）。
+//
+//    2026-07 修正: v7/finance/quote は crumb（ワンタイムトークン）＋
+//    セッションCookieが無いと401 Unauthorizedを返すようになっていた
+//    （本番でmarket_cap.jsonが空のまま更新できていなかった不具合の原因）。
+//    実行開始時に一度だけ crumb+Cookie を取得し、全バッチで使い回す
+//    （crumbはセッション単位のトークンであり、リクエストごとに取り直す
+//    必要はない。取得手順はYahoo非公式・コミュニティ報告ベース）。
+//
+//    あわせて BATCH_SIZE を 50 → 2000 に引き上げた。実地検証の結果、
+//    2000銘柄（URL長 約18,000文字）までは成功し、3000銘柄
+//    （URL長 約27,000文字）では Yahoo 側のWebサーバーが
+//    "431 Request Header Fields Too Large" を返すことを確認済みのため、
+//    安全マージンを見て2000に設定している。これにより
+//    89バッチ→3バッチ（4437銘柄の場合）に削減され、実行時間も大幅に
+//    短縮される。
 // -----------------------------
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 2000;
 const REQUEST_INTERVAL_MS = 500; // fetch.js と同じリクエスト間隔
 
 function chunk(array, size) {
@@ -43,12 +58,41 @@ function chunk(array, size) {
   return result;
 }
 
-async function fetchSharesOutstandingBatch(codes) {
+// crumb+Cookie取得手順はYahoo公式ドキュメントが存在しないため、コミュニティで
+// 報告されている非公式な手順（fc.yahoo.comへのアクセスでセッションCookieを得て、
+// query2.finance.yahoo.com/v1/test/getcrumb でcrumbを取得する）を踏襲している。
+function cookieHeaderFrom(setCookieArray) {
+  return (setCookieArray || []).map(sc => sc.split(";")[0]).join("; ");
+}
+
+async function getCrumb() {
+  const cookieRes = await fetch("https://fc.yahoo.com", { redirect: "manual" });
+  // node-fetch の Headers#raw() は Set-Cookie を複数持つ場合でも全件配列で返す
+  // （Headers#get("set-cookie") だと1件目しか取れず、必要なCookieを取りこぼす）
+  const setCookies = cookieRes.headers.raw()["set-cookie"] || [];
+  const cookie = cookieHeaderFrom(setCookies);
+  if (!cookie) {
+    console.log("ERROR: セッションCookieを取得できませんでした。");
+    return null;
+  }
+
+  const crumbRes = await fetch("https://query2.finance.yahoo.com/v1/test/getcrumb", {
+    headers: { Cookie: cookie },
+  });
+  const crumb = (await crumbRes.text()).trim();
+  if (!crumb || crumb.includes("<html") || crumbRes.status !== 200) {
+    console.log("ERROR: crumbを取得できませんでした。");
+    return null;
+  }
+  return { crumb, cookie };
+}
+
+async function fetchSharesOutstandingBatch(codes, auth) {
   const symbolsParam = codes.map(code => `${code}.T`).join(",");
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbolsParam}`;
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbolsParam}&crumb=${encodeURIComponent(auth.crumb)}`;
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: { Cookie: auth.cookie } });
     const json = await res.json();
 
     const list = json.quoteResponse?.result;
@@ -78,16 +122,20 @@ async function fetchSharesOutstandingBatch(codes) {
 // 3. 全銘柄をバッチ単位で順次取得
 // -----------------------------
 async function main() {
+  const auth = await getCrumb();
+  if (!auth) {
+    console.log("ERROR: crumb取得に失敗したため処理を中断します。data/market_cap.json は更新しません（前回分を保持）。");
+    process.exit(1);
+  }
+
   let marketCap = {};
   const batches = chunk(symbols, BATCH_SIZE);
 
   for (let i = 0; i < batches.length; i++) {
-    const batchResult = await fetchSharesOutstandingBatch(batches[i]);
+    const batchResult = await fetchSharesOutstandingBatch(batches[i], auth);
     marketCap = { ...marketCap, ...batchResult };
 
-    if ((i + 1) % 10 === 0 || i === batches.length - 1) {
-      console.log(`進捗: ${i + 1}/${batches.length} バッチ`);
-    }
+    console.log(`進捗: ${i + 1}/${batches.length} バッチ`);
 
     await new Promise(r => setTimeout(r, REQUEST_INTERVAL_MS));
   }
