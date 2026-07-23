@@ -1,0 +1,56 @@
+name: 【analysis.yml】Run heuristics signal analysis (経験則シグナル分析)
+
+on:
+  workflow_dispatch:
+    inputs:
+      from_date:
+        description: '対象期間の開始日（YYYYMMDD）。空欄なら全期間を対象とする'
+        required: false
+        default: ''
+      to_date:
+        description: '対象期間の終了日（YYYYMMDD）。空欄なら全期間を対象とする'
+        required: false
+        default: ''
+
+permissions:
+  contents: read  # 結果はartifactとしてのみ出力し、dataやanalysis配下へのcommit・pushは行わない
+
+concurrency:
+  group: heuristics-analysis
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # data/ohlcv・data/heuristics の現時点の内容が読めればよく、履歴は不要
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install analysis dependencies
+        run: pip install -r analysis/requirements.txt
+
+      # pooled検定・daywise検定を、データ読み込みを1回だけ行うrun_all.pyでまとめて実行する。
+      # CIをまたぐキャッシュ（actions/cache等）は、heuristics_YYYYMMDD.jsonが平日ごとに
+      # 増え続けることと、生成ロジック見直し時は全体が変わりうることから実運用ではほぼ
+      # ヒットせず、キャッシュ管理コストに見合わないため採用しない（2026-07 検討）。
+      - name: Run analysis
+        env:
+          ANALYSIS_FROM_DATE: ${{ github.event.inputs.from_date }}
+          ANALYSIS_TO_DATE: ${{ github.event.inputs.to_date }}
+        run: |
+          mkdir -p analysis/output
+          python analysis/run_all.py | tee analysis/output/run_log.txt
+
+      - name: Upload analysis results
+        uses: actions/upload-artifact@v4
+        with:
+          name: heuristics-signal-analysis-${{ github.event.inputs.from_date || 'all' }}-${{ github.event.inputs.to_date || 'all' }}-${{ github.run_id }}
+          path: analysis/output/
+          retention-days: 30
