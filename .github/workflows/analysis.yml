@@ -45,6 +45,7 @@ jobs:
           ANALYSIS_FROM_DATE: ${{ github.event.inputs.from_date }}
           ANALYSIS_TO_DATE: ${{ github.event.inputs.to_date }}
         run: |
+          set -o pipefail
           mkdir -p analysis/output
           python analysis/run_all.py | tee analysis/output/run_log.txt
 
