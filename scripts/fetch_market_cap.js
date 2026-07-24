@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
 import fs from "fs";
 import xlsx from "xlsx";
+import { getCrumb, YAHOO_REQUEST_HEADERS } from "./lib/yahoo_finance_auth.js";
 
 // -----------------------------
 // 1. Excel から銘柄コードを読み込む（fetch.js と同一の手順・同一ファイルを再利用）
@@ -61,38 +62,14 @@ function chunk(array, size) {
 // crumb+Cookie取得手順はYahoo公式ドキュメントが存在しないため、コミュニティで
 // 報告されている非公式な手順（fc.yahoo.comへのアクセスでセッションCookieを得て、
 // query2.finance.yahoo.com/v1/test/getcrumb でcrumbを取得する）を踏襲している。
-function cookieHeaderFrom(setCookieArray) {
-  return (setCookieArray || []).map(sc => sc.split(";")[0]).join("; ");
-}
-
-async function getCrumb() {
-  const cookieRes = await fetch("https://fc.yahoo.com", { redirect: "manual" });
-  // node-fetch の Headers#raw() は Set-Cookie を複数持つ場合でも全件配列で返す
-  // （Headers#get("set-cookie") だと1件目しか取れず、必要なCookieを取りこぼす）
-  const setCookies = cookieRes.headers.raw()["set-cookie"] || [];
-  const cookie = cookieHeaderFrom(setCookies);
-  if (!cookie) {
-    console.log("ERROR: セッションCookieを取得できませんでした。");
-    return null;
-  }
-
-  const crumbRes = await fetch("https://query2.finance.yahoo.com/v1/test/getcrumb", {
-    headers: { Cookie: cookie },
-  });
-  const crumb = (await crumbRes.text()).trim();
-  if (!crumb || crumb.includes("<html") || crumbRes.status !== 200) {
-    console.log("ERROR: crumbを取得できませんでした。");
-    return null;
-  }
-  return { crumb, cookie };
-}
+// getCrumb・cookieHeaderFromは共通化のため scripts/lib/yahoo_finance_auth.js へ移動した（2026-07）。
 
 async function fetchSharesOutstandingBatch(codes, auth) {
   const symbolsParam = codes.map(code => `${code}.T`).join(",");
   const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbolsParam}&crumb=${encodeURIComponent(auth.crumb)}`;
 
   try {
-    const res = await fetch(url, { headers: { Cookie: auth.cookie } });
+    const res = await fetch(url, { headers: { ...YAHOO_REQUEST_HEADERS, Cookie: auth.cookie } });
     const json = await res.json();
 
     const list = json.quoteResponse?.result;
@@ -122,7 +99,7 @@ async function fetchSharesOutstandingBatch(codes, auth) {
 // 3. 全銘柄をバッチ単位で順次取得
 // -----------------------------
 async function main() {
-  const auth = await getCrumb();
+  const auth = await getCrumb("ERROR"); // フォールバックが無いためERROR扱い（既存挙動を維持）
   if (!auth) {
     console.log("ERROR: crumb取得に失敗したため処理を中断します。data/market_cap.json は更新しません（前回分を保持）。");
     process.exit(1);

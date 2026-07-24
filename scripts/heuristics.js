@@ -5,10 +5,12 @@
 import fetch from "node-fetch";
 import fs from "fs";
 import xlsx from "xlsx";
-import path from "path";
 import { execSync } from "child_process";
+// backupFileは、この関数内で使う既存のローカル変数名（コピー先パス）と紛らわしいため
+// createBackupという別名でインポートしている。
+import { backupFile as createBackup, pruneKeepNewest } from "./lib/backup_utils.js";
 
-import * as hc from "./heuristics_conditions.js";
+import * as hc from "./lib/heuristics_conditions.js";
 
 /* ==========================================================================================
    0. コマンドライン引数のパース
@@ -439,34 +441,13 @@ async function runForDate(targetDate) {
   fs.writeFileSync(outFile, JSON.stringify(finalData, null, 2));
 
   /* バックアップ処理（data/backup/heuristics_YYYYMMDD.json.TIMESTAMP） */
+  // タイムスタンプ生成・コピー・件数ベースの古いバックアップ削除は
+  // scripts/lib/jst_time.js・scripts/lib/backup_utils.js へ共通化した（2026-07）。
   const backupDir = "data/backup";
-  if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
-
-  const now = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  const pad = n => String(n).padStart(2, "0");
-
-  const timestamp =
-    now.getFullYear().toString() +
-    pad(now.getMonth() + 1) +
-    pad(now.getDate()) +
-    "_" +
-    pad(now.getHours()) +
-    pad(now.getMinutes()) +
-    pad(now.getSeconds());
-
-  const backupFile = path.join(backupDir, `heuristics_${latestDateGlobal}.json.${timestamp}`);
-  fs.copyFileSync(outFile, backupFile);
+  createBackup(outFile, backupDir);
 
   /* バックアップ最新 8 件だけ残す */
-  const files = fs
-    .readdirSync(backupDir)
-    .filter(f => f.startsWith("heuristics_") && f.includes(".json."))
-    .sort();
-
-  while (files.length > 8) {
-    const oldFile = files.shift();
-    fs.unlinkSync(path.join(backupDir, oldFile));
-  }
+  pruneKeepNewest(backupDir, f => f.startsWith("heuristics_") && f.includes(".json."), 8);
 
   console.log(`heuristics_${latestDateGlobal}.json generation completed.`);
   return latestDateGlobal;

@@ -4,6 +4,8 @@ import xlsx from "xlsx";
 import { JSDOM } from "jsdom";
 import iconv from "iconv-lite";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { formatTimestampJst } from "./lib/jst_time.js";
+import { backupFile, pruneOlderThanDays } from "./lib/backup_utils.js";
 
 // ============================================================
 // Utility
@@ -12,22 +14,7 @@ function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-function jstNow() {
-  return new Date(Date.now() + 9 * 60 * 60 * 1000);
-}
-
-function timestamp() {
-  const d = jstNow();
-  const pad = n => String(n).padStart(2, "0");
-  return (
-    d.getFullYear().toString() +
-    pad(d.getMonth() + 1) +
-    pad(d.getDate()) + "_" +
-    pad(d.getHours()) +
-    pad(d.getMinutes()) +
-    pad(d.getSeconds())
-  );
-}
+// jstNow・timestampは共通化のため scripts/lib/jst_time.js（formatTimestampJst）へ移動した（2026-07）。
 
 function normalizeNFKC(s) {
   return s.normalize("NFKC");
@@ -415,40 +402,14 @@ function buildMarginJson(kubunMap, regulationMap, BUY_BAN, SELL_BAN, jpxMap) {
 // 7. バックアップ作成
 // ============================================================
 function backupMargin() {
-  ensureDir("data/backup");
-  const ts = timestamp();
-  fs.copyFileSync("data/margin.json", `data/backup/margin.json.${ts}`);
+  backupFile("data/margin.json", "data/backup");
 }
 
 // ============================================================
 // 8. 古いバックアップ削除（3日超）
 // ============================================================
 function cleanupBackups() {
-  const dir = "data/backup";
-  if (!fs.existsSync(dir)) return;
-
-  const files = fs.readdirSync(dir);
-  const now = jstNow();
-
-  for (const f of files) {
-    const m = f.match(/margin\.json\.(\d{8}_\d{6})$/);
-    if (!m) continue;
-
-    const ts = m[1];
-    const dt = new Date(
-      ts.slice(0, 4),
-      ts.slice(4, 6) - 1,
-      ts.slice(6, 8),
-      ts.slice(9, 11),
-      ts.slice(11, 13),
-      ts.slice(13, 15)
-    );
-
-    const diffDays = (now - dt) / (1000 * 60 * 60 * 24);
-    if (diffDays > 3) {
-      fs.unlinkSync(`${dir}/${f}`);
-    }
-  }
+  pruneOlderThanDays("data/backup", /margin\.json\.(\d{8}_\d{6})$/, 3);
 }
 
 // ============================================================

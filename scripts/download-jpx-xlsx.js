@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 import { JSDOM } from "jsdom";
+import { formatTimestampJst } from "./lib/jst_time.js";
+import { backupFile, pruneOlderThanDays } from "./lib/backup_utils.js";
 
 // ---------------------------------------------
 // 1. JPX ページから data_j.xls の URL を取得
@@ -68,29 +70,11 @@ function convertToXlsx() {
 // ---------------------------------------------
 function backupFiles() {
   const backupDir = "data/backup";
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
-  }
+  // xls・xlsxの2ファイルを同一タイムスタンプでまとめてバックアップする（既存挙動を維持）
+  const ts = formatTimestampJst();
 
-  const now = new Date(Date.now() + 9 * 60 * 60 * 1000); // JST
-  const pad = n => String(n).padStart(2, "0");
-
-  const timestamp =
-    now.getFullYear().toString() +
-    pad(now.getMonth() + 1) +
-    pad(now.getDate()) + "_" +
-    pad(now.getHours()) +
-    pad(now.getMinutes()) +
-    pad(now.getSeconds());
-
-  const srcXls = "data/data_j.xls";
-  const srcXlsx = "data/data_j.xlsx";
-
-  const dstXls = path.join(backupDir, `data_j.xls.${timestamp}`);
-  const dstXlsx = path.join(backupDir, `data_j.xlsx.${timestamp}`);
-
-  fs.copyFileSync(srcXls, dstXls);
-  fs.copyFileSync(srcXlsx, dstXlsx);
+  const dstXls = backupFile("data/data_j.xls", backupDir, ts);
+  const dstXlsx = backupFile("data/data_j.xlsx", backupDir, ts);
 
   console.log("✔ バックアップ作成:", dstXls, dstXlsx);
 }
@@ -99,36 +83,7 @@ function backupFiles() {
 // 5. 古いバックアップ削除（3日以上）
 // ---------------------------------------------
 function cleanupBackups() {
-  const backupDir = "data/backup";
-  const files = fs.readdirSync(backupDir);
-
-  const pattern = /(data_j\.(xls|xlsx))\.(\d{8}_\d{6})$/;
-
-  const now = new Date(Date.now() + 9 * 60 * 60 * 1000); // JST
-
-  for (const file of files) {
-    const match = file.match(pattern);
-    if (!match) continue;
-
-    const timestamp = match[3];
-    const dt = new Date(
-      Number(timestamp.slice(0, 4)),
-      Number(timestamp.slice(4, 6)) - 1,
-      Number(timestamp.slice(6, 8)),
-      Number(timestamp.slice(9, 11)),
-      Number(timestamp.slice(11, 13)),
-      Number(timestamp.slice(13, 15))
-    );
-
-    const diff = now - dt;
-    const days = diff / (1000 * 60 * 60 * 24);
-
-    if (days > 3) {
-      const fullPath = path.join(backupDir, file);
-      fs.unlinkSync(fullPath);
-      console.log("✔ 古いバックアップ削除:", fullPath);
-    }
-  }
+  pruneOlderThanDays("data/backup", /(data_j\.(xls|xlsx))\.(\d{8}_\d{6})$/, 3);
 }
 
 // ---------------------------------------------
