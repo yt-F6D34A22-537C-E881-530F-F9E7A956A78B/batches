@@ -1649,7 +1649,7 @@
     },
     "TECH_BB_ZONE_BREAK_DAILY": true,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": true,
+    "TECH_BB_ZONE_BREAK_MONTHLY": false,
     "TECH_BOX_RANGE": false,
     "TECH_OVERHEAT": false,
     "TECH_GRANVILLE": {
