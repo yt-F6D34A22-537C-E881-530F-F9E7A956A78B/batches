@@ -132,6 +132,14 @@ async function fetchViaV7QuoteBatch(codes) {
   const finalDataByCode = {};
   const batches = chunk(codes, V7_BATCH_SIZE);
 
+  // v7/finance/quote は「当日時点のスナップショット」を返す設計だが、長期間売買が成立していない
+  // 銘柄（整理・監理銘柄、出来高極少の銘柄等）に対しては、Yahoo側が何ヶ月〜何年も前の
+  // regularMarketTime をそのまま返すことがある（2026-07 実運用で確認。ohlcv_20240627.json 等、
+  // 本来存在しないはずの過去日付ファイルが少数銘柄だけで新規生成される不具合の原因だった）。
+  // このため、全バッチの取得が完了するまで確定させず、まず正常取得できた銘柄のOHLCVを
+  // pendingByCode に保留し、日付の妥当性は全銘柄が出揃ってから判定する（詳細は下記を参照）。
+  const pendingByCode = {};
+
   for (let i = 0; i < batches.length; i++) {
     const batchCodes = batches[i];
     const label = `v7バッチ ${i + 1}/${batches.length}`;
@@ -149,7 +157,11 @@ async function fetchViaV7QuoteBatch(codes) {
       returnedCodes.add(code);
 
       const ohlcv = extractOhlcvFromQuoteItem(item);
-      finalDataByCode[code] = ohlcv || { error: "incomplete OHLCV fields from v7 quote" };
+      if (!ohlcv) {
+        finalDataByCode[code] = { error: "incomplete OHLCV fields from v7 quote" };
+        continue;
+      }
+      pendingByCode[code] = ohlcv;
     }
     // レスポンスに含まれなかった銘柄（上場廃止・コード相違等）もエラー扱いにする
     for (const code of batchCodes) {
@@ -158,6 +170,38 @@ async function fetchViaV7QuoteBatch(codes) {
 
     console.log(`${label} 完了（${list.length}/${batchCodes.length}銘柄）`);
     await new Promise(r => setTimeout(r, V7_BATCH_INTERVAL_MS));
+  }
+
+  // 正常取得できた銘柄群のうち、最も多くの銘柄が指している日付（最頻値）を
+  // 「このバッチ全体が指し示す最新営業日」とみなす。
+  //
+  // 実行時点の「今日（JST）」と直接比較しないのは、実行が遅延した場合
+  // （例: 金曜分の取得が実行できず土曜に持ち越された場合）でも、v7が返す
+  // 実際の最新営業日（金曜）を正しく採用できるようにするため。
+  //
+  // 最大値（最も新しい日付）ではなく最頻値を使うのは、ごく少数の銘柄が
+  // 何らかの理由で異常な日付（古い/新しいいずれも）を報告した場合に、
+  // その外れ値へ基準日が引きずられ、大多数の正しいデータの方が誤って
+  // 除外されるのを防ぐため。
+  const dateCounts = {};
+  for (const ohlcv of Object.values(pendingByCode)) {
+    const d = Object.keys(ohlcv)[0];
+    dateCounts[d] = (dateCounts[d] || 0) + 1;
+  }
+  const majorityDate = Object.entries(dateCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+  let staleCount = 0;
+  for (const [code, ohlcv] of Object.entries(pendingByCode)) {
+    const d = Object.keys(ohlcv)[0];
+    if (d === majorityDate) {
+      finalDataByCode[code] = ohlcv;
+    } else {
+      finalDataByCode[code] = { error: `stale quote from v7 (regularMarketTime date=${d}, batch majority date=${majorityDate})` };
+      staleCount++;
+    }
+  }
+  if (staleCount > 0) {
+    console.log(`WARNING: v7取得銘柄のうち${staleCount}件は、バッチ全体の最頻日付（${majorityDate}）と異なるregularMarketTimeのため除外しました。`);
   }
 
   return finalDataByCode;
