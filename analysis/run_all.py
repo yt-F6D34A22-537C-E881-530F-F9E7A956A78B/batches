@@ -28,6 +28,15 @@ REPO_ROOT = "."
 DATE_RE = re.compile(r"^\d{8}$")
 
 
+def guide():
+    print("########## 現状機能だけで「有意な指標を重視した売買」を行う際の注意点 ##########")
+	print("")
+	print("・　pooledとdaywiseの両方で有意な指標を優先する：pooled検定単体で有意でも、daywise検定（クロスセクション相関を考慮した、より妥当な検定）で消える指標は「その日の市場全体が動いただけ」の疑いがあるため、両方一致するものの方が信頼度が高いです（4083行目の記述より）。")
+	print("・　単一指標の有意性は「組み合わせでも同様に効く」ことを保証しない：これは統計的に一般に知られる注意点で、個々に有意な指標を機械的に足し合わせても、相関構造によっては効果が弱まったり打ち消し合ったりすることがあります（一般的な統計知識であり、本アプリ固有の実装事実ではありません）。")
+	print("・　多重検定の性質上、有意判定そのものに一定の偽陽性リスクが残る：FDR補正は「複数指標を同時に検定した際の偽陽性率」を抑えるためのものですが、ゼロにするものではありません。")
+    print("###########################################################################")
+
+
 def _read_date_env(name: str) -> str | None:
     """環境変数からYYYYMMDD形式の日付を読む。未設定・空文字はNone（=絞り込みなし）。"""
     value = os.environ.get(name, "").strip()
@@ -39,6 +48,7 @@ def _read_date_env(name: str) -> str | None:
 
 
 def main():
+    guide()
     from_date = _read_date_env("ANALYSIS_FROM_DATE")
     to_date = _read_date_env("ANALYSIS_TO_DATE")
     if from_date is None and to_date is None:
