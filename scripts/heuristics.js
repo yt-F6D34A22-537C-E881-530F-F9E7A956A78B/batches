@@ -393,6 +393,44 @@ function runAllConditions(daily, weekly, monthly) {
   };
 }
 
+/**
+ * computeHeuristicsForDate() のフル計算（全銘柄 × runAllConditions()）を行う前に、
+ * この対象日が実際に解決する日付（＝latestDateGlobal）を軽量に見積もる。
+ *
+ * dailyByCode内の有効な銘柄からサンプル（最大 PREDICT_SAMPLE_SIZE 件）だけを取り出し、
+ * その中での最新日（最大値）を採用する。1銘柄だけで判定すると、その銘柄固有の
+ * データ欠損（個別の取引停止等）により実際より古い日付に誤判定するリスクがあるため、
+ * 複数銘柄のサンプルの最大値を取ることで、市場全体の休場日判定としての精度を確保する
+ * （全銘柄は基本的に同一の取引所カレンダーに従うため、サンプル内の最大値が
+ * 市場全体の実際の最新営業日と一致する可能性が高い）。
+ *
+ * @param {Map<string, object>} dailyByCode
+ * @param {string} targetDate - YYYYMMDD
+ * @returns {string|null}
+ */
+const PREDICT_SAMPLE_SIZE = 20;
+
+function predictResolvedDate(dailyByCode, targetDate) {
+  let best = null;
+  let sampled = 0;
+
+  for (const rawDaily of dailyByCode.values()) {
+    if (!rawDaily || rawDaily.error) continue;
+
+    const sliced = sliceDailyUpTo(rawDaily, targetDate);
+    const keys = Object.keys(sliced);
+    if (keys.length === 0) continue;
+
+    const latest = keys.sort().pop();
+    if (!best || latest > best) best = latest;
+
+    sampled++;
+    if (sampled >= PREDICT_SAMPLE_SIZE) break;
+  }
+
+  return best;
+}
+
 /* ==========================================================================================
    4. 1日分の heuristics を生成する（純粋な計算のみ。ネットワークアクセスは行わない）
 
@@ -611,12 +649,28 @@ async function main() {
     console.log("範囲全体の日足を一括取得中（この処理は1回だけ実行されます）...");
     const dailyByCode = await fetchAllSymbolsDaily(toDate, fromDate);
 
+    // 2026-07 追加: 休場日の候補（例: 年末年始・GW等）は、スライス後の最新日が
+    // 直近の実際の営業日へ解決される（＝今回の実行で既に生成済みの日付と同じ）ため、
+    // computeHeuristicsForDate() をフルに実行しても最終的には無コミットで捨てられる。
+    // 4,400銘柄分のrunAllConditions()（1日あたり数分規模）を毎回無駄にしないよう、
+    // 代表銘柄のサンプルだけで「この候補が解決する日付」を軽量に事前判定し、
+    // 今回の実行で既に生成済みの日付と一致する場合はフル計算をスキップする。
+    const producedDatesThisRun = new Set();
+
     for (const date of candidates) {
       console.log(`\n=== 処理中: ${date} ===`);
+
+      const predicted = predictResolvedDate(dailyByCode, date);
+      if (predicted && producedDatesThisRun.has(predicted)) {
+        console.log(`  → ${date} は直近の営業日（${predicted}）と同一と推定されるためスキップします（休場日の可能性）。`);
+        continue;
+      }
+
       const result = computeHeuristicsForDate(dailyByCode, date);
       if (!result) {
         console.log(`  → ${date} はスキップされました（休場日またはデータなし）`);
       } else {
+        producedDatesThisRun.add(result);
         // 全期間の完了を待たず、1日分できるたびに commit & push する
         commitAndPushDate(result);
       }
