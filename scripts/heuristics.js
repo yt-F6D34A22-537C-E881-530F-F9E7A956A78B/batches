@@ -9,6 +9,8 @@ import { execSync } from "child_process";
 // backupFileは、この関数内で使う既存のローカル変数名（コピー先パス）と紛らわしいため
 // createBackupという別名でインポートしている。
 import { backupFile as createBackup, pruneKeepNewest } from "./lib/backup_utils.js";
+import { mapWithConcurrency } from "./lib/concurrency.js";
+import { resampleWeekly, resampleMonthly, sliceDailyUpTo } from "./lib/ohlcv_resample.js";
 
 import * as hc from "./lib/heuristics_conditions.js";
 
@@ -130,10 +132,16 @@ if (symbols.length === 0) {
 
 
 /* ==========================================================================================
-   2. Yahoo Finance API（足種別に取得）
+   2. Yahoo Finance API（日足のみ取得。週足・月足はローカルで集計する）
 
    ⚠️ この関数は data/data.json を読み書きしない。
       通常モード・指定日モードともに Yahoo Finance API へ直接アクセスする。
+
+   2026-07: 週足・月足をYahoo Finance APIから直接取得すると値が不安定になることがある
+   （実運用で確認）ため、日足のみを取得し、週足・月足はバックエンド（main.py の /chart。
+   pandasの df.resample("W-FRI") / df.resample("ME")）と同一の集計規則で
+   scripts/lib/ohlcv_resample.js によりローカル生成するように変更した。
+   これにより銘柄あたりのAPIリクエスト数が3回→1回に減る副次効果もある。
 ========================================================================================== */
 
 /**
@@ -149,39 +157,35 @@ function toUnixEndOfDay(yyyymmdd) {
   return Math.floor(utcMs / 1000);
 }
 
-// 通常モード時の range 設定（既存動作を維持）
-const FETCH_RANGES = {
-  "1d":  "1y",
-  "1wk": "5y",
-  "1mo": "10y"
-};
+// 日足の遡及日数。週足・月足をローカル集計するため、旧実装の週足用（1900日）・
+// 月足用（3700日）双方の必要期間をカバーできるよう、両者のうち大きい方（月足用）を採用する。
+const DAILY_LOOKBACK_DAYS = 3700;
 
-// 指定日モード時の period1 オフセット（日数）
-// 祝日・連休を考慮して必要足数より余裕を持たせる
-const PERIOD1_OFFSET_DAYS = {
-  "1d":  400,  // 1y（約250営業日）+ 余裕
-  "1wk": 1900, // 5y + 余裕
-  "1mo": 3700  // 10y + 余裕
-};
+// 通常モード（targetDateなし）時の range 指定。週足・月足をローカル集計するため、
+// 旧実装の日足用range（"1y"）ではなく、月足の集計に必要な期間（旧"10y"）に合わせて拡大している。
+const DAILY_RANGE_NORMAL = "10y";
 
 /**
  * @param {string} code        - 銘柄コード（4桁）
- * @param {string} interval    - "1d" | "1wk" | "1mo"
- * @param {string|null} targetDate - YYYYMMDD（指定日モード）または null（通常モード）
+ * @param {string|null} targetDate  - YYYYMMDD（指定日/期間モード。取得終端＝period2）または null（通常モード）
+ * @param {string|null} period1AnchorDate - period1（遡及開始日）の基準日。省略時は targetDate を使う。
+ *   期間モードでは、範囲内で最も古い対象日（fromDate）をここに渡すことで、
+ *   「範囲内のどの対象日についても、その日自身が必要とするDAILY_LOOKBACK_DAYS分の
+ *   遡及期間を確保する」ことができる（toDateを基準にperiod1を計算すると、
+ *   fromDate〜toDateの日数分だけ遡及期間が不足してしまうため。2026-07 修正）。
  */
-async function fetchCandles(code, interval, targetDate = null) {
+async function fetchDailyCandles(code, targetDate = null, period1AnchorDate = null) {
   const symbol = `${code}.T`;  // ← Yahoo API 用に .T を付ける
 
   let url;
   if (targetDate) {
-    // 指定日モード: period1/period2 で期間を固定し、指定日を終端とする
+    // 指定日/期間モード: period1/period2 で期間を固定し、targetDateを終端とする
     const period2 = toUnixEndOfDay(targetDate);
-    const period1 = period2 - PERIOD1_OFFSET_DAYS[interval] * 24 * 60 * 60;
-    url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&period1=${period1}&period2=${period2}`;
+    const period1 = toUnixEndOfDay(period1AnchorDate ?? targetDate) - DAILY_LOOKBACK_DAYS * 24 * 60 * 60;
+    url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&period1=${period1}&period2=${period2}`;
   } else {
     // 通常モード: 従来通り range 指定
-    const range = FETCH_RANGES[interval];
-    url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+    url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${DAILY_RANGE_NORMAL}`;
   }
 
   try {
@@ -226,6 +230,41 @@ async function fetchCandles(code, interval, targetDate = null) {
   } catch (err) {
     return { error: "Network or fetch error" };
   }
+}
+
+/* ==========================================================================================
+   2.5 全銘柄の日足をまとめて取得する（同時実行数を制限したプールで並列化）
+
+   2026-07 新設。旧実装は「1銘柄ずつ直列で3リクエスト（日足/週足/月足）+ 固定500msスリープ」
+   だったため、約4,400銘柄で1日分の処理に1〜2時間程度を要していた。
+   日足のみの取得に一本化した上で、同時実行数を制限したプール（scripts/lib/concurrency.js）で
+   並列化することで大幅に短縮する。
+========================================================================================== */
+
+// Yahoo Finance側のレート制限に配慮した初期値。エラー率が高い場合は下げ、
+// 安定していれば上げるなど、実地の様子を見て調整すること。
+const FETCH_CONCURRENCY = 8;
+
+/**
+ * @param {string|null} targetDate - YYYYMMDD（指定日/期間モード時の取得終端日）または null（通常モード）
+ * @param {string|null} period1AnchorDate - period1（遡及開始日）の基準日。省略時は targetDate を使う。
+ *   期間モードでは fromDate（範囲内最古の対象日）を渡す（詳細は fetchDailyCandles を参照）。
+ * @returns {Promise<Map<string, object>>} - code -> 日足OHLCVオブジェクト（取得失敗時は{error}）
+ */
+async function fetchAllSymbolsDaily(targetDate, period1AnchorDate = null) {
+  const dailyByCode = new Map();
+  let doneCount = 0;
+
+  await mapWithConcurrency(symbols, FETCH_CONCURRENCY, async (code) => {
+    const daily = await fetchDailyCandles(code, targetDate, period1AnchorDate);
+    dailyByCode.set(code, daily);
+    doneCount++;
+    if (doneCount % 200 === 0 || doneCount === symbols.length) {
+      console.log(`日足取得進捗: ${doneCount}/${symbols.length}`);
+    }
+  });
+
+  return dailyByCode;
 }
 
 
@@ -355,62 +394,61 @@ function runAllConditions(daily, weekly, monthly) {
 }
 
 /* ==========================================================================================
-   4. 1日分の heuristics を生成する
-      targetDate が null の場合は通常モード（Yahoo Finance 最新日付を自動取得）。
-      targetDate が YYYYMMDD の場合は指定日モード（period2 で終端を固定）。
+   4. 1日分の heuristics を生成する（純粋な計算のみ。ネットワークアクセスは行わない）
+
+      dailyByCode は fetchAllSymbolsDaily() であらかじめ取得済みのものを渡す
+      （2026-07、日足取得と条件計算を分離した。詳細は 2.5 を参照）。
+
+      targetDate が null の場合は通常モード（取得した日足データをそのまま使い、
+      最新日付をデータから自動判定する）。
+      targetDate が YYYYMMDD の場合は、指定日/期間モード向けに、その日以前の
+      日足のみへスライスしてから週足・月足を集計する（期間モードで1回だけ取得した
+      長期間の日足を対象日ごとに使い回す際、対象日より未来のデータが混入
+      〔先読み〕しないようにするため）。
+
       休場日など有効データが取得できない場合は null を返す。
 ========================================================================================== */
 
 /**
+ * @param {Map<string, object>} dailyByCode - fetchAllSymbolsDaily() の戻り値
  * @param {string|null} targetDate - YYYYMMDD または null
- * @returns {Promise<string|null>} - 生成した heuristics の日付（YYYYMMDD）、スキップ時は null
+ * @returns {string|null} - 生成した heuristics の日付（YYYYMMDD）、スキップ時は null
  */
-async function runForDate(targetDate) {
+function computeHeuristicsForDate(dailyByCode, targetDate) {
   let finalData = {};
   let latestDateGlobal = null;
+  let okCount = 0, fetchErrorCount = 0, insufficientCount = 0;
+
+  const needDaily   = 100; // Rule9 daily
+  const needWeekly  = 100; // Rule9 weekly
+  const needMonthly = 75;  // MA75, PO, RPO, etc.
 
   for (const code of symbols) {
-    console.log(`Processing ${code} ...`);
+    const rawDaily = dailyByCode.get(code);
 
-    // targetDate を fetchCandles に渡す（null なら通常モード）
-    const daily   = await fetchCandles(code, "1d",  targetDate);
-    const weekly  = await fetchCandles(code, "1wk", targetDate);
-    const monthly = await fetchCandles(code, "1mo", targetDate);
-
-    // --- データ不足チェック（fetchCandles の error を検出） ---
-    if (daily.error || weekly.error || monthly.error) {
-      console.log(`Skipping ${code} due to fetch error:`, {
-        daily:   daily.error,
-        weekly:  weekly.error,
-        monthly: monthly.error
-      });
-      finalData[code] = { error: "fetch error" };
+    // --- データ不足チェック（fetchAllSymbolsDaily の error を検出） ---
+    if (!rawDaily || rawDaily.error) {
+      finalData[code] = { error: rawDaily?.error ?? "no data" };
+      fetchErrorCount++;
       continue;
     }
-  
+
+    // targetDateが指定されている場合、それ以前の日足のみに絞ってから週足・月足を集計する
+    const daily = targetDate ? sliceDailyUpTo(rawDaily, targetDate) : rawDaily;
+    const weekly = resampleWeekly(daily);
+    const monthly = resampleMonthly(daily);
+
     // --- ローソク足が少なすぎる場合もスキップ ---
-    const needDaily   = 100; // Rule9 daily
-    const needWeekly  = 100; // Rule9 weekly
-    const needMonthly = 75;  // MA75, PO, RPO, etc.
-    
     const dailyCount   = Object.keys(daily).length;
     const weeklyCount  = Object.keys(weekly).length;
     const monthlyCount = Object.keys(monthly).length;
-    
+
     const insufficient =
       dailyCount < needDaily || weeklyCount < needWeekly || monthlyCount < needMonthly;
 
     if (insufficient) {
-      const dailyMsg   = `${dailyCount}  ${dailyCount   >= needDaily   ? ">" : "<"} ${needDaily}   required`;
-      const weeklyMsg  = `${weeklyCount} ${weeklyCount  >= needWeekly  ? ">" : "<"} ${needWeekly}  required`;
-      const monthlyMsg = `${monthlyCount} ${monthlyCount >= needMonthly ? ">" : "<"} ${needMonthly} required`;
-
-      console.log(`Skipping ${code} due to insufficient candles. {`);
-      console.log(`  daily:   ${dailyMsg},`);
-      console.log(`  weekly:  ${weeklyMsg},`);
-      console.log(`  monthly: ${monthlyMsg}`);
-      console.log(`}`);
       finalData[code] = { error: "insufficient candles" };
+      insufficientCount++;
       continue;
     }
 
@@ -421,8 +459,7 @@ async function runForDate(targetDate) {
     }
 
     finalData[code] = runAllConditions(daily, weekly, monthly);
-
-    await new Promise(r => setTimeout(r, 500));
+    okCount++;
   }
 
   // 全銘柄がスキップされた場合（休場日など有効データが存在しない）
@@ -449,13 +486,16 @@ async function runForDate(targetDate) {
   /* バックアップ最新 8 件だけ残す */
   pruneKeepNewest(backupDir, f => f.startsWith("heuristics_") && f.includes(".json."), 8);
 
-  console.log(`heuristics_${latestDateGlobal}.json generation completed.`);
+  console.log(
+    `heuristics_${latestDateGlobal}.json generation completed. `
+    + `(成功: ${okCount} / 取得エラー: ${fetchErrorCount} / データ不足: ${insufficientCount})`
+  );
   return latestDateGlobal;
 }
 
 /* ==========================================================================================
    5. 期間モード用：fromDate〜toDate の営業日候補を生成する
-      土日は事前に除外する。祝日は fetchCandles の結果（有効データなし）で自動スキップされる。
+      土日は事前に除外する。祝日は computeHeuristicsForDate の結果（有効データなし）で自動スキップされる。
 ========================================================================================== */
 
 /**
@@ -503,7 +543,7 @@ function generateBusinessDayCandidates(fromDate, toDate) {
 ========================================================================================== */
 
 /**
- * @param {string} targetDate - runForDate が返した YYYYMMDD（生成済みファイルの日付）
+ * @param {string} targetDate - computeHeuristicsForDate が返した YYYYMMDD（生成済みファイルの日付）
  * @returns {void}
  */
 function commitAndPushDate(targetDate) {
@@ -552,30 +592,42 @@ function commitAndPushDate(targetDate) {
 async function main() {
   if (RUN_MODE === "single") {
     // --- 単一日指定モード ---
-    await runForDate(singleDate);
+    console.log("日足取得中...");
+    const dailyByCode = await fetchAllSymbolsDaily(singleDate);
+    computeHeuristicsForDate(dailyByCode, singleDate);
 
   } else if (RUN_MODE === "range") {
     // --- 期間指定モード ---
-    // 土日を事前除外した候補日列を生成（祝日は fetchCandles 側で有効データなしとして自動スキップ）
+    // 土日を事前除外した候補日列を生成（祝日は computeHeuristicsForDate 側で
+    // 有効データなしとして自動スキップ）
     const candidates = generateBusinessDayCandidates(fromDate, toDate);
     console.log(`期間内候補日（土日除外済み）: ${candidates.length} 日`);
 
+    // 2026-07: 範囲全体で必要となる日足を銘柄ごとに1回だけ取得し、対象日ごとに使い回す。
+    // period2=toDate（範囲内で最も未来の対象日）、period1の基準日=fromDate（範囲内で最も古い
+    // 対象日）とすることで、range内のどの対象日についても、その日自身が必要とする
+    // DAILY_LOOKBACK_DAYS分の遡及期間を確保できる（toDateだけを基準にすると、
+    // fromDate〜toDateの日数分だけfromDate側の遡及期間が不足するため。2026-07 修正）。
+    console.log("範囲全体の日足を一括取得中（この処理は1回だけ実行されます）...");
+    const dailyByCode = await fetchAllSymbolsDaily(toDate, fromDate);
+
     for (const date of candidates) {
       console.log(`\n=== 処理中: ${date} ===`);
-      const result = await runForDate(date);
+      const result = computeHeuristicsForDate(dailyByCode, date);
       if (!result) {
         console.log(`  → ${date} はスキップされました（休場日またはデータなし）`);
       } else {
         // 全期間の完了を待たず、1日分できるたびに commit & push する
         commitAndPushDate(result);
       }
-      // 日付間でも API 負荷軽減のため待機
-      await new Promise(r => setTimeout(r, 1000));
+      // computeHeuristicsForDate はネットワークアクセスを行わない（日足は取得済み）ため、
+      // 旧実装にあった「日付間のAPI負荷軽減のための待機」は不要になった。
     }
 
   } else {
     // --- 通常モード（引数なし、既存動作を維持） ---
-    await runForDate(null);
+    const dailyByCode = await fetchAllSymbolsDaily(null);
+    computeHeuristicsForDate(dailyByCode, null);
   }
 }
 
