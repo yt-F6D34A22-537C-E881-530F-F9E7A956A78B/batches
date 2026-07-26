@@ -1162,14 +1162,25 @@ function computeRule9Daily(daily) {
   const n = dates.length;
   if (n < 3) return { direction: null, count: 0 };
 
-  const ma5 = {};
-  const ma100 = {};
+  const closes = dates.map(d => daily[d].c);
 
+  // MA5 / MA100 をローリング合計で逐次計算する（O(n)）。
+  // 2026-07 修正: 旧実装はi件ごとに部分オブジェクトを毎回コピー構築してcalcMA()を
+  // 呼んでいたためO(n^2 log n)だった。日足の取得期間を1年→10年相当に拡大した際、
+  // n（日足件数）が約250→約2,500に増え、1銘柄あたりの計算時間が理論値で約140倍に
+  // 悪化し、heuristics.js のrangeモードが実質的に停止する不具合の原因となった。
+  // 計算結果（各時点のMA5/MA100の値）は旧実装と完全に同一で、計算量のみ改善している。
+  const ma5 = new Array(n).fill(null);
+  const ma100 = new Array(n).fill(null);
+  let sum5 = 0, sum100 = 0;
   for (let i = 0; i < n; i++) {
-    const sub = {};
-    for (let j = 0; j <= i; j++) sub[dates[j]] = daily[dates[j]];
-    ma5[dates[i]] = i >= 4 ? calcMA(sub, 5) : null;
-    ma100[dates[i]] = i >= 99 ? calcMA(sub, 100) : null;
+    sum5 += closes[i];
+    if (i >= 5) sum5 -= closes[i - 5];
+    if (i >= 4) ma5[i] = sum5 / 5;
+
+    sum100 += closes[i];
+    if (i >= 100) sum100 -= closes[i - 100];
+    if (i >= 99) ma100[i] = sum100 / 100;
   }
 
   let ruleDir = null;
@@ -1187,11 +1198,10 @@ function computeRule9Daily(daily) {
     const d = dates[i];
     const c = daily[d].c;
 
-    const prevD = dates[i - 1];
-    const prevMA5 = ma5[prevD];
-    const prevMA100 = ma100[prevD];
-    const todayMA5 = ma5[d];
-    const todayMA100 = ma100[d];
+    const prevMA5 = ma5[i - 1];
+    const prevMA100 = ma100[i - 1];
+    const todayMA5 = ma5[i];
+    const todayMA100 = ma100[i];
 
     if (prevMA5 === null || todayMA5 === null || prevMA100 === null || todayMA100 === null) {
       prevClose = c;
@@ -1286,16 +1296,20 @@ function computeRule9Weekly(weekly) {
   const n = dates.length;
   if (n < 3) return { direction: null, count: 0 };
 
-  const ma5 = {};
-  const ma100 = {};
+  const closes = dates.map(d => weekly[d].c);
 
-  // MA5 / MA100 をローソク足の進行に合わせて逐次計算
+  // MA5 / MA100 をローリング合計で逐次計算する（O(n)。2026-07修正、詳細は computeRule9Daily を参照）
+  const ma5 = new Array(n).fill(null);
+  const ma100 = new Array(n).fill(null);
+  let sum5 = 0, sum100 = 0;
   for (let i = 0; i < n; i++) {
-    const sub = {};
-    for (let j = 0; j <= i; j++) sub[dates[j]] = weekly[dates[j]];
+    sum5 += closes[i];
+    if (i >= 5) sum5 -= closes[i - 5];
+    if (i >= 4) ma5[i] = sum5 / 5;
 
-    ma5[dates[i]] = i >= 4 ? calcMA(sub, 5) : null;
-    ma100[dates[i]] = i >= 99 ? calcMA(sub, 100) : null;
+    sum100 += closes[i];
+    if (i >= 100) sum100 -= closes[i - 100];
+    if (i >= 99) ma100[i] = sum100 / 100;
   }
 
   let ruleDir = null;
@@ -1313,11 +1327,10 @@ function computeRule9Weekly(weekly) {
     const d = dates[i];
     const c = weekly[d].c;
 
-    const prevD = dates[i - 1];
-    const prevMA5 = ma5[prevD];
-    const prevMA100 = ma100[prevD];
-    const todayMA5 = ma5[d];
-    const todayMA100 = ma100[d];
+    const prevMA5 = ma5[i - 1];
+    const prevMA100 = ma100[i - 1];
+    const todayMA5 = ma5[i];
+    const todayMA100 = ma100[i];
 
     // MA が未計算の期間はスキップ
     if (prevMA5 === null || todayMA5 === null || prevMA100 === null || todayMA100 === null) {
