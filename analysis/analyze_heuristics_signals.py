@@ -23,11 +23,14 @@ def forward_dates(trading_dates, signal_date, n):
     return trading_dates[idx + n]
 
 
-def run_pooled_test(price: dict, trading_dates: list, heur: dict) -> pd.DataFrame:
-    """日付をまたいだ全観測をプールしたMann-Whitney U検定（FDR補正込み）。
+def build_long_df(price: dict, trading_dates: list, heur: dict) -> pd.DataFrame:
+    """heuristicsシグナルと、HORIZONS営業日後までのフォワードリターンを結合した
+    long形式（1行 = 1銘柄 × 1シグナル日 × 1horizon）のDataFrameを構築する。
 
-    run_all.py から呼ぶ場合も、本ファイル単体で実行する場合も、
-    データの読み込みは1回で済むようこの関数にロジックを切り出している。
+    2026-07、analyze_heuristics_signal_combinations.run_combination_test() でも
+    同一のデータ構築ロジックが必要になったため、run_pooled_test() 本体から切り出した
+    （単独指標検定・組み合わせ検定のいずれも、起点となる観測データの構築ロジックは
+    完全に同一であるため。切り出しに伴うrun_pooled_test()の出力・stdout内容の変更はない）。
     """
     heur_dates = sorted(heur.keys())
 
@@ -59,6 +62,16 @@ def run_pooled_test(price: dict, trading_dates: list, heur: dict) -> pd.DataFram
     df = pd.DataFrame(records)
     print("観測レコード数:", len(df))
     print(df[["date", "horizon"]].value_counts().sort_index())
+    return df
+
+
+def run_pooled_test(price: dict, trading_dates: list, heur: dict) -> pd.DataFrame:
+    """日付をまたいだ全観測をプールしたMann-Whitney U検定（FDR補正込み）。
+
+    run_all.py から呼ぶ場合も、本ファイル単体で実行する場合も、
+    データの読み込みは1回で済むようこの関数にロジックを切り出している。
+    """
+    df = build_long_df(price, trading_dates, heur)
 
     tech_cols = [c for c in df.columns if c.startswith("TECH_")]
     print("TECH_*列数:", len(tech_cols))
