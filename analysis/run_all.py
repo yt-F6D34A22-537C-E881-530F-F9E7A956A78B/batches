@@ -14,19 +14,28 @@ CIをまたぐキャッシュ（actions/cache等）は、heuristics_YYYYMMDD.jso
 
 2026-07 追加: 単独TECH_*の検定（pooled・daywise）に加え、複数TECH_*を
 組み合わせたAND条件の検定（analyze_heuristics_signal_combinations.py）も実行する。
+
+2026-07 修正: 組み合わせ検定の初版は、実データ規模（TECH_*54列×約100万行/horizon）で
+Apriori探索の組み合わせ数が爆発しCIジョブがタイムアウトした
+（詳細は analyze_heuristics_signal_combinations.py 冒頭のコメントを参照）。
+対処として、(1) pooled検定で有意かつ効果量が大きい上位N件のTECH_*のみを
+組み合わせ検定の対象に事前フィルタし、(2) build_long_df()の重複実行を解消し、
+(3) 各ステージの所要時間をログ出力するようにした（次回同様の事象が起きた際に
+どのステージで詰まったかをすぐ切り分けられるようにするため）。
 """
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common.repo_data import load_price_series, load_heuristics
-from analyze_heuristics_signals import run_pooled_test
+from analyze_heuristics_signals import build_long_df, run_pooled_test
 from analyze_heuristics_signals_daywise import run_daywise_test, print_ttest_summary
-from analyze_heuristics_signal_combinations import run_combination_test
+from analyze_heuristics_signal_combinations import run_combination_test, select_candidate_keys
 
 REPO_ROOT = "."
 DATE_RE = re.compile(r"^\d{8}$")
@@ -51,6 +60,11 @@ def _read_date_env(name: str) -> str | None:
     return value
 
 
+def _elapsed(label: str, start: float) -> None:
+    """各ステージの所要時間をログ出力する（2026-07追加。CIタイムアウト事象の切り分け用）。"""
+    print(f"[elapsed] {label}: {time.time() - start:.1f}秒")
+
+
 def main():
     guide()
     from_date = _read_date_env("ANALYSIS_FROM_DATE")
@@ -62,17 +76,27 @@ def main():
 
     # 価格データ(ohlcv)はto_dateで上限を切らない（common.repo_data.load_price_seriesを参照。
     # heuristicsの期間末尾のフォワードリターン算出に、期間外＝未来側の終値が必要なため）。
+    t0 = time.time()
     price, trading_dates = load_price_series(REPO_ROOT, from_date=from_date)
     print(f"ohlcvアーカイブ収録日付: {trading_dates[0]} 〜 {trading_dates[-1]}（計{len(trading_dates)}日）")
 
     heur = load_heuristics(REPO_ROOT, from_date=from_date, to_date=to_date)
     heur_dates = sorted(heur.keys())
     print(f"heuristicsファイル日付: {heur_dates[0]} 〜 {heur_dates[-1]}（計{len(heur_dates)}日）")
+    _elapsed("データ読み込み（load_price_series + load_heuristics）", t0)
 
     Path("analysis/output").mkdir(parents=True, exist_ok=True)
 
+    # long形式データの構築は1回だけ行い、pooled検定・組み合わせ検定の両方で使い回す
+    # （2026-07修正。以前は各検定内部でそれぞれ構築しており、327万行規模のネストループを
+    # 2回実行する無駄が生じていた）。
+    t0 = time.time()
+    long_df = build_long_df(price, trading_dates, heur)
+    _elapsed("build_long_df（long形式データ構築）", t0)
+
     print("\n########## pooled検定（Mann-Whitney U + FDR補正） ##########")
-    pooled_df = run_pooled_test(price, trading_dates, heur)
+    t0 = time.time()
+    pooled_df = run_pooled_test(price, trading_dates, heur, precomputed_df=long_df)
     pd.set_option("display.width", 160)
     pd.set_option("display.max_rows", 200)
     print("\n=== 全結果（p_adj_fdr昇順・上位20件） ===")
@@ -82,14 +106,26 @@ def main():
         sig = pooled_df[pooled_df["p_adj_fdr"] < 0.05]
         print(sig.to_string(index=False) if len(sig) else "該当なし")
     pooled_df.to_csv("analysis/output/result_all.csv", index=False)
+    _elapsed("pooled検定", t0)
 
     print("\n########## daywise検定（Fama-MacBeth風t検定） ##########")
+    t0 = time.time()
     daily_df = run_daywise_test(price, trading_dates, heur)
     daily_df.to_csv("analysis/output/result_daywise.csv", index=False)
     print_ttest_summary(daily_df)
+    _elapsed("daywise検定", t0)
 
     print("\n########## 組み合わせ検定（Apriori風探索 + Mann-Whitney U + FDR補正） ##########")
-    combo_df = run_combination_test(price, trading_dates, heur)
+    t0 = time.time()
+    # サンプル数が数十万〜100万件規模だとp値だけではほぼ全ルールが有意になってしまうため
+    # （大標本下でのp値の性質上の限界）、効果量も加味してpooled検定結果から候補を絞り込む。
+    # 全TECH_*（54列）をそのまま組み合わせ探索の対象にすると、size2〜4だけで
+    # 最大342,486通りの組み合わせが発生しCIタイムアウトを招くため（2026-07に実際に発生した事象）、
+    # 候補を上位十数件に絞ることで組み合わせ数を現実的な範囲（数千通り以下）に抑える。
+    candidate_keys = select_candidate_keys(pooled_df)
+    print(f"組み合わせ検定の候補キー（{len(candidate_keys)}件）: {candidate_keys}")
+    combo_df = run_combination_test(price, trading_dates, heur,
+                                     candidate_keys=candidate_keys, precomputed_df=long_df)
     print("\n=== 組み合わせ検定 全結果（p_adj_fdr昇順・上位20件） ===")
     print(combo_df.head(20).to_string(index=False))
     if not combo_df.empty:
@@ -97,6 +133,7 @@ def main():
         sig_combo = combo_df[combo_df["p_adj_fdr"] < 0.05]
         print(sig_combo.to_string(index=False) if len(sig_combo) else "該当なし")
     combo_df.to_csv("analysis/output/result_combinations.csv", index=False)
+    _elapsed("組み合わせ検定", t0)
 
 
 if __name__ == "__main__":

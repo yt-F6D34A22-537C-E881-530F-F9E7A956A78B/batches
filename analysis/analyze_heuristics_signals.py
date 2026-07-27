@@ -65,13 +65,20 @@ def build_long_df(price: dict, trading_dates: list, heur: dict) -> pd.DataFrame:
     return df
 
 
-def run_pooled_test(price: dict, trading_dates: list, heur: dict) -> pd.DataFrame:
+def run_pooled_test(price: dict, trading_dates: list, heur: dict,
+                     precomputed_df: pd.DataFrame | None = None) -> pd.DataFrame:
     """日付をまたいだ全観測をプールしたMann-Whitney U検定（FDR補正込み）。
 
     run_all.py から呼ぶ場合も、本ファイル単体で実行する場合も、
     データの読み込みは1回で済むようこの関数にロジックを切り出している。
+
+    precomputed_df（2026-07追加）: build_long_df() の結果を呼び出し側が
+    既に持っている場合に渡すと、再構築（327万行規模のネストループ）を省略できる。
+    run_all.py が pooled検定・組み合わせ検定の両方で同じlong_dfを使い回すために追加した
+    （組み合わせ検定機能の追加に伴い、build_long_df()の重複実行がCI実行時間の
+    無駄になっていたための性能改善。省略時の挙動・出力は従来と完全に同一）。
     """
-    df = build_long_df(price, trading_dates, heur)
+    df = precomputed_df if precomputed_df is not None else build_long_df(price, trading_dates, heur)
 
     tech_cols = [c for c in df.columns if c.startswith("TECH_")]
     print("TECH_*列数:", len(tech_cols))
