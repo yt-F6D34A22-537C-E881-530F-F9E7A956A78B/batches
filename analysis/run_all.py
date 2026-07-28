@@ -33,8 +33,9 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common.repo_data import load_price_series, load_heuristics
+from common.plain_language import annotate_dataframe, build_plain_report
 from analyze_heuristics_signals import build_long_df, run_pooled_test
-from analyze_heuristics_signals_daywise import run_daywise_test, print_ttest_summary
+from analyze_heuristics_signals_daywise import run_daywise_test, print_ttest_summary, summarize_daywise_ttest
 from analyze_heuristics_signal_combinations import run_combination_test, select_candidate_keys
 
 REPO_ROOT = "."
@@ -105,6 +106,9 @@ def main():
         print("\n=== 補正後 有意水準5%未満のルール ===")
         sig = pooled_df[pooled_df["p_adj_fdr"] < 0.05]
         print(sig.to_string(index=False) if len(sig) else "該当なし")
+    # 2026-07追加: 統計知識がなくても読める説明列（verdict・plain_summary）を付加する
+    # （既存列はそのまま維持した上での追加列のため、既存の読み手への影響はない）
+    pooled_df = annotate_dataframe(pooled_df, fdr_column="p_adj_fdr", fdr_corrected=True)
     pooled_df.to_csv("analysis/output/result_all.csv", index=False)
     _elapsed("pooled検定", t0)
 
@@ -113,6 +117,13 @@ def main():
     daily_df = run_daywise_test(price, trading_dates, heur)
     daily_df.to_csv("analysis/output/result_daywise.csv", index=False)
     print_ttest_summary(daily_df)
+    # 2026-07追加: ルールごとの集計結果（従来は標準出力のみ）をCSVとしても保存し、
+    # プレーン言語の説明列も付加する。daywise検定はFDR補正を行っていない（既存仕様）ため、
+    # fdr_corrected=False を指定し、説明文に「多重検定補正なし」の注意書きを含める。
+    daywise_summary_df = summarize_daywise_ttest(daily_df)
+    daywise_summary_df = annotate_dataframe(daywise_summary_df, diff_column="mean_diff",
+                                             fdr_column="p_value", fdr_corrected=False)
+    daywise_summary_df.to_csv("analysis/output/result_daywise_summary.csv", index=False)
     _elapsed("daywise検定", t0)
 
     print("\n########## 組み合わせ検定（Apriori風探索 + Mann-Whitney U + FDR補正） ##########")
@@ -132,8 +143,18 @@ def main():
         print("\n=== 補正後 有意水準5%未満の組み合わせ ===")
         sig_combo = combo_df[combo_df["p_adj_fdr"] < 0.05]
         print(sig_combo.to_string(index=False) if len(sig_combo) else "該当なし")
+    combo_df = annotate_dataframe(combo_df, diff_column="diff", fdr_column="p_adj_fdr", fdr_corrected=True)
     combo_df.to_csv("analysis/output/result_combinations.csv", index=False)
     _elapsed("組み合わせ検定", t0)
+
+    # 2026-07追加: 3種類の検定結果を統合した、統計知識不要の日本語サマリーレポートを生成する
+    print("\n########## サマリーレポート（統計知識不要） ##########")
+    t0 = time.time()
+    plain_report = build_plain_report(pooled_df, daywise_summary_df, combo_df)
+    print(plain_report)
+    with open("analysis/output/summary_plain.txt", "w", encoding="utf-8") as f:
+        f.write(plain_report)
+    _elapsed("サマリーレポート生成", t0)
 
 
 if __name__ == "__main__":

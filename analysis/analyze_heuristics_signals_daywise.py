@@ -60,18 +60,38 @@ def run_daywise_test(price: dict, trading_dates: list, heur: dict) -> pd.DataFra
     return pd.DataFrame(rows)
 
 
+def summarize_daywise_ttest(daily_df: pd.DataFrame) -> pd.DataFrame:
+    """daywise検定（日次差分を1標本としたt検定）の結果を、ルールごとに集計したDataFrameで返す。
+
+    2026-07追加: 従来 print_ttest_summary() が標準出力に印字するだけで、
+    集計結果（ルールごとのn_days・mean_diff・p値）をCSV等の形で保存していなかった。
+    プレーン言語サマリー機能（common/plain_language.py）で再利用するため、
+    集計ロジックをこの関数に切り出した（print_ttest_summary()の出力内容・書式は不変）。
+
+    注意（既存仕様のまま）: この集計はpooled検定・組み合わせ検定と異なり、
+    ルール間の多重検定補正（FDR補正）を行っていない生のp値である。
+    ルール数（40種類超）ぶん同時に検定しているため、統計的に厳密には
+    pooled検定と同じ基準（p<0.05）で「有意」と判断するのはやや楽観的である点に留意。
+    """
+    rows = []
+    for rule in daily_df["rule"].unique():
+        diffs = daily_df.loc[daily_df["rule"] == rule, "diff"]
+        if len(diffs) < 2:
+            continue
+        stat, p = ttest_1samp(diffs, 0)
+        rows.append({"rule": rule, "n_days": len(diffs), "mean_diff": diffs.mean(), "p_value": p})
+    return pd.DataFrame(rows)
+
+
 def print_ttest_summary(daily_df: pd.DataFrame) -> None:
     print("\n=== 日次差分を1標本とした片側t検定（Fama-MacBeth風） ===")
     if daily_df.empty:
         print("日次差分を1件も作成できませんでした（対象期間が狭すぎる可能性があります。"
               f"HORIZON={HORIZON}営業日先までのデータが必要です）")
         return
-    for rule in daily_df["rule"].unique():
-        diffs = daily_df.loc[daily_df["rule"] == rule, "diff"]
-        if len(diffs) < 2:
-            continue
-        stat, p = ttest_1samp(diffs, 0)
-        print(f"{rule:35s} n_days={len(diffs)}  mean_diff={diffs.mean():+.5f}  p={p:.4f}")
+    summary_df = summarize_daywise_ttest(daily_df)
+    for _, row in summary_df.iterrows():
+        print(f"{row['rule']:35s} n_days={row['n_days']}  mean_diff={row['mean_diff']:+.5f}  p={row['p_value']:.4f}")
 
 
 if __name__ == "__main__":
