@@ -120,6 +120,48 @@ def _build_heuristics(paths: list[str]):
     return heur
 
 
+def _build_ohlc(paths: list[str]):
+    """{code: {date: {"o":.., "h":.., "l":.., "c":..}}} を返す（始値も保持する版）。
+
+    2026-07追加: 既存の _build_price() は終値（c）のみを保持し、始値（o）を破棄していた。
+    売買シミュレーション機能（simulate_trades.py）では「シグナル発生翌営業日の始値で
+    エントリーする」といった検証が必要なため、始値も保持する別系統のビルダーを追加した。
+
+    既存の _build_price() / load_price_series() は、pooled検定・daywise検定・組み合わせ検定
+    という高頻度に実行される既存3スクリプトが依存しており、挙動・キャッシュキー
+    （cache_name="price"）を変更するリスクを避けるため、あえて統合（共通化）せず
+    独立した関数・独立したキャッシュ名前空間（cache_name="ohlc"）として追加した
+    （二重パースにはなるが、simulate_trades.py は既存3スクリプトのように毎回実行される
+    ものではないため、実行頻度に見合わないリスクは取らない方針とした）。
+    """
+    ohlc: dict[str, dict[str, dict]] = {}
+    trading_dates: list[str] = []
+    for path in paths:
+        date = _date_from_path(path)
+        trading_dates.append(date)
+        with open(path, encoding="utf-8") as f:
+            day = json.load(f)
+        for code, bar in day.items():
+            if not isinstance(bar, dict) or "c" not in bar or "o" not in bar:
+                continue  # error銘柄（取得失敗）は日付キーを持たないため自然に除外される
+            ohlc.setdefault(code, {})[date] = {
+                "o": bar["o"], "h": bar.get("h"), "l": bar.get("l"), "c": bar["c"],
+            }
+    return ohlc, sorted(trading_dates)
+
+
+def load_ohlc_series(repo_root: str, from_date: str | None = None, use_cache: bool = True):
+    """{code: {date: {"o","h","l","c"}}} と、取引日一覧を返す（始値を含む版）。
+
+    2026-07追加。load_price_series() と同じ仕組み（ファイル一覧のスキャン・内容ハッシュに
+    よるキャッシュ）を踏襲しているが、始値（o）・高値（h）・安値（l）も保持する点が異なる。
+    to_date（上限）を受け付けない理由も load_price_series() と同じ
+    （フォワードリターン算出にシグナル日より後の価格が必要なため）。
+    """
+    paths = _scan(repo_root, OHLCV_GLOB, from_date=from_date, to_date=None)
+    return _load_with_cache("ohlc", paths, _build_ohlc, use_cache)
+
+
 def load_price_series(repo_root: str, from_date: str | None = None, use_cache: bool = True):
     """{code: {date: close}} と、取引日一覧（当該日のファイルが存在する＝近似的な開場日）を返す。
 
