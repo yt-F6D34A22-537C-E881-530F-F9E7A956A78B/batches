@@ -47,7 +47,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p analysis/output
-          python analysis/run_all.py | tee analysis/output/run_log.txt
+          python -u analysis/run_all.py | tee analysis/output/run_log.txt
 
       - name: Upload analysis results
         uses: actions/upload-artifact@v4
