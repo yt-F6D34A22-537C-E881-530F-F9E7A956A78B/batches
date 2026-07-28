@@ -49,6 +49,13 @@ EXIT_TYPES = ["open", "close"]
 FEE_RATE = 0.0                        # 往復の概算手数料率（推測初期値。要調整）
 MIN_SAMPLE_SIZE = 30                  # 集計対象とする最小サンプル数（既存の統計検定と揃えている）
 
+# 2026-07追加: 個別取引のリターンがこの絶対値を超えたら「異常値の疑いあり」として
+# result_trade_simulation_outliers.csv に記録する（初期値は推測。株式分割・併合が
+# 未調整のまま ohlcv データに混入している場合、数百%〜数万%というありえないリターンが
+# 生じることが実際に確認されたための対処）。集計値（mean/median等）の計算からは除外しない
+# （除外の是非は利用者側の確認事項とし、まずは「気づけるようにする」ことを優先する）。
+OUTLIER_ABS_RETURN_THRESHOLD = 0.90
+
 
 def load_promising_rules(result_all_path: str, result_combinations_path: str) -> list[list[str]]:
     """result_all.csv・result_combinations.csv から【有望】判定のルールを読み込み、
@@ -102,7 +109,8 @@ def _price_at(ohlc: dict, code: str, date: str, price_type: str):
     return bar.get("o") if price_type == "open" else bar.get("c")
 
 
-def simulate_rule(ohlc: dict, trading_dates: list[str], instances: list[tuple[str, str]]) -> pd.DataFrame:
+def simulate_rule(ohlc: dict, trading_dates: list[str],
+                   instances: list[tuple[str, str]]) -> tuple[pd.DataFrame, list[dict]]:
     """1つのルール（単独 or 組み合わせ）について、12通りの売買パターンごとに
     リターン分布を集計する。instances は _find_signal_instances() の戻り値。
 
@@ -111,9 +119,14 @@ def simulate_rule(ohlc: dict, trading_dates: list[str], instances: list[tuple[st
     エントリーは常に d の翌営業日（=1営業日目）のため、
     実際の保有期間（エントリー〜エグジット）は N-1 営業日になる
     （N=1の場合はエントリー日当日の始値→終値、という日計りパターンに相当する）。
+
+    戻り値は (集計DataFrame, 異常値の疑いがある個別取引の一覧) のタプル
+    （2026-07追加。後者は OUTLIER_ABS_RETURN_THRESHOLD を超えたリターンを持つ
+    個別取引を、銘柄コード・日付・価格つきで記録したもの。原因調査に使う）。
     """
     date_index = {d: i for i, d in enumerate(trading_dates)}
     records = []
+    outliers = []
 
     for entry_type in ENTRY_TYPES:
         for exit_type in EXIT_TYPES:
@@ -128,12 +141,22 @@ def simulate_rule(ohlc: dict, trading_dates: list[str], instances: list[tuple[st
                     if exit_idx < entry_idx or exit_idx >= len(trading_dates):
                         continue
                     entry_price_type = "open" if entry_type == "next_open" else "close"
-                    entry_price = _price_at(ohlc, code, trading_dates[entry_idx], entry_price_type)
-                    exit_price = _price_at(ohlc, code, trading_dates[exit_idx], exit_type)
+                    entry_date = trading_dates[entry_idx]
+                    exit_date = trading_dates[exit_idx]
+                    entry_price = _price_at(ohlc, code, entry_date, entry_price_type)
+                    exit_price = _price_at(ohlc, code, exit_date, exit_type)
                     if entry_price is None or exit_price is None or entry_price == 0:
                         continue
                     ret = (exit_price / entry_price - 1.0) - FEE_RATE
                     returns.append(ret)
+
+                    if abs(ret) > OUTLIER_ABS_RETURN_THRESHOLD:
+                        outliers.append({
+                            "code": code, "signal_date": signal_date,
+                            "entry_type": entry_type, "exit_type": exit_type, "days_after_signal": n,
+                            "entry_date": entry_date, "exit_date": exit_date,
+                            "entry_price": entry_price, "exit_price": exit_price, "return": ret,
+                        })
 
                 if len(returns) < MIN_SAMPLE_SIZE:
                     continue
@@ -151,11 +174,14 @@ def simulate_rule(ohlc: dict, trading_dates: list[str], instances: list[tuple[st
                     "best_return": s.max(),
                 })
 
-    return pd.DataFrame(records)
+    return pd.DataFrame(records), outliers
 
 
-def run_simulation(repo_root: str = ".", from_date: str | None = None, to_date: str | None = None) -> pd.DataFrame:
-    """全ての【有望】ルールについてシミュレーションを実行し、結果を1つのDataFrameにまとめて返す。"""
+def run_simulation(repo_root: str = ".", from_date: str | None = None,
+                    to_date: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """全ての【有望】ルールについてシミュレーションを実行し、
+    (集計結果, 異常値の疑いがある個別取引一覧) のタプルを返す。
+    """
     rule_key_sets = load_promising_rules(
         f"{repo_root}/analysis/output/result_all.csv",
         f"{repo_root}/analysis/output/result_combinations.csv",
@@ -166,22 +192,29 @@ def run_simulation(repo_root: str = ".", from_date: str | None = None, to_date: 
     heur = load_heuristics(repo_root, from_date=from_date, to_date=to_date)
 
     all_records = []
+    all_outliers = []
     for rule_keys in rule_key_sets:
         rule_label = " AND ".join(rule_keys)
         instances = _find_signal_instances(heur, trading_dates, rule_keys)
         print(f"{rule_label}: シグナル発生件数 {len(instances)}件")
         if not instances:
             continue
-        sim_df = simulate_rule(ohlc, trading_dates, instances)
+        sim_df, outliers = simulate_rule(ohlc, trading_dates, instances)
+        if outliers:
+            print(f"  ⚠ 異常値の疑いがある取引を{len(outliers)}件検出"
+                  f"（|リターン|>{OUTLIER_ABS_RETURN_THRESHOLD*100:.0f}%）")
+            for o in outliers:
+                o["rule"] = rule_label
+            all_outliers.extend(outliers)
         if sim_df.empty:
             continue
         sim_df.insert(0, "rule", rule_label)
         sim_df.insert(1, "combo_size", len(rule_keys))
         all_records.append(sim_df)
 
-    if not all_records:
-        return pd.DataFrame()
-    return pd.concat(all_records, ignore_index=True)
+    result_df = pd.concat(all_records, ignore_index=True) if all_records else pd.DataFrame()
+    outliers_df = pd.DataFrame(all_outliers) if all_outliers else pd.DataFrame()
+    return result_df, outliers_df
 
 
 def select_best_patterns(result_df: pd.DataFrame, rank_by: str = "median_return") -> pd.DataFrame:
@@ -201,10 +234,12 @@ if __name__ == "__main__":
     REPO_ROOT = "."
     from_date, to_date = parse_date_range("売買シミュレーション（翌営業日エントリー基準）を単体実行する")
 
-    result_df = run_simulation(REPO_ROOT, from_date=from_date, to_date=to_date)
+    result_df, outliers_df = run_simulation(REPO_ROOT, from_date=from_date, to_date=to_date)
 
     pd.set_option("display.width", 160)
     pd.set_option("display.max_rows", 200)
+
+    Path("analysis/output").mkdir(parents=True, exist_ok=True)
 
     if result_df.empty:
         print("シミュレーション対象となる【有望】ルールが見つかりませんでした。"
@@ -217,6 +252,16 @@ if __name__ == "__main__":
         print("\n=== ルールごとの最良パターン（中央値リターン降順） ===")
         print(best_df.to_string(index=False))
 
-        Path("analysis/output").mkdir(parents=True, exist_ok=True)
         result_df.to_csv("analysis/output/result_trade_simulation.csv", index=False)
         best_df.to_csv("analysis/output/result_trade_simulation_best.csv", index=False)
+
+    if not outliers_df.empty:
+        print(f"\n⚠ 異常値の疑いがある個別取引を合計{len(outliers_df)}件検出しました"
+              f"（|リターン|>{OUTLIER_ABS_RETURN_THRESHOLD*100:.0f}%）。"
+              "result_trade_simulation_outliers.csv をご確認ください。")
+        print("上位10件（リターンの絶対値が大きい順）:")
+        print(outliers_df.reindex(outliers_df["return"].abs().sort_values(ascending=False).index)
+              .head(10).to_string(index=False))
+        outliers_df.to_csv("analysis/output/result_trade_simulation_outliers.csv", index=False)
+    else:
+        print(f"\n異常値の疑いがある取引（|リターン|>{OUTLIER_ABS_RETURN_THRESHOLD*100:.0f}%）は検出されませんでした。")
