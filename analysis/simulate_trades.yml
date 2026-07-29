@@ -1,0 +1,79 @@
+name: 【simulate_trades.yml】Run heuristics signal trade simulation (経験則シグナル売買シミュレーション)
+
+on:
+  workflow_dispatch:
+    inputs:
+      from_date:
+        description: '対象期間の開始日（YYYYMMDD）。空欄なら全期間を対象とする'
+        required: false
+        default: ''
+      to_date:
+        description: '対象期間の終了日（YYYYMMDD）。空欄なら全期間を対象とする'
+        required: false
+        default: ''
+
+permissions:
+  contents: read  # 結果はartifactとしてのみ出力し、dataやanalysis配下へのcommit・pushは行わない
+
+concurrency:
+  group: heuristics-analysis  # analysis.ymlと同じグループを共有する（本ワークフローも内部でrun_all.pyを
+  cancel-in-progress: false   # 実行するため、重い分析ジョブ同士が同時に走らないようにするための意図的な共有）
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # data/ohlcv・data/heuristics の現時点の内容が読めればよく、履歴は不要
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install analysis dependencies
+        run: pip install -r analysis/requirements.txt
+
+      # simulate_trades.py は result_all.csv / result_combinations.csv（verdict列付き）を前提とするが、
+      # これらは data/ 同様、リポジトリへはcommitされない（読み取り専用ワークフローの方針のため）。
+      # そのため、別ワークフロー実行のartifactを取得するのではなく、同一ジョブ内で run_all.py を
+      # 先に実行して候補ルールを都度算出する（from_date/to_dateが異なる古いartifactを誤って
+      # 参照してしまうと、シミュレーション対象ルールの一貫性・再現性が損なわれるため。2026-07）。
+      - name: Run pooled/daywise/combination analysis (simulate_trades.py の前提データを生成)
+        env:
+          ANALYSIS_FROM_DATE: ${{ github.event.inputs.from_date }}
+          ANALYSIS_TO_DATE: ${{ github.event.inputs.to_date }}
+        run: |
+          set -o pipefail
+          mkdir -p analysis/output
+          python -u analysis/run_all.py | tee analysis/output/run_log.txt
+
+      # -u（無バッファ出力）を指定し、キャンセル・タイムアウト発生時にログが欠落しないようにする
+      # （2026-07、組み合わせ検定のCIタイムアウト調査の際、バッファリングにより直前の進捗が
+      #   ログに残らなかった教訓を踏まえた対応）。
+      - name: Run trade simulation
+        env:
+          ANALYSIS_FROM_DATE: ${{ github.event.inputs.from_date }}
+          ANALYSIS_TO_DATE: ${{ github.event.inputs.to_date }}
+        run: |
+          set -o pipefail
+          python -u analysis/simulate_trades.py | tee analysis/output/simulate_trades_log.txt
+
+      # rank_stocks_by_strategy.py は result_trade_simulation_best.csv（直前のステップで生成）を
+      # 前提とするため、同一ジョブ内で simulate_trades.py の直後に実行する（2026-07追加）。
+      - name: Run stock ranking by strategy
+        env:
+          ANALYSIS_FROM_DATE: ${{ github.event.inputs.from_date }}
+          ANALYSIS_TO_DATE: ${{ github.event.inputs.to_date }}
+        run: |
+          set -o pipefail
+          python -u analysis/rank_stocks_by_strategy.py | tee analysis/output/rank_stocks_log.txt
+
+      - name: Upload simulation results
+        uses: actions/upload-artifact@v4
+        with:
+          name: heuristics-trade-simulation-${{ github.event.inputs.from_date || 'all' }}-${{ github.event.inputs.to_date || 'all' }}-${{ github.run_id }}
+          path: analysis/output/
+          retention-days: 30
