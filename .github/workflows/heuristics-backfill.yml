@@ -14,7 +14,7 @@ on:
   schedule:
     # 22:07 UTC(fetch.yml)〜翌07:07 UTC(fetch.yml)の間が唯一9時間空く時間帯のため、
     # 前後のジョブと十分な余裕を持たせて23:37 UTC（JST 08:37）に設定
-    - cron: '37 23 * * *'  # JST 08:37
+    # - cron: '37 23 * * *'  # JST 08:37
   workflow_dispatch: {}
 
 permissions:
