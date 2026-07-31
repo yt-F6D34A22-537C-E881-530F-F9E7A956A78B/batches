@@ -33,16 +33,22 @@ heuristics.yml は大引け後（JST 17:07〜21:07）に実行されるため、
 記載がないための推測に基づく初期設計であり、実コストを反映したい場合は FEE_RATE を
 往復の概算比率（例: 0.002 = 0.2%）で設定できるようパラメータ化してある。
 
-# 2026-07修正（ロング／ショート両対応化）
+# 2026-07修正（ロング／ショート両対応化。再訂正版）
 従来は verdict【有望】であれば diff（シグナル発生時の平均フォワードリターン - baseline）
-の符号を問わずロング（買い）として一律シミュレーションしていたが、実データ検証
-（result_all.csv）で【有望】判定ルールの約半数が diff<0（シグナル後に下落しやすい）
-であることが判明した。これらを買い対象に含めると勝率を押し下げる要因になるため、
-diffがhorizon間で一貫して正のルールのみをロング対象、一貫して負のルールをショート対象
-として、両方をシミュレーション対象に含めるよう変更した（符号混在のルールのみ除外）。
+の符号を問わずロング（買い）として一律シミュレーションしていた。実データ検証
+（result_all.csv）で【有望】判定ルールの約半数が diff<0 であることが判明したため、
+当初は diff の符号でロング/ショートを振り分けていたが、これは設計上の誤りだった。
+diff は baseline との“相対”指標であり、diff<0 の【有望】ルールの実に8割は
+mean_return_signaled（絶対リターン）自体はプラスだった（強い上昇相場のbaselineほど
+には上がらないだけで、依然上昇はしている）。この状態のルールを空売り対象にすると、
+実際には上昇している銘柄を売ることになり、win_rateが45〜51%まで落ち込むことを
+実データのシミュレーション結果で確認した。そのため、方向判定の基準を diff ではなく
+mean_return_signaled（絶対リターン）の符号に変更した。mean_return_signaledがhorizon間
+で一貫して正のルールをロング対象、一貫して負のルールをショート対象とし、それ以外
+（diffは負だが絶対リターンは正、または符号混在）のルールはいずれの対象にもしない。
 heuristics_conditions.js には元々下降を示唆する指標（TECH_DOWN_TREND_END等）が
-ショート判断の材料としても使う想定で設けられているため、この変更は既存のheuristics設計
-思想とも整合する。
+ショート判断の材料としても使う想定で設けられているため、方向判定の考え方自体は
+既存のheuristics設計思想と整合する。
 
 # 2026-07修正（n=1グリッドの無効な組み合わせ除外）
 entry_idx（シグナル翌営業日）と exit_idx（シグナル日からN営業日後）が
@@ -85,12 +91,25 @@ def load_promising_rules(result_all_path: str, result_combinations_path: str) ->
     組み合わせ単位で重複排除する（本スクリプトは独自に保有期間を総当たりするため、
     元のpooled/組み合わせ検定でどのhorizonで有望だったかは問わない）。
 
-    2026-07修正: diffがhorizon間で一貫して正のルールは「シグナル後に上昇しやすい」
-    としてロング対象、一貫して負のルールは「シグナル後に下落しやすい」として
-    ショート対象とする。horizonによって符号が入れ替わる（符号混在の）ルールは、
-    方向性の判断が不安定なため対象から除外し、理由をログ出力する。
+    2026-07修正（初版）: diffがhorizon間で一貫して正のルールをロング対象、
+    一貫して負のルールをショート対象としていた。
+
+    2026-07再修正（設計誤りの訂正）: 上記初版のロジックには誤りがあった。diff は
+    「シグナル発生時の平均フォワードリターン - baseline」という“相対”指標であり、
+    diff<0 は必ずしも「その銘柄が下落する」ことを意味しない。実データ検証の結果、
+    diff<0の【有望】ルール40行のうち32行（8割）は mean_return_signaled（絶対リターン）
+    自体はプラスだった（＝強い上昇相場のbaselineほどには上がらないだけで、依然
+    上昇はしている）。この状態のルールを空売り対象にした結果、実際には上昇している
+    銘柄を売ることになり、win_rateが45〜51%（ほぼコイントス以下）に落ち込むことを
+    実データのシミュレーション結果で確認した。
+    そのため方向判定の基準を diff ではなく mean_return_signaled（絶対リターン）の
+    符号に変更する。mean_return_signaledがhorizon間で一貫して正のルールをロング対象、
+    一貫して負のルールをショート対象とする。diffは負だがmean_return_signaledは正、
+    または符号がhorizon間で混在するルールは、ロングとして使うには相対的に弱く、
+    ショートとして使うには方向が逆であるため、いずれの対象にもせず除外する
+    （除外理由をログ出力する）。
     """
-    rule_diffs: dict[tuple[str, ...], list[float]] = {}
+    rule_returns: dict[tuple[str, ...], list[float]] = {}
 
     for path in (result_all_path, result_combinations_path):
         if not Path(path).exists():
@@ -105,18 +124,19 @@ def load_promising_rules(result_all_path: str, result_combinations_path: str) ->
             # TECH_*キー部分のみを抽出する
             keys_part = row["rule"].split("=", 1)[0]
             keys = tuple(sorted(k.strip() for k in keys_part.split(" AND ")))
-            rule_diffs.setdefault(keys, []).append(row["diff"])
+            rule_returns.setdefault(keys, []).append(row["mean_return_signaled"])
 
     rule_directions: list[tuple[list[str], str]] = []
-    for keys, diffs in sorted(rule_diffs.items()):
-        if all(d > 0 for d in diffs):
+    for keys, returns in sorted(rule_returns.items()):
+        if all(r > 0 for r in returns):
             rule_directions.append((list(keys), "long"))
-        elif all(d < 0 for d in diffs):
+        elif all(r < 0 for r in returns):
             rule_directions.append((list(keys), "short"))
         else:
             print(
-                f"  → {' AND '.join(keys)}: diffの符号がhorizon間で混在しているため、"
-                f"ロング/ショートいずれの対象からも除外します（diffs={[round(d, 4) for d in diffs]}）。"
+                f"  → {' AND '.join(keys)}: mean_return_signaled（絶対リターン）の符号が"
+                f"horizon間で混在、またはロング/ショートいずれとしても方向が一致しないため、"
+                f"対象から除外します（mean_return_signaled={[round(r, 6) for r in returns]}）。"
             )
 
     return rule_directions
