@@ -32,6 +32,25 @@ heuristics.yml は大引け後（JST 17:07〜21:07）に実行されるため、
 初期値として一切考慮しない（FEE_RATE=0.0）。仕様書に実際の証券会社の手数料体系の
 記載がないための推測に基づく初期設計であり、実コストを反映したい場合は FEE_RATE を
 往復の概算比率（例: 0.002 = 0.2%）で設定できるようパラメータ化してある。
+
+# 2026-07修正（ロング／ショート両対応化）
+従来は verdict【有望】であれば diff（シグナル発生時の平均フォワードリターン - baseline）
+の符号を問わずロング（買い）として一律シミュレーションしていたが、実データ検証
+（result_all.csv）で【有望】判定ルールの約半数が diff<0（シグナル後に下落しやすい）
+であることが判明した。これらを買い対象に含めると勝率を押し下げる要因になるため、
+diffがhorizon間で一貫して正のルールのみをロング対象、一貫して負のルールをショート対象
+として、両方をシミュレーション対象に含めるよう変更した（符号混在のルールのみ除外）。
+heuristics_conditions.js には元々下降を示唆する指標（TECH_DOWN_TREND_END等）が
+ショート判断の材料としても使う想定で設けられているため、この変更は既存のheuristics設計
+思想とも整合する。
+
+# 2026-07修正（n=1グリッドの無効な組み合わせ除外）
+entry_idx（シグナル翌営業日）と exit_idx（シグナル日からN営業日後）が
+n=1のとき同一営業日になる。このうち「翌営業日の始値で買い、同日終値で売る」
+（本docstring記載の日計りパターン）以外の組み合わせ（次の終値で買って同日の始値で売る＝
+時系列が逆転して実行不可能／始値で買って同日の始値で売る＝常にリターン0）は、
+無効な組み合わせとしてシミュレーション対象から除外する
+（TECH_MOMIAIの検証時、mean_return=0.0・win_rate=0.0という不自然な結果で実際に発覚した）。
 """
 import sys
 from pathlib import Path
@@ -57,15 +76,21 @@ MIN_SAMPLE_SIZE = 30                  # 集計対象とする最小サンプル�
 OUTLIER_ABS_RETURN_THRESHOLD = 0.90
 
 
-def load_promising_rules(result_all_path: str, result_combinations_path: str) -> list[list[str]]:
+def load_promising_rules(result_all_path: str, result_combinations_path: str) -> list[tuple[list[str], str]]:
     """result_all.csv・result_combinations.csv から【有望】判定のルールを読み込み、
-    TECH_*キーのリスト（単独なら1要素、組み合わせなら複数要素）のリストとして返す。
+    (TECH_*キーのリスト（単独なら1要素、組み合わせなら複数要素）, "long"|"short") の
+    タプルのリストとして返す。
 
     同じルールが horizon_days（1・3・5）ごとに複数行存在するため、TECH_*キーの
     組み合わせ単位で重複排除する（本スクリプトは独自に保有期間を総当たりするため、
     元のpooled/組み合わせ検定でどのhorizonで有望だったかは問わない）。
+
+    2026-07修正: diffがhorizon間で一貫して正のルールは「シグナル後に上昇しやすい」
+    としてロング対象、一貫して負のルールは「シグナル後に下落しやすい」として
+    ショート対象とする。horizonによって符号が入れ替わる（符号混在の）ルールは、
+    方向性の判断が不安定なため対象から除外し、理由をログ出力する。
     """
-    rule_key_sets: set[tuple[str, ...]] = set()
+    rule_diffs: dict[tuple[str, ...], list[float]] = {}
 
     for path in (result_all_path, result_combinations_path):
         if not Path(path).exists():
@@ -75,14 +100,26 @@ def load_promising_rules(result_all_path: str, result_combinations_path: str) ->
         if df.empty or "verdict" not in df.columns:
             continue
         promising = df[df["verdict"] == "【有望】"]
-        for rule in promising["rule"]:
+        for _, row in promising.iterrows():
             # "TECH_A AND TECH_B=signal (vs baseline)" / "TECH_A=signal (vs baseline)" 形式から
             # TECH_*キー部分のみを抽出する
-            keys_part = rule.split("=", 1)[0]
+            keys_part = row["rule"].split("=", 1)[0]
             keys = tuple(sorted(k.strip() for k in keys_part.split(" AND ")))
-            rule_key_sets.add(keys)
+            rule_diffs.setdefault(keys, []).append(row["diff"])
 
-    return [list(keys) for keys in sorted(rule_key_sets)]
+    rule_directions: list[tuple[list[str], str]] = []
+    for keys, diffs in sorted(rule_diffs.items()):
+        if all(d > 0 for d in diffs):
+            rule_directions.append((list(keys), "long"))
+        elif all(d < 0 for d in diffs):
+            rule_directions.append((list(keys), "short"))
+        else:
+            print(
+                f"  → {' AND '.join(keys)}: diffの符号がhorizon間で混在しているため、"
+                f"ロング/ショートいずれの対象からも除外します（diffs={[round(d, 4) for d in diffs]}）。"
+            )
+
+    return rule_directions
 
 
 def _find_signal_instances(heur: dict, trading_dates: list[str], rule_keys: list[str]) -> list[tuple[str, str]]:
@@ -110,7 +147,7 @@ def _price_at(ohlc: dict, code: str, date: str, price_type: str):
 
 
 def simulate_rule(ohlc: dict, trading_dates: list[str],
-                   instances: list[tuple[str, str]]) -> tuple[pd.DataFrame, list[dict]]:
+                   instances: list[tuple[str, str]], direction: str = "long") -> tuple[pd.DataFrame, list[dict]]:
     """1つのルール（単独 or 組み合わせ）について、12通りの売買パターンごとに
     リターン分布を集計する。instances は _find_signal_instances() の戻り値。
 
@@ -119,6 +156,10 @@ def simulate_rule(ohlc: dict, trading_dates: list[str],
     エントリーは常に d の翌営業日（=1営業日目）のため、
     実際の保有期間（エントリー〜エグジット）は N-1 営業日になる
     （N=1の場合はエントリー日当日の始値→終値、という日計りパターンに相当する）。
+
+    @param direction: "long"（買い。価格上昇で利益）または "short"（空売り。価格下落で利益）。
+        2026-07追加。load_promising_rules() が判定したdiffの符号（"long"|"short"）を
+        そのまま渡す想定。損益の符号だけが反転し、集計方法（win_rate等）は共通。
 
     戻り値は (集計DataFrame, 異常値の疑いがある個別取引の一覧) のタプル
     （2026-07追加。後者は OUTLIER_ABS_RETURN_THRESHOLD を超えたリターンを持つ
@@ -131,6 +172,17 @@ def simulate_rule(ohlc: dict, trading_dates: list[str],
     for entry_type in ENTRY_TYPES:
         for exit_type in EXIT_TYPES:
             for n in HOLDING_PERIODS:
+                # 2026-07修正: n=1（エントリー翌営業日とエグジット対象日が同一営業日になる
+                # ケース）のうち、本モジュールdocstring記載の意図どおりの「翌営業日の始値で
+                # 買い（売り）、同日終値で売る（買い戻す）」（日計り）以外の組み合わせを除外する。
+                # entry_type="next_close" の場合、始値は終値より時系列上先に発生するため、
+                # 「終値でエントリーして同日の始値でエグジット」は時系列が逆転しており実行不可能。
+                # entry_type="next_open" かつ exit_type="open" は、エントリー価格・エグジット
+                # 価格が完全に同一になり、常にリターン0の無意味な"取引"になる
+                # （TECH_MOMIAIの検証時、mean_return=0.0・win_rate=0.0という不自然な結果で発覚）。
+                if n == 1 and not (entry_type == "next_open" and exit_type == "close"):
+                    continue
+
                 returns = []
                 for code, signal_date in instances:
                     idx = date_index.get(signal_date)
@@ -147,12 +199,15 @@ def simulate_rule(ohlc: dict, trading_dates: list[str],
                     exit_price = _price_at(ohlc, code, exit_date, exit_type)
                     if entry_price is None or exit_price is None or entry_price == 0:
                         continue
-                    ret = (exit_price / entry_price - 1.0) - FEE_RATE
+                    raw_ret = exit_price / entry_price - 1.0
+                    # ショート（空売り）の場合は価格下落が利益になるため符号を反転する。
+                    # 手数料（FEE_RATE）はロング・ショート問わず往復コストとして減算する。
+                    ret = (raw_ret if direction == "long" else -raw_ret) - FEE_RATE
                     returns.append(ret)
 
                     if abs(ret) > OUTLIER_ABS_RETURN_THRESHOLD:
                         outliers.append({
-                            "code": code, "signal_date": signal_date,
+                            "code": code, "signal_date": signal_date, "direction": direction,
                             "entry_type": entry_type, "exit_type": exit_type, "days_after_signal": n,
                             "entry_date": entry_date, "exit_date": exit_date,
                             "entry_price": entry_price, "exit_price": exit_price, "return": ret,
@@ -182,24 +237,30 @@ def run_simulation(repo_root: str = ".", from_date: str | None = None,
     """全ての【有望】ルールについてシミュレーションを実行し、
     (集計結果, 異常値の疑いがある個別取引一覧) のタプルを返す。
     """
-    rule_key_sets = load_promising_rules(
+    rule_direction_sets = load_promising_rules(
         f"{repo_root}/analysis/output/result_all.csv",
         f"{repo_root}/analysis/output/result_combinations.csv",
     )
-    print(f"シミュレーション対象ルール数: {len(rule_key_sets)}")
+    n_long = sum(1 for _, d in rule_direction_sets if d == "long")
+    n_short = sum(1 for _, d in rule_direction_sets if d == "short")
+    print(f"シミュレーション対象ルール数: {len(rule_direction_sets)}（ロング: {n_long} / ショート: {n_short}）")
 
     ohlc, trading_dates = load_ohlc_series(repo_root, from_date=from_date)
     heur = load_heuristics(repo_root, from_date=from_date, to_date=to_date)
 
     all_records = []
     all_outliers = []
-    for rule_keys in rule_key_sets:
-        rule_label = " AND ".join(rule_keys)
+    for rule_keys, direction in rule_direction_sets:
+        # 2026-07変更: ruleラベルに [LONG]/[SHORT] を付与し、集計後もどちらの
+        # ポジション方向のシミュレーション結果か一目で分かるようにする
+        # （同一TECH_*キーの組み合わせがロング・ショート両方に属することはない設計のため、
+        # select_best_patterns() の rule 単位のgroupbyには影響しない）。
+        rule_label = " AND ".join(rule_keys) + f" [{direction.upper()}]"
         instances = _find_signal_instances(heur, trading_dates, rule_keys)
         print(f"{rule_label}: シグナル発生件数 {len(instances)}件")
         if not instances:
             continue
-        sim_df, outliers = simulate_rule(ohlc, trading_dates, instances)
+        sim_df, outliers = simulate_rule(ohlc, trading_dates, instances, direction)
         if outliers:
             print(f"  ⚠ 異常値の疑いがある取引を{len(outliers)}件検出"
                   f"（|リターン|>{OUTLIER_ABS_RETURN_THRESHOLD*100:.0f}%）")
@@ -209,7 +270,8 @@ def run_simulation(repo_root: str = ".", from_date: str | None = None,
         if sim_df.empty:
             continue
         sim_df.insert(0, "rule", rule_label)
-        sim_df.insert(1, "combo_size", len(rule_keys))
+        sim_df.insert(1, "direction", direction)
+        sim_df.insert(2, "combo_size", len(rule_keys))
         all_records.append(sim_df)
 
     result_df = pd.concat(all_records, ignore_index=True) if all_records else pd.DataFrame()
@@ -223,6 +285,10 @@ def select_best_patterns(result_df: pd.DataFrame, rank_by: str = "median_return"
     中央値を既定にしている理由: 平均値は少数の極端な当たり銘柄に引っ張られやすく、
     「再現性のある」実務的な判断材料としては中央値の方が代表性が高いと考えられるため
     （推測に基づく初期設計。用途に応じて mean_return / win_rate 等に切り替え可能）。
+
+    2026-07注記: rule列には " [LONG]"/" [SHORT]" のポジション方向ラベルが付与されて
+    いるため、同一TECH_*キーの組み合わせがロング・ショート双方に属することはなく、
+    groupby("rule") の単位はそのまま「1ルール1ポジション方向」に対応する。
     """
     if result_df.empty:
         return result_df
@@ -254,6 +320,15 @@ if __name__ == "__main__":
 
         result_df.to_csv("analysis/output/result_trade_simulation.csv", index=False)
         best_df.to_csv("analysis/output/result_trade_simulation_best.csv", index=False)
+
+        # 2026-07追加: 勝率（win_rate）を主指標として比較したい運用のため、
+        # median_return基準のbest_dfとは別に、win_rate基準の最良パターンも出力する。
+        # 既存のresult_trade_simulation_best.csv（rank_stocks_by_strategy.pyが
+        # median_return基準を前提に参照している）はそのまま維持し、追加ファイルとする。
+        best_by_winrate_df = select_best_patterns(result_df, rank_by="win_rate")
+        best_by_winrate_df.to_csv("analysis/output/result_trade_simulation_best_by_winrate.csv", index=False)
+        print("\n=== ルールごとの最良パターン（勝率降順・参考） ===")
+        print(best_by_winrate_df.to_string(index=False))
 
     if not outliers_df.empty:
         print(f"\n⚠ 異常値の疑いがある個別取引を合計{len(outliers_df)}件検出しました"
