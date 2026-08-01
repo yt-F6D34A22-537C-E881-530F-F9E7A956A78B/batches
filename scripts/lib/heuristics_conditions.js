@@ -457,11 +457,19 @@ function isSakataTripleTop(daily) {
   const arr = safeLast(daily, 5);
   if (!arr) return false;
 
-  const [c1, , c3, , c5] = arr;
+  const [c1, c2, c3, c4, c5] = arr;
   const avg = (c1.h + c3.h + c5.h) / 3;
   const tol = avg * 0.01;
 
+  // 2026-07修正: 従来は1・3・5日目の高値が近いことしか見ておらず、2・4日目が
+  // 「谷」（山より明確に低い）であることを検証していなかったため、単なる横ばい
+  // 相場を三尊天井として誤検知していた（実データ検証で発生率24.7%・
+  // TECH_SAKATA_TRIPLE_BOTTOMとの同時発生24.16%という明らかな過検知を確認）。
+  // 2・4日目の高値が両隣の山より低いことを追加で検証する。
+  const isValley = c2.h < Math.min(c1.h, c3.h) && c4.h < Math.min(c3.h, c5.h);
+
   return (
+    isValley &&
     Math.abs(c1.h - avg) < tol &&
     Math.abs(c3.h - avg) < tol &&
     Math.abs(c5.h - avg) < tol
@@ -472,11 +480,16 @@ function isSakataTripleBottom(daily) {
   const arr = safeLast(daily, 5);
   if (!arr) return false;
 
-  const [c1, , c3, , c5] = arr;
+  const [c1, c2, c3, c4, c5] = arr;
   const avg = (c1.l + c3.l + c5.l) / 3;
   const tol = avg * 0.01;
 
+  // 2026-07修正: isSakataTripleTop と対称の修正。2・4日目の安値が両隣の
+  // 谷（底値）より高い（＝「山」として機能している）ことを追加で検証する。
+  const isPeak = c2.l > Math.max(c1.l, c3.l) && c4.l > Math.max(c3.l, c5.l);
+
   return (
+    isPeak &&
     Math.abs(c1.l - avg) < tol &&
     Math.abs(c3.l - avg) < tol &&
     Math.abs(c5.l - avg) < tol

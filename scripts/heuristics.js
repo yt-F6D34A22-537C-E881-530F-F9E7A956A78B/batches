@@ -455,7 +455,7 @@ function predictResolvedDate(dailyByCode, targetDate) {
 function computeHeuristicsForDate(dailyByCode, targetDate) {
   let finalData = {};
   let latestDateGlobal = null;
-  let okCount = 0, fetchErrorCount = 0, insufficientCount = 0;
+  let okCount = 0, fetchErrorCount = 0, insufficientCount = 0, partialDataCount = 0;
 
   const needDaily   = 100; // Rule9 daily
   const needWeekly  = 100; // Rule9 weekly
@@ -481,13 +481,29 @@ function computeHeuristicsForDate(dailyByCode, targetDate) {
     const weeklyCount  = Object.keys(weekly).length;
     const monthlyCount = Object.keys(monthly).length;
 
-    const insufficient =
-      dailyCount < needDaily || weeklyCount < needWeekly || monthlyCount < needMonthly;
+    // 2026-07修正: 従来は dailyCount/weeklyCount/monthlyCount のいずれか1つでも
+    // 必要本数に届かないと、日足だけで完結するルール（TECH_5MA_UPDATE・
+    // TECH_NICHI_DAI・TECH_RULE9_DAILY等）も含めて全TECH_*が丸ごと欠測になっていた。
+    // 実データ検証（heuristics_YYYYMMDD.jsonの実測）で、この判定により銘柄全体の
+    // 23.6%が14日間すべてで恒常的に除外されていることが判明した。
+    // heuristics_conditions.js の週足・月足系の各関数はいずれも safeCalcMA/safeLast
+    // により候補本数不足時は自前で false/"flat"/null を返す安全設計になっているため、
+    // ここでの weekly/monthly の不足チェックは不要（むしろ過剰）と判断し撤廃する。
+    // dailyCount の不足チェックのみ残す（日足ベースのルールが必要とする
+    // 最低限のローソク足本数を確保するためのガードとして維持する）。
+    const insufficient = dailyCount < needDaily;
 
     if (insufficient) {
       finalData[code] = { error: "insufficient candles" };
       insufficientCount++;
       continue;
+    }
+
+    // 週足・月足が必要本数に届いていない場合も処理は継続する。該当する
+    // 週足・月足系のTECH_*は各関数側の安全ガードにより "flat"/false/null に
+    // なるが、日足系のTECH_*は正しく計算される。件数はログ集計のみ行う。
+    if (weeklyCount < needWeekly || monthlyCount < needMonthly) {
+      partialDataCount++;
     }
 
     // 最新日付を更新
@@ -526,7 +542,8 @@ function computeHeuristicsForDate(dailyByCode, targetDate) {
 
   console.log(
     `heuristics_${latestDateGlobal}.json generation completed. `
-    + `(成功: ${okCount} / 取得エラー: ${fetchErrorCount} / データ不足: ${insufficientCount})`
+    + `(成功: ${okCount} / 取得エラー: ${fetchErrorCount} / データ不足: ${insufficientCount} `
+    + `/ うち週足・月足が必要本数未満で日足系ルールのみ計算: ${partialDataCount})`
   );
   return latestDateGlobal;
 }
