@@ -10,7 +10,7 @@ name: 【heuristics-backfill.yml】Trigger heuristics.yml range backfill (経験
 #       concurrency group「auto-update」に追加したことに伴い、本ワークフローの
 #       ガード対象（GUARD_TARGET_WORKFLOWS）にも追加した。
 
-# on:
+on:
 #   schedule:
 #     # 22:07 UTC(fetch.yml)〜翌07:07 UTC(fetch.yml)の間が唯一9時間空く時間帯のため、
 #     # 前後のジョブと十分な余裕を持たせて23:37 UTC（JST 08:37）に設定
