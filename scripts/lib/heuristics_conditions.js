@@ -644,6 +644,21 @@ function isDoubleBottom(daily) {
 
   if (firstLowIdx === -1 || secondLowIdx === -1) return false;
 
+  // 2026-07修正: 従来は前半5本・後半5本それぞれの最安値を単純に「2つの底」として
+  // 扱っており、①2つの底の間隔（隣接していないか）と②2つの底の間に明確な山
+  // （反発）があるかを検証していなかった。そのため、実質1つの谷（例:4日目と
+  // 6日目が隣接して安値を付けただけ）でもダブルボトムとして誤検知していた
+  // （実データ検証で発生率36.07%という明らかな過検知を確認）。
+  // 「谷→山→谷」の実際のW字構造になっているかを追加で検証する。
+  const gapDays = secondLowIdx - firstLowIdx;
+  if (gapDays < 3) return false; // 2つの底が近すぎる（実質1つの谷）は対象外
+
+  const betweenHighs = closes.slice(firstLowIdx + 1, secondLowIdx);
+  const midPeak = betweenHighs.length > 0 ? Math.max(...betweenHighs) : -Infinity;
+  const higherLow = Math.max(firstLow, secondLow);
+  // 2つの底の間の山が、底より明確に高い（3%以上）ことを要求する
+  const hasMidPeak = midPeak >= higherLow * 1.03;
+
   // 2つの底が近い水準（3%以内）
   const tolerance = firstLow * 0.03;
   const cond1 = Math.abs(firstLow - secondLow) < tolerance;
@@ -658,7 +673,7 @@ function isDoubleBottom(daily) {
   // 5日線が上向き（上昇転換の確認）
   const slopeUp = isMaSlopeUp(daily, 5);
 
-  return cond1 && cond2 && cond3 && slopeUp;
+  return hasMidPeak && cond1 && cond2 && cond3 && slopeUp;
 }
 
 
