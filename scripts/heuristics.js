@@ -204,48 +204,70 @@ async function fetchDailyCandles(code, targetDate = null, period1AnchorDate = nu
     url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${DAILY_RANGE_NORMAL}`;
   }
 
-  try {
-    const res = await fetch(url);
-    const json = await res.json();
+  // 2026-07追加: 一時的な失敗（レート制限・タイムアウト等）をリトライで吸収する。
+  // 実データ検証で、約3,700銘柄を並列取得した際、常に処理終盤の同じ540銘柄
+  // （銘柄リスト全体の後ろから約85〜100%の位置、1件の欠けもなく完全に連続）が
+  // "Network or fetch error"で失敗することを確認した。銘柄固有の問題ではなく、
+  // リクエストを重ねるうちにYahoo Finance側のレート制限に達し、リトライが
+  // 無かったため一度失敗すると即座にその銘柄を諦めていたことが原因と推測される。
+  // 最大3回まで、指数バックオフ（1秒→2秒→4秒）を挟んでリトライする。
+  // ※このリトライにより、レート制限が実際に発生している状況では全体の処理時間が
+  //   延びる可能性がある。FETCH_CONCURRENCY（同時実行数）との兼ね合いも含め、
+  //   実地の様子を見て調整すること。
+  const MAX_RETRIES = 3;
+  let lastError = "Unknown error";
 
-    if (!json.chart || !json.chart.result) {
-      return { error: json.chart?.error?.description || "Unknown error from Yahoo Finance" };
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url);
+      const json = await res.json();
+
+      if (!json.chart || !json.chart.result) {
+        lastError = json.chart?.error?.description || "Unknown error from Yahoo Finance";
+      } else {
+        const item = json.chart.result[0];
+        const timestamps = item.timestamp;
+        const q = item.indicators.quote[0];
+
+        if (!timestamps || timestamps.length < 10) {
+          lastError = "Too few candles returned from Yahoo API";
+        } else if (!q || !q.close || q.close.length < 10) {
+          lastError = "Too few quote entries returned from Yahoo API";
+        } else {
+          let result = {};
+          for (let i = 0; i < timestamps.length; i++) {
+            const ts = timestamps[i];
+            const date = new Date(ts * 1000);
+
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, "0");
+            const d = String(date.getDate()).padStart(2, "0");
+            const key = `${y}${m}${d}`;
+
+            result[key] = {
+              o: q.open[i],
+              h: q.high[i],
+              l: q.low[i],
+              c: q.close[i],
+              v: q.volume[i]
+            };
+          }
+
+          return result; // 成功
+        }
+      }
+    } catch (err) {
+      lastError = "Network or fetch error";
     }
 
-    const item = json.chart.result[0];
-    const timestamps = item.timestamp;
-    const q = item.indicators.quote[0];
-
-    if (!timestamps || timestamps.length < 10) {
-      return { error: "Too few candles returned from Yahoo API" };
+    // 最後の試行でなければ、バックオフしてリトライする
+    if (attempt < MAX_RETRIES) {
+      const backoffMs = 1000 * Math.pow(2, attempt); // 1s, 2s, 4s
+      await new Promise(resolve => setTimeout(resolve, backoffMs));
     }
-    if (!q || !q.close || q.close.length < 10) {
-      return { error: "Too few quote entries returned from Yahoo API" };
-    }
-
-    let result = {};
-    for (let i = 0; i < timestamps.length; i++) {
-      const ts = timestamps[i];
-      const date = new Date(ts * 1000);
-
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      const key = `${y}${m}${d}`;
-
-      result[key] = {
-        o: q.open[i],
-        h: q.high[i],
-        l: q.low[i],
-        c: q.close[i],
-        v: q.volume[i]
-      };
-    }
-
-    return result;
-  } catch (err) {
-    return { error: "Network or fetch error" };
   }
+
+  return { error: lastError };
 }
 
 /* ==========================================================================================
