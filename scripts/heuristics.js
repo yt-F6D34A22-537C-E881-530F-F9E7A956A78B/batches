@@ -82,7 +82,23 @@ const workbook = xlsx.readFile("data/data_j.xlsx");
 const sheet = workbook.Sheets["Sheet1"];
 const rows = xlsx.utils.sheet_to_json(sheet);
 
+// 2026-07追加: 「市場・商品区分」が PRO Market の銘柄を除外する。
+// PRO Marketはプロ投資家向け市場で、出来高が恒常的にゼロに近い（実データ検証で
+// 137営業日中137日すべて出来高ゼロという銘柄を複数確認した）極端な低流動性銘柄が
+// 多く、テクニカル判定を行っても実務的な意味を持たない
+// （例: 60日間値が動かないだけで「節目」判定が機械的に成立してしまう）。
+// あわせて ETF・ETN、REIT・ベンチャーファンド・カントリーファンド・インフラファンドも
+// 除外する（個別企業のチャート形成ロジックを前提とした本ヒューリスティクスは、
+// 指数・バスケット連動型の値動きをする銘柄には適用対象として馴染まないため）。
+// data_j.xlsx の「市場・商品区分」列（D列）の値をもとに、選定の入り口で除外する。
+const EXCLUDED_MARKET_SEGMENTS = [
+  "PRO Market",
+  "ETF・ETN",
+  "REIT・ベンチャーファンド・カントリーファンド・インフラファンド",
+];
+
 let symbols = rows
+  .filter(r => !EXCLUDED_MARKET_SEGMENTS.includes(r["市場・商品区分"]))
   .map(r => String(r["コード"]).trim())
   .filter(code => code && code !== "undefined");
 
