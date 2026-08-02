@@ -599,7 +599,12 @@ function isHeadAndShoulders(daily) {
   const cond1 = h1 < h2 && h3 < h2;
   const tolerance = h2 * 0.03;
   const cond2 = Math.abs(h1 - h3) < tolerance;
-  const cond3 = l1 < h1 && l2 < h3;
+  // 2026-07修正: 従来は「谷の安値が隣の肩の高値よりわずかでも低ければ良い」という
+  // 極めて緩い条件（l1 < h1 && l2 < h3）だったため、通常の値動きでもほぼ常に成立
+  // してしまっていた（実データ検証で発生率13.09%という高頻度を確認）。
+  // 谷が肩の高値から明確に（3%以上）下回っていることを要求し、なだらかな
+  // 値動きを頭肩天井として誤検知しないようにする。
+  const cond3 = l1 < h1 * 0.97 && l2 < h3 * 0.97;
 
   return cond1 && cond2 && cond3;
 }
