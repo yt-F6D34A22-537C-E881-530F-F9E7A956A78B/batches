@@ -11,10 +11,10 @@ name: 【heuristics-backfill.yml】Trigger heuristics.yml range backfill (経験
 #       ガード対象（GUARD_TARGET_WORKFLOWS）にも追加した。
 
 on:
-#   schedule:
-#     # 22:07 UTC(fetch.yml)〜翌07:07 UTC(fetch.yml)の間が唯一9時間空く時間帯のため、
-#     # 前後のジョブと十分な余裕を持たせて23:37 UTC（JST 08:37）に設定
-#     - cron: '37 23 * * *'  # JST 08:37
+  schedule:
+    # 22:07 UTC(fetch.yml)〜翌07:07 UTC(fetch.yml)の間が唯一9時間空く時間帯のため、
+    # 前後のジョブと十分な余裕を持たせて23:37 UTC（JST 08:37）に設定
+    - cron: '37 23 * * *'  # JST 08:37
   workflow_dispatch: {}
 
 permissions:
@@ -29,8 +29,8 @@ jobs:
   trigger:
     runs-on: ubuntu-latest
     env:
-      BACKFILL_START: '20250701'
-      BACKFILL_END: '20260630'
+      BACKFILL_START: '20260101'
+      BACKFILL_END: '20260731'
       # concurrency group「auto-update」を共有する既存ワークフロー一覧
       # 2026-07、market_cap.yml を追加（auto-update グループへの参加に伴う）
       GUARD_TARGET_WORKFLOWS: 'fetch.yml margin.yml download-jpx-xlsx.yml heuristics.yml market_cap.yml'
