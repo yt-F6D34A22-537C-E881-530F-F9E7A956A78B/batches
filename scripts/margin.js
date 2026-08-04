@@ -20,6 +20,59 @@ function normalizeNFKC(s) {
   return s.normalize("NFKC");
 }
 
+// margin_archive のファイル名（YYYYMMDD）に使うJST日付。
+// formatTimestampJst() は "YYYYMMDD_hhmmss" 形式（data/backup のファイル名で使用中）を返すため、
+// 先頭8文字を流用する。jst_time.js への新規export追加は不要（2026-08追加）。
+function todayDateStrJst() {
+  return formatTimestampJst(new Date()).slice(0, 8);
+}
+
+// ============================================================
+// 基準日抽出（margin_archive のmeta用。2026-08追加）
+//   - JPX側の各公表資料に記載されている「その資料が何の日付時点のデータか」を
+//     抽出する。抽出できない場合は null を返し、warnログのみ出して処理は継続する
+//     （JPX側の資料形式変更等で壊れても、信用残データ本体の取得自体は止めない）。
+// ============================================================
+
+// syumatsu*.pdf の全文テキストから「YYYY/M/D 申込み現在」を抽出する
+function extractWeeklyBaseDate(fullText) {
+  const m = fullText.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})\s*申込み現在/);
+  if (!m) {
+    console.warn("[margin_archive] weekly base date pattern not found in PDF text");
+    return null;
+  }
+  const [, y, mo, d] = m;
+  return `${y}${mo.padStart(2, "0")}${d.padStart(2, "0")}`;
+}
+
+// meigara.csv の1行目（貸借取引対象銘柄一覧,YYYYMMDD,...）から基準日を抽出する
+function extractKubunBaseDate(csv) {
+  const firstLine = csv.split(/\r?\n/)[0];
+  const cols = firstLine.split(",");
+  if (!cols[1]) {
+    console.warn("[margin_archive] kubun base date not found in meigara.csv header");
+    return null;
+  }
+  return cols[1];
+}
+
+// mtdailyk*.xls の生シートから「as of YYYY/M/D application based」を抽出する（B2セル想定）
+function extractDailyBaseDate(sheet) {
+  const cellAddr = xlsx.utils.encode_cell({ r: 1, c: 1 }); // "B2"
+  const cell = sheet[cellAddr];
+  if (!cell || typeof cell.v !== "string") {
+    console.warn(`[margin_archive] daily base date cell not found or unexpected format: ${cellAddr}`);
+    return null;
+  }
+  const m = cell.v.match(/as of (\d{4})\/(\d{1,2})\/(\d{1,2})/);
+  if (!m) {
+    console.warn(`[margin_archive] daily base date pattern mismatch: "${cell.v}"`);
+    return null;
+  }
+  const [, y, mo, d] = m;
+  return `${y}${mo.padStart(2, "0")}${d.padStart(2, "0")}`;
+}
+
 // ============================================================
 // 1. JSF 貸借銘柄（meigara.csv, Shift_JIS）
 //    - 1行目: タイトル
@@ -32,8 +85,11 @@ async function fetchKubunMap() {
   const buf = Buffer.from(await res.arrayBuffer());
   const csv = iconv.decode(buf, "shift_jis");
 
+  // margin_archive のmeta用に基準日を抽出しておく（2026-08追加。margin.json 本体には影響しない）
+  const baseDate = extractKubunBaseDate(csv);
+
   const lines = csv.split(/\r?\n/);
-  if (lines.length < 3) return {};
+  if (lines.length < 3) return { kubunMap: {}, baseDate };
 
   const headerLine = lines[1];
   const headers = headerLine.split(",");
@@ -56,7 +112,7 @@ async function fetchKubunMap() {
     kubunMap[code] = String(kubun);
   }
 
-  return kubunMap;
+  return { kubunMap, baseDate };
 }
 
 // ============================================================
@@ -216,7 +272,7 @@ async function fetchJpxWeekly() {
     .filter(href => href.endsWith(".pdf") && href.includes("syumatsu"))
     .map(href => "https://www.jpx.co.jp" + href);
 
-  if (pdfLinks.length === 0) return {};
+  if (pdfLinks.length === 0) return { jpxMap: {}, baseDate: null };
 
   const latestPdf = pdfLinks.sort().slice(-1)[0];
   const pdfRes = await fetch(latestPdf);
@@ -231,6 +287,9 @@ async function fetchJpxWeekly() {
     const strings = content.items.map(it => it.str).join(" ");
     fullText += "\n" + strings;
   }
+
+  // margin_archive のmeta用に基準日を抽出しておく（2026-08追加。margin.json 本体には影響しない）
+  const baseDate = extractWeeklyBaseDate(fullText);
 
   const blocks = fullText.split(/(?=[0-9A-Z]{4}0\s+JP\d{10})/);
 
@@ -270,7 +329,7 @@ async function fetchJpxWeekly() {
     };
   }
 
-  return jpxMap;
+  return { jpxMap, baseDate };
 }
 
 // ============================================================
@@ -288,7 +347,7 @@ async function fetchJpxDaily() {
     .map(a => a.href)
     .filter(href => /mtdailyk.*\.xls$/.test(href));
 
-  if (links.length === 0) return {};
+  if (links.length === 0) return { dailyMap: {}, baseDate: null };
 
   const latestDaily = links.sort().slice(-1)[0];
   const dailyUrl = "https://www.jpx.co.jp" + latestDaily;
@@ -296,6 +355,9 @@ async function fetchJpxDaily() {
   const buf = await (await fetch(dailyUrl)).arrayBuffer();
   const wb = xlsx.read(buf, { type: "buffer" });
   const sheet = wb.Sheets[wb.SheetNames[0]];
+
+  // margin_archive のmeta用に基準日を抽出しておく（2026-08追加。margin.json 本体には影響しない）
+  const baseDate = extractDailyBaseDate(sheet);
 
   const rows = xlsx.utils.sheet_to_json(sheet, { header: 0, range: 5 });
 
@@ -319,7 +381,7 @@ async function fetchJpxDaily() {
     dailyMap[code4] = { sell, buy };
   }
 
-  return dailyMap;
+  return { dailyMap, baseDate };
 }
 
 // ============================================================
@@ -413,16 +475,87 @@ function cleanupBackups() {
 }
 
 // ============================================================
+// 8.5. margin_archive 書き出し（信用残アーカイブ化。2026-08追加）
+//   - data/ohlcv・data/heuristics と同じ「1ファイル＝1日分・恒久保存・
+//     一度書いたら不変」方針。margin.yml は1日1回実行のため、
+//     同日中の再実行（workflow_dispatch再実行等）で当日分ファイルが
+//     既に存在する場合は上書きせずスキップする。
+//   - margin.json と同一内容（全項目）に、各銘柄が「その日、日々公表対象
+//     だったか」を示す「情報源」フィールドを付与して保存する。
+//   - ファイル単位のmetaとして、各データソース（週次PDF・日々公表XLS・
+//     JSF貸借銘柄CSV）の基準日を記録する。これにより「情報源: 通常公表」
+//     の銘柄が実際にいつ時点の値を繰り越しているかを、後からチャート等で
+//     機械的に判定できる。
+// ============================================================
+const MARGIN_ARCHIVE_DIR = "data/margin_archive";
+
+/**
+ * margin.json と同一内容に「情報源」（日々公表 / 通常公表）を付与した
+ * アーカイブ専用レコードを構築する。margin.json のスキーマ・値には
+ * 一切影響しない（アーカイブ書き出し時にのみ複製して付与）。
+ */
+function buildArchiveRecord(entry, isDailyDisclosed) {
+  return {
+    ...entry,
+    "情報源": isDailyDisclosed ? "日々公表" : "通常公表",
+  };
+}
+
+/**
+ * @param {object} margin - margin.json と同一内容（全項目）
+ * @param {Set<string>} dailyDisclosedCodes - その実行でJPX日々公表(dailyMap)に含まれていた銘柄コード集合
+ * @param {object} meta - 基準日情報
+ * @param {string|null} meta.jpxWeeklyBaseDate - syumatsu*.pdf の基準日（YYYYMMDD）
+ * @param {string|null} meta.kubunBaseDate - meigara.csv の基準日（YYYYMMDD）
+ * @param {string|null} meta.jpxDailyBaseDate - mtdailyk*.xls の基準日（YYYYMMDD）
+ */
+function writeMarginArchive(margin, dailyDisclosedCodes, meta) {
+  const dateStr = todayDateStrJst();
+  const yyyymm = dateStr.slice(0, 6);
+  const dir = `${MARGIN_ARCHIVE_DIR}/${yyyymm}`;
+  const filePath = `${dir}/margin_${dateStr}.json`;
+
+  if (fs.existsSync(filePath)) {
+    console.log(`[margin_archive] skip (already exists, immutable): ${filePath}`);
+    return;
+  }
+
+  const issues = {};
+  for (const [code, entry] of Object.entries(margin)) {
+    issues[code] = buildArchiveRecord(entry, dailyDisclosedCodes.has(code));
+  }
+
+  const archive = {
+    meta: {
+      jpx_weekly_base_date: meta.jpxWeeklyBaseDate,
+      kubun_base_date: meta.kubunBaseDate,
+      jpx_daily_base_date: meta.jpxDailyBaseDate,
+    },
+    issues,
+  };
+
+  ensureDir(dir);
+  fs.writeFileSync(filePath, JSON.stringify(archive, null, 2), "utf-8");
+  console.log(`[margin_archive] wrote: ${filePath}`);
+}
+
+// ============================================================
 // 9. Main
 // ============================================================
 async function main() {
   ensureDir("data");
 
-  const kubunMap = await fetchKubunMap();
+  const { kubunMap, baseDate: kubunBaseDate } = await fetchKubunMap();
   const { regulationMap, BUY_BAN_KEYWORDS, SELL_BAN_KEYWORDS } =
     await fetchRakutenRegulation();
-  const jpxMap = await fetchJpxWeekly();
-  const dailyMap = await fetchJpxDaily();
+  const { jpxMap, baseDate: jpxWeeklyBaseDate } = await fetchJpxWeekly();
+  const { dailyMap, baseDate: jpxDailyBaseDate } = await fetchJpxDaily();
+
+  // この実行で日々公表XLSに実際に載っていた銘柄コード集合。
+  // 将来の信用残推移チャートで「日々公表由来の値」と「週次PDFの値が
+  // そのまま残っている（未更新）値」を点ごとに区別するために保持する
+  // （2026-08追加。margin.json 本体のスキーマには影響させない）。
+  const dailyDisclosedCodes = new Set(Object.keys(dailyMap));
 
   applyDailyToWeekly(jpxMap, dailyMap);
 
@@ -444,6 +577,14 @@ async function main() {
 
   backupMargin();
   cleanupBackups();
+
+  // 信用残アーカイブ化（2026-08追加）。margin.json と同じ内容（全項目）を
+  // 日付ごとの恒久ファイルとして保存する。
+  writeMarginArchive(sorted, dailyDisclosedCodes, {
+    jpxWeeklyBaseDate,
+    kubunBaseDate,
+    jpxDailyBaseDate,
+  });
 }
 
 main();
