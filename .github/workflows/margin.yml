@@ -43,7 +43,7 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
 
-          git add data/margin.json data/margin_archive/ data/backup/
+          git add data/margin.json data/margin/ data/backup/
 
           git commit -m "Auto-update margin.json + margin_archive + backup" || exit 0
 
