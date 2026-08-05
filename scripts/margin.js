@@ -487,7 +487,7 @@ function cleanupBackups() {
 //     の銘柄が実際にいつ時点の値を繰り越しているかを、後からチャート等で
 //     機械的に判定できる。
 // ============================================================
-const MARGIN_ARCHIVE_DIR = "data/margin_archive";
+const MARGIN_ARCHIVE_DIR = "data/margin";
 
 /**
  * margin.json と同一内容に「情報源」（日々公表 / 通常公表）を付与した
