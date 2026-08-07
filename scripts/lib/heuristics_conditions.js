@@ -552,6 +552,18 @@ function isSakataSanpeiDown(daily) {
   );
 }
 
+/* ==========================================================================================
+   酒田五法（三法・上げ三法/下げ三法）
+   仕様：「3本のもみ合いをブレイクしたら、その方向につく」
+         （元ネタ「テクニカル」シート31行目、D列）
+   [2026-08-06] 従来は中間3本の実体サイズ（c1実体の50%未満）のみを検証しており、
+   「もみ合い」＝c1の値幅（高値・安値）内に収まっているかどうかを検証していなかった
+   （実体が小さくても、窓を開けてc1の値幅の外側にある値動きが誤って通過し得た）。
+   元ネタ突き合わせにより、中間3本がc1の値幅内に収まっていること（withinC1Range）と、
+   c5がc1の値幅を明確にブレイクしていること（c1.c超えではなくc1.h/c1.l超え）を追加。
+   ※ 実体サイズ50%という閾値自体は元ネタに具体的記載がなく、既存の暫定値のまま維持した。
+========================================================================================== */
+
 function isSakataSanpoUp(daily) {
   const arr = safeLast(daily, 5);
   if (!arr) return false;
@@ -559,8 +571,17 @@ function isSakataSanpoUp(daily) {
   const [c1, c2, c3, c4, c5] = arr;
   const bull = c => c.c > c.o;
   const small = c => Math.abs(c.c - c.o) < (c1.c - c1.o) * 0.5;
+  // もみ合い：中間3本の値幅（高値・安値）がc1の値幅（高値・安値）の内側に収まっている
+  const withinC1Range = c => c.h <= c1.h && c.l >= c1.l;
 
-  return bull(c1) && small(c2) && small(c3) && small(c4) && bull(c5) && c5.c > c1.c;
+  return (
+    bull(c1) &&
+    small(c2) && withinC1Range(c2) &&
+    small(c3) && withinC1Range(c3) &&
+    small(c4) && withinC1Range(c4) &&
+    bull(c5) &&
+    c5.c > c1.h // c1の高値を明確にブレイク（従来は c5.c > c1.c だった）
+  );
 }
 
 function isSakataSanpoDown(daily) {
@@ -570,8 +591,17 @@ function isSakataSanpoDown(daily) {
   const [c1, c2, c3, c4, c5] = arr;
   const bear = c => c.c < c.o;
   const small = c => Math.abs(c.c - c.o) < Math.abs(c1.c - c1.o) * 0.5;
+  // もみ合い：中間3本の値幅（高値・安値）がc1の値幅（高値・安値）の内側に収まっている
+  const withinC1Range = c => c.h <= c1.h && c.l >= c1.l;
 
-  return bear(c1) && small(c2) && small(c3) && small(c4) && bear(c5) && c5.c < c1.c;
+  return (
+    bear(c1) &&
+    small(c2) && withinC1Range(c2) &&
+    small(c3) && withinC1Range(c3) &&
+    small(c4) && withinC1Range(c4) &&
+    bear(c5) &&
+    c5.c < c1.l // c1の安値を明確にブレイク（従来は c5.c < c1.c だった）
+  );
 }
 
 
@@ -584,10 +614,10 @@ function isSakataSanpoDown(daily) {
 ========================================================================================== */
 
 function isHeadAndShoulders(daily) {
-  const arr = safeLast(daily, 5);
+  const arr = safeLast(daily, 6);
   if (!arr) return false;
 
-  const [c1, c2, c3, c4, c5] = arr;
+  const [c1, c2, c3, c4, c5, c6] = arr;
 
   const h1 = c1.h;
   const h2 = c3.h;
@@ -606,7 +636,18 @@ function isHeadAndShoulders(daily) {
   // 値動きを頭肩天井として誤検知しないようにする。
   const cond3 = l1 < h1 * 0.97 && l2 < h3 * 0.97;
 
-  return cond1 && cond2 && cond3;
+  // [2026-08-06] 元ネタ突き合わせにより追加：「2つの谷の延長線＝ネックラインを
+  // 割ったら上昇トレンドの終了と判断する」という確定条件。従来は3つの山・2つの谷
+  // という"形"のみを検出しており、その後の値動きがネックラインを実際に下抜けた
+  // かどうかを確認していなかった（＝5本の窓では確認する余地が構造的になかった）。
+  // 6本目（c6）を「確認足」として追加し、谷1(c2)・谷2(c4)を結ぶ直線をc6の時点まで
+  // 延長したネックライン価格を、c6の終値が下抜けているかを確認する。
+  // ※ これにより、シグナルが点灯するタイミングが「肩の形成日」から「ネックライン
+  // 割れの確認日（1本後）」へ変わる点に注意。
+  const necklineAtC6 = l1 + (l2 - l1) * ((5 - 1) / (3 - 1)); // 谷1→谷2の傾きをc6位置まで延長
+  const cond4 = c6.c < necklineAtC6;
+
+  return cond1 && cond2 && cond3 && cond4;
 }
 
 
@@ -614,6 +655,21 @@ function isHeadAndShoulders(daily) {
    W底（Double Bottom）
    仕様：「5日線やローソク足の終値線が大底圏で2度の安値を付けたあと上昇」
 ========================================================================================== */
+
+// [2026-08-06] isDoubleBottom / isInInHarami 共通：「大底圏」前提条件のヘルパー
+// 元ネタ突き合わせにより、両ルールとも「大底圏で」という前提を要求していることが
+// 判明したため追加。対象の安値が、直近lookbackDays日間の最安値水準に対して
+// 明確な安値（＝その期間の実質的な底）になっているかを確認する。
+const MAJOR_BOTTOM_ZONE_LOOKBACK_DAYS = 60;
+const MAJOR_BOTTOM_ZONE_TOLERANCE_PCT = 0.03;
+
+function isNearMajorBottomZone(daily, dates, atDateIdx, low, lookbackDays = MAJOR_BOTTOM_ZONE_LOOKBACK_DAYS, tolerancePct = MAJOR_BOTTOM_ZONE_TOLERANCE_PCT) {
+  const zoneStart = Math.max(0, atDateIdx - lookbackDays);
+  const zoneDates = dates.slice(zoneStart, atDateIdx + 1);
+  if (zoneDates.length === 0) return false;
+  const zoneMin = Math.min(...zoneDates.map(d => daily[d].l));
+  return low <= zoneMin * (1 + tolerancePct);
+}
 
 function isDoubleBottom(daily) {
   const dates = Object.keys(daily).sort();
@@ -678,7 +734,13 @@ function isDoubleBottom(daily) {
   // 5日線が上向き（上昇転換の確認）
   const slopeUp = isMaSlopeUp(daily, 5);
 
-  return hasMidPeak && cond1 && cond2 && cond3 && slopeUp;
+  // [2026-08-06] 元ネタ突き合わせにより追加：「大底圏で」という前提条件の検証。
+  // 1つ目の底が、直近60営業日の安値水準に対して明確な安値になっているか
+  // （＝単なる上昇トレンド中の押し目ではなく、実質的な底値圏であるか）を確認する。
+  const firstLowDateIdx = dates.length - 10 + firstLowIdx;
+  const isMajorBottomZone = isNearMajorBottomZone(daily, dates, firstLowDateIdx, firstLow);
+
+  return hasMidPeak && cond1 && cond2 && cond3 && slopeUp && isMajorBottomZone;
 }
 
 
@@ -779,14 +841,14 @@ function isInInHarami(daily) {
 
   const inside = body2High <= body1High && body2Low >= body1Low;
 
-  const lookback = Math.min(10, dates.length);
-  const lows = dates.slice(-lookback).map(d => daily[d].l);
-  const recentMin = Math.min(...lows);
-  const recentMax = Math.max(...lows);
+  // [2026-08-06] 元ネタ突き合わせにより修正：「大底圏での下げ止まりシグナル」という
+  // 前提条件を、従来の簡易な downBias（直近10日の安値が3%動いているか、という
+  // 極めて緩い代替チェック）から、isDoubleBottomと同じ「直近60営業日の安値水準に
+  // 対して明確な安値であるか」という、大底圏の実態に即したチェックに強化した。
+  const currentLow = Math.min(c1.l, c2.l);
+  const isMajorBottomZone = isNearMajorBottomZone(daily, dates, dates.length - 1, currentLow);
 
-  const downBias = recentMin < recentMax * 0.97;
-
-  return inside && downBias;
+  return inside && isMajorBottomZone;
 }
 
 
@@ -872,16 +934,92 @@ function isDownTrendEnd(daily) {
 
 
 /* ==========================================================================================
+   赤と青の交差 / ものわかれ 共通ヘルパー
+   [2026-08-06 元ネタ（heuristics整理.xlsx「テクニカル」シート 12/14行目）突き合わせにより追加]
+   従来 isRedBlueCross / isMonowakareRedBlueCrossUp / Down のいずれにも
+   実装されていなかった、元ネタ記載の3条件を追加するための共通ヘルパー。
+   ・起点（クロス発生日）から6本以内
+   ・前の高値/安値付近を避ける
+   ・急騰/急落が起こっているときは避ける
+   ※ 下記の閾値定数（RED_BLUE_CROSS_*）は元ネタに具体的な数値の記載がないため、
+     本ファイル内の類似閾値（findFushimeLevelの1%、Granvilleの5%乖離）を参考にした
+     暫定値（推測）。実データでの検証・調整が必要。
+========================================================================================== */
+
+const RED_BLUE_CROSS_MAX_LOOKBACK_BARS = 6;
+const RED_BLUE_CROSS_EXTREME_LOOKBACK_DAYS = 60; // findFushimeLevel と同じ窓幅に合わせた
+const RED_BLUE_CROSS_EXTREME_TOLERANCE_PCT = 0.03; // 「前の高値/安値付近」の許容幅（暫定・要確認）
+const RED_BLUE_CROSS_SHARP_MOVE_LOOKBACK_DAYS = 5;
+const RED_BLUE_CROSS_SHARP_MOVE_THRESHOLD_PCT = 0.15; // 「急騰/急落」とみなす閾値（暫定・要確認）
+
+// 直近 maxLookback 本以内（当日を含む）に、5MAが20MAを指定方向にクロスしたか。
+// 見つかった場合は「何本前か」（0=当日）を返し、見つからなければ null を返す。
+function findRecentMaCrossOffset(daily, dates, direction, maxLookback = RED_BLUE_CROSS_MAX_LOOKBACK_BARS) {
+  for (let offset = 0; offset < maxLookback; offset++) {
+    const endIdx = dates.length - offset;
+    if (endIdx < 2) return null;
+
+    const currCandles = {};
+    dates.slice(0, endIdx).forEach(d => (currCandles[d] = daily[d]));
+    const prevCandles = {};
+    dates.slice(0, endIdx - 1).forEach(d => (prevCandles[d] = daily[d]));
+
+    const ma5_curr  = safeCalcMA(currCandles, 5);
+    const ma20_curr = safeCalcMA(currCandles, 20);
+    const ma5_prev  = safeCalcMA(prevCandles, 5);
+    const ma20_prev = safeCalcMA(prevCandles, 20);
+    if ([ma5_curr, ma20_curr, ma5_prev, ma20_prev].some(x => x === null)) continue;
+
+    const crossedUp   = ma5_prev < ma20_prev && ma5_curr > ma20_curr;
+    const crossedDown = ma5_prev > ma20_prev && ma5_curr < ma20_curr;
+
+    if (direction === "up" && crossedUp) return offset;
+    if (direction === "down" && crossedDown) return offset;
+    if (direction === "either" && (crossedUp || crossedDown)) return offset;
+  }
+  return null;
+}
+
+// 直近lookbackDays日間の高値/安値付近に現在値が来ていないか（避けるべき状態ならtrue）。
+// 判定に必要な日数が無い場合は「避けるべき状態ではない」扱い（false）とする。
+function isNearRecentExtreme(daily, dates, mode, lookbackDays = RED_BLUE_CROSS_EXTREME_LOOKBACK_DAYS, tolerancePct = RED_BLUE_CROSS_EXTREME_TOLERANCE_PCT) {
+  if (dates.length < lookbackDays) return false;
+  const recentDates = dates.slice(-lookbackDays);
+  const target = mode === "high"
+    ? Math.max(...recentDates.map(d => daily[d].h))
+    : Math.min(...recentDates.map(d => daily[d].l));
+
+  const c = daily[dates[dates.length - 1]].c;
+  return Math.abs(c - target) / target <= tolerancePct;
+}
+
+// 直近lookbackDays日間で±thresholdPctを超える急騰・急落が起きていないか（避けるべき状態ならtrue）
+function hasSharpRecentMove(daily, dates, lookbackDays = RED_BLUE_CROSS_SHARP_MOVE_LOOKBACK_DAYS, thresholdPct = RED_BLUE_CROSS_SHARP_MOVE_THRESHOLD_PCT) {
+  if (dates.length < lookbackDays + 1) return false;
+  const base = daily[dates[dates.length - 1 - lookbackDays]].c;
+  const last = daily[dates[dates.length - 1]].c;
+  return Math.abs(last - base) / base >= thresholdPct;
+}
+
+
+/* ==========================================================================================
    赤と青の交差
-   仕様：「5MA × 20MA が交差。赤と青の傾きが同じ方向。週足・月足も同方向。」
+   仕様：「5MA × 20MA が交差。赤と青の傾きが同じ方向。週足・月足も同方向。
+          ローソク足が起点から6本以内が望ましい。前の高値/安値付近の場合は避ける。
+          急騰/急落が起こっているときは避ける。」（元ネタ「テクニカル」シート14行目）
    引数：週足・月足データを追加（heuristics.js 側の呼び出しも変更が必要）
+   [2026-08-06] 元ネタ突き合わせにより、起点6本以内／前の高値安値回避／急騰急落回避の
+   3条件を追加。あわせて週足・月足の同方向チェックを「データ不足時はスキップ」から
+   「データ不足時はfalse（必須条件）」に変更（元ネタが無条件の必須条件として記載しているため）。
 ========================================================================================== */
 
 function isRedBlueCross(daily, weekly, monthly) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 25) return false;
 
-  const last = dates[dates.length - 1];
+  // 5MAと20MAが直近6本以内にクロスしている（起点から6本以内）
+  const crossOffset = findRecentMaCrossOffset(daily, dates, "either");
+  if (crossOffset === null) return false;
 
   const prevCandles = {};
   dates.slice(0, -1).forEach(d => (prevCandles[d] = daily[d]));
@@ -892,13 +1030,6 @@ function isRedBlueCross(daily, weekly, monthly) {
   const ma20_curr = safeCalcMA(daily, 20);
 
   if ([ma5_prev, ma20_prev, ma5_curr, ma20_curr].some(x => x === null)) return false;
-
-  // 5MAと20MAが交差している
-  const crossed =
-    (ma5_prev < ma20_prev && ma5_curr > ma20_curr) ||
-    (ma5_prev > ma20_prev && ma5_curr < ma20_curr);
-
-  if (!crossed) return false;
 
   // 赤（5MA）と青（20MA）の傾きが同じ方向
   const prev2Candles = {};
@@ -914,46 +1045,52 @@ function isRedBlueCross(daily, weekly, monthly) {
   if (slope5 === 0 || slope20 === 0) return false;
   if (slope5 * slope20 <= 0) return false;
 
-  // 週足：5週線と20週線の傾きが同方向
-  if (weekly) {
-    const wDates = Object.keys(weekly).sort();
-    if (wDates.length >= 22) {
-      const wPrev = {};
-      wDates.slice(0, -2).forEach(d => (wPrev[d] = weekly[d]));
-      const wma5_curr  = safeCalcMA(weekly, 5);
-      const wma20_curr = safeCalcMA(weekly, 20);
-      const wma5_prev  = safeCalcMA(wPrev, 5);
-      const wma20_prev = safeCalcMA(wPrev, 20);
+  // 前の高値/安値付近を避ける（上昇方向なら直近高値＝上値抵抗、下降方向なら直近安値＝下値支持）
+  if (isNearRecentExtreme(daily, dates, slope5 > 0 ? "high" : "low")) return false;
 
-      if (wma5_curr !== null && wma20_curr !== null && wma5_prev !== null && wma20_prev !== null) {
-        const wSlope5  = wma5_curr  - wma5_prev;
-        const wSlope20 = wma20_curr - wma20_prev;
-        if (wSlope5 !== 0 && wSlope20 !== 0 && wSlope5 * wSlope20 <= 0) return false;
-        // 週足の傾き方向と日足が逆なら除外
-        if (wSlope5 * slope5 < 0) return false;
-      }
-    }
+  // 急騰/急落が起こっているときは避ける
+  if (hasSharpRecentMove(daily, dates)) return false;
+
+  // 週足：5週線と20週線の傾きが同方向（必須。データ不足の場合はfalse）
+  if (!weekly) return false;
+  const wDates = Object.keys(weekly).sort();
+  if (wDates.length < 22) return false;
+  {
+    const wPrev = {};
+    wDates.slice(0, -2).forEach(d => (wPrev[d] = weekly[d]));
+    const wma5_curr  = safeCalcMA(weekly, 5);
+    const wma20_curr = safeCalcMA(weekly, 20);
+    const wma5_prev  = safeCalcMA(wPrev, 5);
+    const wma20_prev = safeCalcMA(wPrev, 20);
+
+    if (wma5_curr === null || wma20_curr === null || wma5_prev === null || wma20_prev === null) return false;
+
+    const wSlope5  = wma5_curr  - wma5_prev;
+    const wSlope20 = wma20_curr - wma20_prev;
+    if (wSlope5 !== 0 && wSlope20 !== 0 && wSlope5 * wSlope20 <= 0) return false;
+    // 週足の傾き方向と日足が逆なら除外
+    if (wSlope5 * slope5 < 0) return false;
   }
 
-  // 月足：5月線と20月線の傾きが同方向
-  if (monthly) {
-    const mDates = Object.keys(monthly).sort();
-    if (mDates.length >= 22) {
-      const mPrev = {};
-      mDates.slice(0, -2).forEach(d => (mPrev[d] = monthly[d]));
-      const mma5_curr  = safeCalcMA(monthly, 5);
-      const mma20_curr = safeCalcMA(monthly, 20);
-      const mma5_prev  = safeCalcMA(mPrev, 5);
-      const mma20_prev = safeCalcMA(mPrev, 20);
+  // 月足：5月線と20月線の傾きが同方向（必須。データ不足の場合はfalse）
+  if (!monthly) return false;
+  const mDates = Object.keys(monthly).sort();
+  if (mDates.length < 22) return false;
+  {
+    const mPrev = {};
+    mDates.slice(0, -2).forEach(d => (mPrev[d] = monthly[d]));
+    const mma5_curr  = safeCalcMA(monthly, 5);
+    const mma20_curr = safeCalcMA(monthly, 20);
+    const mma5_prev  = safeCalcMA(mPrev, 5);
+    const mma20_prev = safeCalcMA(mPrev, 20);
 
-      if (mma5_curr !== null && mma20_curr !== null && mma5_prev !== null && mma20_prev !== null) {
-        const mSlope5  = mma5_curr  - mma5_prev;
-        const mSlope20 = mma20_curr - mma20_prev;
-        if (mSlope5 !== 0 && mSlope20 !== 0 && mSlope5 * mSlope20 <= 0) return false;
-        // 月足の傾き方向と日足が逆なら除外
-        if (mSlope5 * slope5 < 0) return false;
-      }
-    }
+    if (mma5_curr === null || mma20_curr === null || mma5_prev === null || mma20_prev === null) return false;
+
+    const mSlope5  = mma5_curr  - mma5_prev;
+    const mSlope20 = mma20_curr - mma20_prev;
+    if (mSlope5 !== 0 && mSlope20 !== 0 && mSlope5 * mSlope20 <= 0) return false;
+    // 月足の傾き方向と日足が逆なら除外
+    if (mSlope5 * slope5 < 0) return false;
   }
 
   return true;
@@ -1002,61 +1139,74 @@ function isMomiai(daily) {
 
 /* ==========================================================================================
    ものわかれ
-   仕様：「5日線が10日線、10日線が20日線にいったん近づいて離れる」
+   仕様：「5日線が10日線、10日線が20日線にいったん近づいて離れることでトレンド再加速。
+          あくまで同じトレンドの向きと複合で考える必要がある。」
+          （元ネタ「テクニカル」シート23行目）
+   [2026-08-06] 元ネタ突き合わせにより判明した内部矛盾を修正：
+   従来はこの関数自身のコード内コメントで「5日線/10日線/20日線」と明記しながら、
+   実装本体は safeCalcMA(daily, 25) など「5日線と25日線」の関係しか見ておらず、
+   10日線が一切使われていなかった。5-10日線ペア・10-20日線ペアそれぞれについて
+   「乖離が縮小→再拡大」という"近づいて離れる"形を検出するよう作り直した。
+   ※「近づいて離れる」の具体的な数値定義は元ネタに記載がないため、
+   「直近2日でMA間の乖離幅が縮小し、当日再び拡大に転じた」という操作的定義を
+   採用した（推測）。実データでの検証・調整が必要。
 ========================================================================================== */
+
+function detectApproachThenSeparate(daily, dates, shortPeriod, longPeriod, direction) {
+  const idxCurr = dates.length;
+  const idxPrev = dates.length - 1;
+  const idxPrev2 = dates.length - 2;
+  if (idxPrev2 < 1) return false;
+
+  const curr = {};  dates.slice(0, idxCurr).forEach(d => (curr[d] = daily[d]));
+  const prev = {};  dates.slice(0, idxPrev).forEach(d => (prev[d] = daily[d]));
+  const prev2 = {}; dates.slice(0, idxPrev2).forEach(d => (prev2[d] = daily[d]));
+
+  const shortCurr  = safeCalcMA(curr, shortPeriod);
+  const longCurr   = safeCalcMA(curr, longPeriod);
+  const shortPrev  = safeCalcMA(prev, shortPeriod);
+  const longPrev   = safeCalcMA(prev, longPeriod);
+  const shortPrev2 = safeCalcMA(prev2, shortPeriod);
+  const longPrev2  = safeCalcMA(prev2, longPeriod);
+
+  if ([shortCurr, longCurr, shortPrev, longPrev, shortPrev2, longPrev2].some(x => x === null)) return false;
+
+  const spreadCurr  = shortCurr  - longCurr;
+  const spreadPrev  = shortPrev  - longPrev;
+  const spreadPrev2 = shortPrev2 - longPrev2;
+
+  // 短期線が長期線の上（up）/下（down）にある状態が前提
+  if (direction === "up" && spreadCurr <= 0) return false;
+  if (direction === "down" && spreadCurr >= 0) return false;
+
+  const wasApproaching = Math.abs(spreadPrev) < Math.abs(spreadPrev2); // 乖離が縮小していた
+  const nowSeparating  = Math.abs(spreadCurr) > Math.abs(spreadPrev);  // 当日、再び拡大
+
+  return wasApproaching && nowSeparating;
+}
 
 function isMonowakareUp(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 26) return false;
+  if (dates.length < 22) return false;
 
-  const today = dates[dates.length - 1];
-  const prev = dates[dates.length - 2];
+  // 5日線-10日線ペア、10日線-20日線ペアの双方が「近づいて離れる」形になっているか
+  const pair1 = detectApproachThenSeparate(daily, dates, 5, 10, "up");
+  const pair2 = detectApproachThenSeparate(daily, dates, 10, 20, "up");
+  if (!(pair1 && pair2)) return false;
 
-  const c_today = daily[today].c;
-  const c_prev = daily[prev].c;
-
-  const ma5_today = safeCalcMA(daily, 5);
-  const ma25_today = safeCalcMA(daily, 25);
-
-  const prevCandles = {};
-  dates.slice(0, -1).forEach(d => (prevCandles[d] = daily[d]));
-
-  const ma5_prev = safeCalcMA(prevCandles, 5);
-  const ma25_prev = safeCalcMA(prevCandles, 25);
-
-  if ([ma5_today, ma25_today, ma5_prev, ma25_prev].some(x => x === null)) return false;
-
-  const cond1 = c_prev < ma25_prev && c_today > ma25_today;
-  const cond2 = ma5_prev < ma25_prev && ma5_today > ma25_today;
-
-  return cond1 && cond2;
+  // 「あくまで同じトレンドの向きと複合で考える」— 20日線が上向きであることを確認
+  return isMaSlopeUp(daily, 20);
 }
 
 function isMonowakareDown(daily) {
   const dates = Object.keys(daily).sort();
-  if (dates.length < 26) return false;
+  if (dates.length < 22) return false;
 
-  const today = dates[dates.length - 1];
-  const prev = dates[dates.length - 2];
+  const pair1 = detectApproachThenSeparate(daily, dates, 5, 10, "down");
+  const pair2 = detectApproachThenSeparate(daily, dates, 10, 20, "down");
+  if (!(pair1 && pair2)) return false;
 
-  const c_today = daily[today].c;
-  const c_prev = daily[prev].c;
-
-  const ma5_today = safeCalcMA(daily, 5);
-  const ma25_today = safeCalcMA(daily, 25);
-
-  const prevCandles = {};
-  dates.slice(0, -1).forEach(d => (prevCandles[d] = daily[d]));
-
-  const ma5_prev = safeCalcMA(prevCandles, 5);
-  const ma25_prev = safeCalcMA(prevCandles, 25);
-
-  if ([ma5_today, ma25_today, ma5_prev, ma25_prev].some(x => x === null)) return false;
-
-  const cond1 = c_prev > ma25_prev && c_today < ma25_today;
-  const cond2 = ma5_prev > ma25_prev && ma5_today < ma25_today;
-
-  return cond1 && cond2;
+  return isMaSlopeDown(daily, 20);
 }
 
 
@@ -1070,6 +1220,10 @@ function isMonowakareRedBlueCrossUp(daily, weekly, monthly) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 21) return false;
 
+  // 上昇：5MAが20MAを下から上にクロス（ものわかれの形成）— 起点から6本以内
+  const crossOffset = findRecentMaCrossOffset(daily, dates, "up");
+  if (crossOffset === null) return false;
+
   const ma5_today  = safeCalcMA(daily, 5);
   const ma20_today = safeCalcMA(daily, 20);
 
@@ -1081,46 +1235,47 @@ function isMonowakareRedBlueCrossUp(daily, weekly, monthly) {
 
   if ([ma5_today, ma20_today, ma5_prev, ma20_prev].some(x => x === null)) return false;
 
-  // 上昇：5MAが20MAを下から上にクロス（ものわかれの形成）
-  const cond1 = ma5_prev < ma20_prev && ma5_today > ma20_today;
-
   // 赤（5MA）と青（20MA）の傾きが同じ上昇方向
   const slope5  = ma5_today  - ma5_prev;
   const slope20 = ma20_today - ma20_prev;
   const cond2 = slope5 > 0 && slope20 > 0;
 
-  if (!(cond1 && cond2)) return false;
+  if (!cond2) return false;
 
-  // 週足：5週線と20週線が同じ上昇方向
-  if (weekly) {
-    const wDates = Object.keys(weekly).sort();
-    if (wDates.length >= 22) {
-      const wPrev = {};
-      wDates.slice(0, -1).forEach(d => (wPrev[d] = weekly[d]));
-      const wma5_curr  = safeCalcMA(weekly, 5);
-      const wma20_curr = safeCalcMA(weekly, 20);
-      const wma5_prev  = safeCalcMA(wPrev, 5);
-      const wma20_prev = safeCalcMA(wPrev, 20);
-      if (wma5_curr !== null && wma20_curr !== null && wma5_prev !== null && wma20_prev !== null) {
-        if (!(wma5_curr - wma5_prev > 0 && wma20_curr - wma20_prev > 0)) return false;
-      }
-    }
+  // 前の高値付近を避ける
+  if (isNearRecentExtreme(daily, dates, "high")) return false;
+
+  // 急騰/急落が起こっているときは避ける
+  if (hasSharpRecentMove(daily, dates)) return false;
+
+  // 週足：5週線と20週線が同じ上昇方向（必須。データ不足の場合はfalse）
+  if (!weekly) return false;
+  const wDates = Object.keys(weekly).sort();
+  if (wDates.length < 22) return false;
+  {
+    const wPrev = {};
+    wDates.slice(0, -1).forEach(d => (wPrev[d] = weekly[d]));
+    const wma5_curr  = safeCalcMA(weekly, 5);
+    const wma20_curr = safeCalcMA(weekly, 20);
+    const wma5_prev  = safeCalcMA(wPrev, 5);
+    const wma20_prev = safeCalcMA(wPrev, 20);
+    if (wma5_curr === null || wma20_curr === null || wma5_prev === null || wma20_prev === null) return false;
+    if (!(wma5_curr - wma5_prev > 0 && wma20_curr - wma20_prev > 0)) return false;
   }
 
-  // 月足：5月線と20月線が同じ上昇方向
-  if (monthly) {
-    const mDates = Object.keys(monthly).sort();
-    if (mDates.length >= 22) {
-      const mPrev = {};
-      mDates.slice(0, -1).forEach(d => (mPrev[d] = monthly[d]));
-      const mma5_curr  = safeCalcMA(monthly, 5);
-      const mma20_curr = safeCalcMA(monthly, 20);
-      const mma5_prev  = safeCalcMA(mPrev, 5);
-      const mma20_prev = safeCalcMA(mPrev, 20);
-      if (mma5_curr !== null && mma20_curr !== null && mma5_prev !== null && mma20_prev !== null) {
-        if (!(mma5_curr - mma5_prev > 0 && mma20_curr - mma20_prev > 0)) return false;
-      }
-    }
+  // 月足：5月線と20月線が同じ上昇方向（必須。データ不足の場合はfalse）
+  if (!monthly) return false;
+  const mDates = Object.keys(monthly).sort();
+  if (mDates.length < 22) return false;
+  {
+    const mPrev = {};
+    mDates.slice(0, -1).forEach(d => (mPrev[d] = monthly[d]));
+    const mma5_curr  = safeCalcMA(monthly, 5);
+    const mma20_curr = safeCalcMA(monthly, 20);
+    const mma5_prev  = safeCalcMA(mPrev, 5);
+    const mma20_prev = safeCalcMA(mPrev, 20);
+    if (mma5_curr === null || mma20_curr === null || mma5_prev === null || mma20_prev === null) return false;
+    if (!(mma5_curr - mma5_prev > 0 && mma20_curr - mma20_prev > 0)) return false;
   }
 
   return true;
@@ -1130,6 +1285,10 @@ function isMonowakareRedBlueCrossDown(daily, weekly, monthly) {
   const dates = Object.keys(daily).sort();
   if (dates.length < 21) return false;
 
+  // 下降：5MAが20MAを上から下にクロス（ものわかれの形成）— 起点から6本以内
+  const crossOffset = findRecentMaCrossOffset(daily, dates, "down");
+  if (crossOffset === null) return false;
+
   const ma5_today  = safeCalcMA(daily, 5);
   const ma20_today = safeCalcMA(daily, 20);
 
@@ -1141,46 +1300,47 @@ function isMonowakareRedBlueCrossDown(daily, weekly, monthly) {
 
   if ([ma5_today, ma20_today, ma5_prev, ma20_prev].some(x => x === null)) return false;
 
-  // 下降：5MAが20MAを上から下にクロス（ものわかれの形成）
-  const cond1 = ma5_prev > ma20_prev && ma5_today < ma20_today;
-
   // 赤（5MA）と青（20MA）の傾きが同じ下降方向
   const slope5  = ma5_today  - ma5_prev;
   const slope20 = ma20_today - ma20_prev;
   const cond2 = slope5 < 0 && slope20 < 0;
 
-  if (!(cond1 && cond2)) return false;
+  if (!cond2) return false;
 
-  // 週足：5週線と20週線が同じ下降方向
-  if (weekly) {
-    const wDates = Object.keys(weekly).sort();
-    if (wDates.length >= 22) {
-      const wPrev = {};
-      wDates.slice(0, -1).forEach(d => (wPrev[d] = weekly[d]));
-      const wma5_curr  = safeCalcMA(weekly, 5);
-      const wma20_curr = safeCalcMA(weekly, 20);
-      const wma5_prev  = safeCalcMA(wPrev, 5);
-      const wma20_prev = safeCalcMA(wPrev, 20);
-      if (wma5_curr !== null && wma20_curr !== null && wma5_prev !== null && wma20_prev !== null) {
-        if (!(wma5_curr - wma5_prev < 0 && wma20_curr - wma20_prev < 0)) return false;
-      }
-    }
+  // 前の安値付近を避ける
+  if (isNearRecentExtreme(daily, dates, "low")) return false;
+
+  // 急騰/急落が起こっているときは避ける
+  if (hasSharpRecentMove(daily, dates)) return false;
+
+  // 週足：5週線と20週線が同じ下降方向（必須。データ不足の場合はfalse）
+  if (!weekly) return false;
+  const wDates = Object.keys(weekly).sort();
+  if (wDates.length < 22) return false;
+  {
+    const wPrev = {};
+    wDates.slice(0, -1).forEach(d => (wPrev[d] = weekly[d]));
+    const wma5_curr  = safeCalcMA(weekly, 5);
+    const wma20_curr = safeCalcMA(weekly, 20);
+    const wma5_prev  = safeCalcMA(wPrev, 5);
+    const wma20_prev = safeCalcMA(wPrev, 20);
+    if (wma5_curr === null || wma20_curr === null || wma5_prev === null || wma20_prev === null) return false;
+    if (!(wma5_curr - wma5_prev < 0 && wma20_curr - wma20_prev < 0)) return false;
   }
 
-  // 月足：5月線と20月線が同じ下降方向
-  if (monthly) {
-    const mDates = Object.keys(monthly).sort();
-    if (mDates.length >= 22) {
-      const mPrev = {};
-      mDates.slice(0, -1).forEach(d => (mPrev[d] = monthly[d]));
-      const mma5_curr  = safeCalcMA(monthly, 5);
-      const mma20_curr = safeCalcMA(monthly, 20);
-      const mma5_prev  = safeCalcMA(mPrev, 5);
-      const mma20_prev = safeCalcMA(mPrev, 20);
-      if (mma5_curr !== null && mma20_curr !== null && mma5_prev !== null && mma20_prev !== null) {
-        if (!(mma5_curr - mma5_prev < 0 && mma20_curr - mma20_prev < 0)) return false;
-      }
-    }
+  // 月足：5月線と20月線が同じ下降方向（必須。データ不足の場合はfalse）
+  if (!monthly) return false;
+  const mDates = Object.keys(monthly).sort();
+  if (mDates.length < 22) return false;
+  {
+    const mPrev = {};
+    mDates.slice(0, -1).forEach(d => (mPrev[d] = monthly[d]));
+    const mma5_curr  = safeCalcMA(monthly, 5);
+    const mma20_curr = safeCalcMA(monthly, 20);
+    const mma5_prev  = safeCalcMA(mPrev, 5);
+    const mma20_prev = safeCalcMA(mPrev, 20);
+    if (mma5_curr === null || mma20_curr === null || mma5_prev === null || mma20_prev === null) return false;
+    if (!(mma5_curr - mma5_prev < 0 && mma20_curr - mma20_prev < 0)) return false;
   }
 
   return true;
@@ -1504,8 +1664,17 @@ function getBbZoneBreak(candles) {
   const currZone = getBbZone(candles);
 
   if (!prevZone || !currZone) return null;
-  if (prevZone !== currZone) return `${prevZone} → ${currZone}`;
-  return null;
+  if (prevZone === currZone) return null;
+
+  // [2026-08-06] 元ネタ突き合わせにより追加：仕様は「ゾーンを終値で下へ割った場合」が
+  // 調整入りの目安、と明記している（例：2σ内→1σ内）。ここでの「下へ割る」とは、
+  // ゾーン水準（0σ<1σ<2σ<3σ、平均からの絶対乖離のランク）が縮小する方向＝
+  // 平均に近づく方向を指す。従来は拡大方向（例：0σ→1σ、平均から離れるブレイク
+  // アウト）も区別せずtrue扱いしていたため、縮小方向のみを対象とするよう修正。
+  const ZONE_RANK = { "0σ": 0, "1σ": 1, "2σ": 2, "3σ": 3 };
+  if (ZONE_RANK[currZone] >= ZONE_RANK[prevZone]) return null;
+
+  return `${prevZone} → ${currZone}`;
 }
 
 const isBbZoneBreakDaily = d => getBbZoneBreak(d) !== null;
@@ -1651,7 +1820,73 @@ function computeGranville(daily) {
    値動きのサイクル（Cycle Progress）— window=150
    仕様：「direction（上昇/下降サイクルの方向）と count（起点からの経過日数）を返す」
          直近スイングが安値→上昇サイクル、高値→下降サイクル。
+   [2026-08-06] 従来は150日ウィンドウ内の単一のグローバル最大値/最小値のうち
+   直近側を「起点」としていたが、ウィンドウ内に複数回の反転（複数サイクル）が
+   含まれる場合、グローバル極値以降に起きた別のスイングを無視してしまい、
+   「直近スイング」という仕様の意図と乖離する（＝真のスイング検出になっていない）
+   問題があった。閾値ベースのジグザグ判定で「直近の確定スイング点」を
+   起点として検出するよう修正。
+   CYCLE_SWING_REVERSAL_THRESHOLD_PCT は元ネタに具体的数値の記載がないため、
+   本ファイル内の他ルール（Granvilleの5%乖離判定等）を参考にした暫定値（推測）。
+   実データでの検証・調整が必要。
 ========================================================================================== */
+
+const CYCLE_SWING_REVERSAL_THRESHOLD_PCT = 0.05;
+
+// 終値の配列から、閾値以上の反転を「確定スイング」として時系列順に検出する。
+// 戻り値：{ idx, type: 'high'|'low' } の配列（時系列順）。
+// 最後の要素が「直近の確定スイング」＝現在進行中のサイクルの起点となる。
+function detectSwingPoints(closes, thresholdPct = CYCLE_SWING_REVERSAL_THRESHOLD_PCT) {
+  const swings = [];
+  if (closes.length < 2) return swings;
+
+  // 先頭(closes[0])からthresholdPct以上乖離するまでは方向未確定として待機する
+  let dir = null; // 'up' | 'down'（確定後の現在の追跡方向）
+  let extIdx = 0;
+  let extVal = closes[0];
+
+  for (let i = 1; i < closes.length; i++) {
+    const price = closes[i];
+
+    if (dir === null) {
+      const change = (price - extVal) / extVal;
+      if (change >= thresholdPct) {
+        dir = "up";
+        extVal = price;
+        extIdx = i;
+      } else if (change <= -thresholdPct) {
+        dir = "down";
+        extVal = price;
+        extIdx = i;
+      }
+      continue;
+    }
+
+    if (dir === "up") {
+      if (price >= extVal) {
+        extVal = price;
+        extIdx = i;
+      } else if ((extVal - price) / extVal >= thresholdPct) {
+        swings.push({ idx: extIdx, type: "high" });
+        dir = "down";
+        extVal = price;
+        extIdx = i;
+      }
+    } else {
+      if (price <= extVal) {
+        extVal = price;
+        extIdx = i;
+      } else if ((price - extVal) / extVal >= thresholdPct) {
+        swings.push({ idx: extIdx, type: "low" });
+        dir = "up";
+        extVal = price;
+        extIdx = i;
+      }
+    }
+  }
+
+  return swings;
+}
 
 function computeCycleProgress(daily) {
   const dates = Object.keys(daily).sort();
@@ -1662,21 +1897,22 @@ function computeCycleProgress(daily) {
   const recent = closes.slice(-150);
   const baseIdx = dates.length - recent.length;
 
-  let maxIdx = 0;
-  let minIdx = 0;
-  for (let i = 1; i < recent.length; i++) {
-    if (recent[i] > recent[maxIdx]) maxIdx = i;
-    if (recent[i] < recent[minIdx]) minIdx = i;
+  const swings = detectSwingPoints(recent);
+
+  let startIdx, direction;
+  if (swings.length > 0) {
+    // 直近の確定スイングが安値→現在は上昇サイクル、高値→現在は下降サイクル
+    const lastSwing = swings[swings.length - 1];
+    startIdx  = lastSwing.idx;
+    direction = lastSwing.type === "low" ? "up" : "down";
+  } else {
+    // ウィンドウ内で閾値以上の反転が一度も確定しなかった場合のフォールバック
+    // （ウィンドウ先頭を起点とし、始値と終値の比較で大まかな方向のみ判定）
+    startIdx  = 0;
+    direction = recent[recent.length - 1] >= recent[0] ? "up" : "down";
   }
 
-  const distFromMax = recent.length - 1 - maxIdx;
-  const distFromMin = recent.length - 1 - minIdx;
-
-  // 直近のスイングが安値→上昇サイクル、高値→下降サイクル
-  const isUpCycle = distFromMin < distFromMax;
-  const startIdx  = isUpCycle ? minIdx : maxIdx;
-  const direction = isUpCycle ? "up" : "down";
-  const count     = recent.length - 1 - startIdx;
+  const count = recent.length - 1 - startIdx;
 
   return {
     direction,
