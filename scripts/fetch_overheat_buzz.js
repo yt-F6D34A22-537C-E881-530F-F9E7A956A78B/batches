@@ -7,10 +7,12 @@ import { backupFile, pruneOlderThanDays } from "./lib/backup_utils.js";
 
 // [2026-08-08 新規追加] TECH_OVERHEAT の「SNS/ニュースでの話題性」条件を実装するため、
 // SNS話題株サイト（トレーダーウォッチ / wolf-fun.secret.jp）の「話題株ランキング」
-// ページをスクレイピングし、当日ランキングに掲載されている銘柄コードの一覧を
-// data/overheat_buzz/overheat_buzz_YYYYMMDD.json として日次アーカイブする。
-// heuristics.js から呼ばれる runAllConditions() は、このファイルを読み込んで
-// 「銘柄コードがランキングに載っているか（0/1）」を isOverheat の話題性条件に使う。
+// ページをスクレイピングし、当日ランキングに掲載されている銘柄コードの一覧
+// （ページ掲載順＝ランキング順）を data/overheat_buzz/YYYYMM/overheat_buzz_YYYYMMDD.json
+// として日次アーカイブする。heuristics.js から呼ばれる runAllConditions() は、
+// このファイルを読み込んで「銘柄コードが上位何%以内にランクインしているか」を
+// isOverheat の話題性条件に使う（閾値は heuristics_conditions.js 側の
+// OVERHEAT_BUZZ_TOP_PERCENTILE で管理）。
 // download-jpx-xlsx.js と同じ構成（node-fetch + JSDOM でのスクレイピング、
 // lib/jst_time.js・lib/backup_utils.js を使ったバックアップ）を踏襲している。
 //
@@ -51,19 +53,19 @@ function parseTopicalCodes(html) {
 }
 
 // ---------------------------------------------
-// 3. data/overheat_buzz/overheat_buzz_YYYYMMDD.json を保存
+// 3. data/overheat_buzz/YYYYMM/overheat_buzz_YYYYMMDD.json を保存
 // ---------------------------------------------
 function saveTopicalCodes(codes) {
-  const outputDir = "data/overheat_buzz";
+  const now = new Date();
+  const yyyymm =
+    now.getFullYear().toString() + String(now.getMonth() + 1).padStart(2, "0");
+  const date = yyyymm + String(now.getDate()).padStart(2, "0");
+
+  // data/heuristics/YYYYMM/・data/ohlcv/YYYYMM/ と同じ月次サブフォルダ構成に合わせる
+  const outputDir = path.join("data/overheat_buzz", yyyymm);
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
-
-  const now = new Date();
-  const date =
-    now.getFullYear().toString() +
-    String(now.getMonth() + 1).padStart(2, "0") +
-    String(now.getDate()).padStart(2, "0");
 
   const outputPath = path.join(outputDir, `overheat_buzz_${date}.json`);
 
@@ -71,7 +73,7 @@ function saveTopicalCodes(codes) {
     date,
     source: RANKING_URL,
     scrapedAt: now.toISOString(),
-    codes, // このランキングに掲載されている＝話題あり(1)。それ以外は話題なし(0)扱い
+    codes, // ページ掲載順（＝ランキング順）。先頭ほど話題性が高い
   };
 
   fs.writeFileSync(outputPath, JSON.stringify(record, null, 2));
