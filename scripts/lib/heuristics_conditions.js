@@ -1752,22 +1752,29 @@ function isBoxRange(daily) {
    過熱 — TODO（仕様未確定）
 ========================================================================================== */
 
-function isOverheat(daily, isTopical = false) {
+// [2026-08-08新規追加] 話題株ランキングの上位何割以内を「話題になっている」と
+// みなすかの閾値。固定順位（例：上位100件）ではなくパーセンタイル方式にしている
+// のは、ランキング総件数が日によって変動しても意味合い（上位何割か）が
+// ぶれないようにするため。0.5＝上位50%（暫定値・要確認）。
+const OVERHEAT_BUZZ_TOP_PERCENTILE = 0.5;
+
+function isOverheat(daily, buzzRank = null, buzzTotal = 0) {
   // [2026-08-06] 元ネタ「テクニカル」シート5行目により、TODO（仕様未確定）だった
   // 仕様が判明：
   //   ・SNS、ニュースなどで十分に話題になっている
   //   ・上昇が3回以上発生している（グランビルの法則より）
   //   ・急激に上げ始めている
   // [2026-08-08] 1つ目（SNS/ニュースの話題性）を、外部スクレイピング
-  // （scripts/fetch_overheat_buzz.js → data/overheat_buzz/overheat_buzz_YYYYMMDD.json）
-  // 経由の isTopical 引数（0/1）として実装した。当日の話題株ランキングに
-  // 銘柄が掲載されていれば true、それ以外（未掲載・データ未取得日を含む）は
-  // false。heuristics.js 側から対象日の値を渡す想定。
+  // （scripts/fetch_overheat_buzz.js → data/overheat_buzz/YYYYMM/overheat_buzz_YYYYMMDD.json）
+  // 経由の buzzRank（当日ランキングにおける順位、1が最上位。未掲載はnull）と
+  // buzzTotal（当日の総掲載件数）として実装した。上位 OVERHEAT_BUZZ_TOP_PERCENTILE
+  // 以内であれば話題性ありと判定する。heuristics.js 側から対象日の値を渡す想定。
   const dates = Object.keys(daily).sort();
   if (dates.length < 80) return false;
 
-  // SNS、ニュースなどで十分に話題になっている（話題株ランキングに掲載されている）
-  if (!isTopical) return false;
+  // SNS、ニュースなどで十分に話題になっている（話題株ランキングの上位に掲載されている）
+  if (buzzRank === null || buzzTotal <= 0) return false;
+  if (buzzRank > Math.ceil(buzzTotal * OVERHEAT_BUZZ_TOP_PERCENTILE)) return false;
 
   // 上昇が3回以上発生している（グランビルの法則より）
   const granville = computeGranville(daily);
