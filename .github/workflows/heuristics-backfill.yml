@@ -1,14 +1,16 @@
 name: 【heuristics-backfill.yml】Trigger heuristics.yml range backfill (経験則バックフィルトリガー)
 
 # 責務: 2025-07-01〜2026-06-30 のheuristicsバックフィルを、
-#       concurrency group「auto-update」を共有する既存5ワークフロー
-#       （fetch.yml / margin.yml / download-jpx-xlsx.yml / heuristics.yml / market_cap.yml）が
+#       concurrency group「auto-update」を共有する既存6ワークフロー
+#       （fetch.yml / margin.yml / download-jpx-xlsx.yml / heuristics.yml / market_cap.yml / overheat_buzz.yml）が
 #       いずれも稼働していない時間帯にのみ、range モードで heuristics.yml へ委譲する。
 #       重い処理そのもの（OHLCV取得・スコア計算・営業日判定）は
 #       heuristics.yml / heuristics.js 側の既存責務のまま変更しない。
 #       2026-07、市場データ（発行済株式数）取得の market_cap.yml を
 #       concurrency group「auto-update」に追加したことに伴い、本ワークフローの
 #       ガード対象（GUARD_TARGET_WORKFLOWS）にも追加した。
+#       2026-08、TECH_OVERHEATの話題性データ取得用 overheat_buzz.yml を
+#       同グループに追加したことに伴い、同様にガード対象へ追加した。
 
 on:
   schedule:
@@ -33,7 +35,8 @@ jobs:
       BACKFILL_END: '20260731'
       # concurrency group「auto-update」を共有する既存ワークフロー一覧
       # 2026-07、market_cap.yml を追加（auto-update グループへの参加に伴う）
-      GUARD_TARGET_WORKFLOWS: 'fetch.yml margin.yml download-jpx-xlsx.yml heuristics.yml market_cap.yml'
+      # 2026-08、overheat_buzz.yml を追加（同上）
+      GUARD_TARGET_WORKFLOWS: 'fetch.yml margin.yml download-jpx-xlsx.yml heuristics.yml market_cap.yml overheat_buzz.yml'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
