@@ -14,6 +14,35 @@ import { resampleWeekly, resampleMonthly, sliceDailyUpTo } from "./lib/ohlcv_res
 
 import * as hc from "./lib/heuristics_conditions.js";
 
+// [2026-08新規追加] TECH_OVERHEATの話題性条件（上位何%以内か）のため、
+// scripts/fetch_overheat_buzz.js が生成した日次ファイルをキャッシュ付きで読み込む。
+// data/heuristics/YYYYMM/・data/ohlcv/YYYYMM/ と同じ月次サブフォルダ構成。
+const overheatBuzzCache = new Map();
+
+function loadOverheatBuzzRankMap(date) {
+  if (overheatBuzzCache.has(date)) return overheatBuzzCache.get(date);
+
+  const yyyymm = date.slice(0, 6);
+  const buzzPath = `data/overheat_buzz/${yyyymm}/overheat_buzz_${date}.json`;
+
+  let rankMap = new Map();
+  let total = 0;
+  try {
+    const raw = JSON.parse(fs.readFileSync(buzzPath, "utf8"));
+    const codes = raw.codes ?? [];
+    codes.forEach((code, idx) => rankMap.set(code, idx + 1)); // 1位＝配列の先頭
+    total = codes.length;
+  } catch {
+    // ファイルが存在しない場合（スクレイパー未実行日・過去の再生成等）は
+    // 空のMap・total=0として扱う（isOverheat側でbuzzTotal<=0ならfalse扱いになる、
+    // フェイルセーフ設計）
+  }
+
+  const result = { rankMap, total };
+  overheatBuzzCache.set(date, result);
+  return result;
+}
+
 /* ==========================================================================================
    0. コマンドライン引数のパース
       --date  YYYYMMDD   : 単一日指定（その日を終端として取得）
@@ -310,7 +339,7 @@ async function fetchAllSymbolsDaily(targetDate, period1AnchorDate = null) {
    3. 条件実行まとめ
 ========================================================================================== */
 
-function runAllConditions(daily, weekly, monthly) {
+function runAllConditions(daily, weekly, monthly, buzzRank = null, buzzTotal = 0) {
   const slope = (up, down) => (up ? "up" : down ? "down" : "flat");
   const mono  = (up, down) => (up ? "up" : down ? "down" : "flat");
 
@@ -417,7 +446,7 @@ function runAllConditions(daily, weekly, monthly) {
     TECH_BOX_RANGE: hc.isBoxRange(daily),
 
     /* 過熱 */
-    TECH_OVERHEAT: hc.isOverheat(daily),
+    TECH_OVERHEAT: hc.isOverheat(daily, buzzRank, buzzTotal),
 
     /* グランビル */
     TECH_GRANVILLE: granville,
@@ -550,7 +579,10 @@ function computeHeuristicsForDate(dailyByCode, targetDate) {
       latestDateGlobal = latestDate;
     }
 
-    finalData[code] = runAllConditions(daily, weekly, monthly);
+    const { rankMap: buzzRankMap, total: buzzTotal } = loadOverheatBuzzRankMap(latestDate);
+    const buzzRank = buzzRankMap.get(code) ?? null;
+
+    finalData[code] = runAllConditions(daily, weekly, monthly, buzzRank, buzzTotal);
     okCount++;
   }
 
