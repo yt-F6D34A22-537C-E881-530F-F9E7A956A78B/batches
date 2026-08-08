@@ -1752,19 +1752,22 @@ function isBoxRange(daily) {
    過熱 — TODO（仕様未確定）
 ========================================================================================== */
 
-function isOverheat(daily) {
+function isOverheat(daily, isTopical = false) {
   // [2026-08-06] 元ネタ「テクニカル」シート5行目により、TODO（仕様未確定）だった
   // 仕様が判明：
   //   ・SNS、ニュースなどで十分に話題になっている
   //   ・上昇が3回以上発生している（グランビルの法則より）
   //   ・急激に上げ始めている
-  // このうち1つ目（SNS/ニュースの話題性）はOHLCVデータのみでは原理的に測定
-  // 不可能なため（外部データソースが必要）、本実装では省略している。
-  // 2つ目・3つ目のみで判定する暫定実装であり、話題性を考慮しない分、
-  // 元の仕様が意図する「加熱」よりも広めに（false positiveが多めに）判定される
-  // 可能性がある点に注意。話題性データを組み込む方針が決まれば再修正が必要。
+  // [2026-08-08] 1つ目（SNS/ニュースの話題性）を、外部スクレイピング
+  // （scripts/fetch_overheat_buzz.js → data/overheat_buzz/overheat_buzz_YYYYMMDD.json）
+  // 経由の isTopical 引数（0/1）として実装した。当日の話題株ランキングに
+  // 銘柄が掲載されていれば true、それ以外（未掲載・データ未取得日を含む）は
+  // false。heuristics.js 側から対象日の値を渡す想定。
   const dates = Object.keys(daily).sort();
   if (dates.length < 80) return false;
+
+  // SNS、ニュースなどで十分に話題になっている（話題株ランキングに掲載されている）
+  if (!isTopical) return false;
 
   // 上昇が3回以上発生している（グランビルの法則より）
   const granville = computeGranville(daily);
