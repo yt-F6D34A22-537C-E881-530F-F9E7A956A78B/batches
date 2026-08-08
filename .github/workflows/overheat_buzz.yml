@@ -1,0 +1,51 @@
+name: "【overheat_buzz.yml】Archive overheat buzz ranking (話題株ランキングのアーカイブ)"
+
+on:
+  schedule:
+    # fetch.yml と同じ考え方：heuristics.yml（JST 17:07/19:07/21:07）の1時間前に
+    # 実行し、当日の話題株ランキングを heuristics.js が読み込める状態にしておく。
+    - cron: "7 7 * * *"   # JST 16:07
+    - cron: "7 9 * * *"   # JST 18:07
+    - cron: "7 11 * * *"  # JST 20:07
+  workflow_dispatch: {}
+
+concurrency:
+  group: auto-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-overheat-buzz:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: npm install --no-save node-fetch@3 jsdom
+
+      - name: Ensure data directory exists
+        run: mkdir -p data/overheat_buzz data/backup
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run overheat buzz fetch script
+        run: node scripts/fetch_overheat_buzz.js
+
+      - name: Commit and push changes
+        run: |
+          git add data/overheat_buzz
+          git commit -m "chore: update overheat_buzz_$(date +%Y%m%d).json" || exit 0
+          git push || (git fetch origin && git rebase -X theirs origin/main && git push)
