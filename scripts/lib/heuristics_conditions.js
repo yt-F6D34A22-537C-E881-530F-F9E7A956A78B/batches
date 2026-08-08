@@ -454,10 +454,10 @@ function is5MaLowUpdate(daily) {
 ========================================================================================== */
 
 function isSakataTripleTop(daily) {
-  const arr = safeLast(daily, 5);
+  const arr = safeLast(daily, 6);
   if (!arr) return false;
 
-  const [c1, c2, c3, c4, c5] = arr;
+  const [c1, c2, c3, c4, c5, c6] = arr;
   const avg = (c1.h + c3.h + c5.h) / 3;
   const tol = avg * 0.01;
 
@@ -468,19 +468,30 @@ function isSakataTripleTop(daily) {
   // 2・4日目の高値が両隣の山より低いことを追加で検証する。
   const isValley = c2.h < Math.min(c1.h, c3.h) && c4.h < Math.min(c3.h, c5.h);
 
-  return (
+  const shapeOk = (
     isValley &&
     Math.abs(c1.h - avg) < tol &&
     Math.abs(c3.h - avg) < tol &&
     Math.abs(c5.h - avg) < tol
   );
+  if (!shapeOk) return false;
+
+  // [2026-08-06] Web検索により補足した仕様（酒田五法・三山）：
+  // 「2つの谷を結んだ線＝ネックラインを下抜けたら下降トレンドへの転換」
+  // （マネックス証券・投資リーダーズ等、複数の証券系解説サイトで一致）。
+  // isHeadAndShoulders と同じ設計で、6本目（c6）がネックライン
+  // （谷1=c2.l・谷2=c4.lを結ぶ延長線）を下抜けているかを確認する。
+  const l1 = c2.l;
+  const l2 = c4.l;
+  const necklineAtC6 = l1 + (l2 - l1) * ((5 - 1) / (3 - 1));
+  return c6.c < necklineAtC6;
 }
 
 function isSakataTripleBottom(daily) {
-  const arr = safeLast(daily, 5);
+  const arr = safeLast(daily, 6);
   if (!arr) return false;
 
-  const [c1, c2, c3, c4, c5] = arr;
+  const [c1, c2, c3, c4, c5, c6] = arr;
   const avg = (c1.l + c3.l + c5.l) / 3;
   const tol = avg * 0.01;
 
@@ -488,12 +499,22 @@ function isSakataTripleBottom(daily) {
   // 谷（底値）より高い（＝「山」として機能している）ことを追加で検証する。
   const isPeak = c2.l > Math.max(c1.l, c3.l) && c4.l > Math.max(c3.l, c5.l);
 
-  return (
+  const shapeOk = (
     isPeak &&
     Math.abs(c1.l - avg) < tol &&
     Math.abs(c3.l - avg) < tol &&
     Math.abs(c5.l - avg) < tol
   );
+  if (!shapeOk) return false;
+
+  // [2026-08-06] Web検索により補足した仕様（酒田五法・三川、三山の逆パターン）：
+  // 「2つの谷の間の山（高値）を結んだ線＝ネックラインを上抜けたら上昇トレンドへの
+  // 転換」。isSakataTripleTop と対称に、6本目（c6）がネックライン
+  // （山1=c2.h・山2=c4.hを結ぶ延長線）を上抜けているかを確認する。
+  const h1 = c2.h;
+  const h2 = c4.h;
+  const necklineAtC6 = h1 + (h2 - h1) * ((5 - 1) / (3 - 1));
+  return c6.c > necklineAtC6;
 }
 
 function isSakataSankuUp(daily) {
@@ -1732,10 +1753,25 @@ function isBoxRange(daily) {
 ========================================================================================== */
 
 function isOverheat(daily) {
-  // TODO: 2026-06-19 泰長より仕様未確定。
-  // RSI / 乖離率 / BB / MA など複数候補があるため、
-  // 現時点では骨組みのみ実装し、常に false を返す。
-  return false;
+  // [2026-08-06] 元ネタ「テクニカル」シート5行目により、TODO（仕様未確定）だった
+  // 仕様が判明：
+  //   ・SNS、ニュースなどで十分に話題になっている
+  //   ・上昇が3回以上発生している（グランビルの法則より）
+  //   ・急激に上げ始めている
+  // このうち1つ目（SNS/ニュースの話題性）はOHLCVデータのみでは原理的に測定
+  // 不可能なため（外部データソースが必要）、本実装では省略している。
+  // 2つ目・3つ目のみで判定する暫定実装であり、話題性を考慮しない分、
+  // 元の仕様が意図する「加熱」よりも広めに（false positiveが多めに）判定される
+  // 可能性がある点に注意。話題性データを組み込む方針が決まれば再修正が必要。
+  const dates = Object.keys(daily).sort();
+  if (dates.length < 80) return false;
+
+  // 上昇が3回以上発生している（グランビルの法則より）
+  const granville = computeGranville(daily);
+  if (!granville || granville.direction !== "up" || granville.count < 3) return false;
+
+  // 急激に上げ始めている
+  return hasSharpRecentMove(daily, dates);
 }
 
 
