@@ -5,7 +5,6 @@ import { JSDOM } from "jsdom";
 import iconv from "iconv-lite";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { formatTimestampJst } from "./lib/jst_time.js";
-import { backupFile, pruneOlderThanDays } from "./lib/backup_utils.js";
 
 // ============================================================
 // Utility
@@ -461,31 +460,22 @@ function buildMarginJson(kubunMap, regulationMap, BUY_BAN, SELL_BAN, jpxMap) {
 }
 
 // ============================================================
-// 7. バックアップ作成
-// ============================================================
-function backupMargin() {
-  backupFile("data/margin.json", "data/backup");
-}
-
-// ============================================================
-// 8. 古いバックアップ削除（3日超）
-// ============================================================
-function cleanupBackups() {
-  pruneOlderThanDays("data/backup", /margin\.json\.(\d{8}_\d{6})$/, 3);
-}
-
-// ============================================================
-// 8.5. margin_archive 書き出し（信用残アーカイブ化。2026-08追加）
+// 7. margin_archive 書き出し（信用残アーカイブ化。2026-08追加）
 //   - data/ohlcv・data/heuristics と同じ「1ファイル＝1日分・恒久保存・
 //     一度書いたら不変」方針。margin.yml は1日1回実行のため、
 //     同日中の再実行（workflow_dispatch再実行等）で当日分ファイルが
 //     既に存在する場合は上書きせずスキップする。
-//   - margin.json と同一内容（全項目）に、各銘柄が「その日、日々公表対象
-//     だったか」を示す「情報源」フィールドを付与して保存する。
+//   - 各銘柄が「その日、日々公表対象だったか」を示す「情報源」
+//     フィールドを付与して保存する。
 //   - ファイル単位のmetaとして、各データソース（週次PDF・日々公表XLS・
 //     JSF貸借銘柄CSV）の基準日を記録する。これにより「情報源: 通常公表」
 //     の銘柄が実際にいつ時点の値を繰り越しているかを、後からチャート等で
 //     機械的に判定できる。
+//   - 2026-0X、margin.json（洗い替え・3日バックアップ）の生成を廃止し、
+//     本アーカイブのみを信用取引データの正とした。廃止理由：(1) 同一実行
+//     内で margin.json と完全に重複する内容を二重生成していた、
+//     (2) app/main.py など、いずれの箇所からも margin.json は参照されて
+//     いなかった（バックエンドの改修は不要と確認済み）。
 // ============================================================
 const MARGIN_ARCHIVE_DIR = "data/margin";
 
@@ -540,7 +530,7 @@ function writeMarginArchive(margin, dailyDisclosedCodes, meta) {
 }
 
 // ============================================================
-// 9. Main
+// 8. Main
 // ============================================================
 async function main() {
   ensureDir("data");
@@ -573,12 +563,7 @@ async function main() {
     sorted[code] = margin[code];
   }
 
-  fs.writeFileSync("data/margin.json", JSON.stringify(sorted, null, 2), "utf-8");
-
-  backupMargin();
-  cleanupBackups();
-
-  // 信用残アーカイブ化（2026-08追加）。margin.json と同じ内容（全項目）を
+  // 信用残アーカイブ化（2026-08追加。2026-0X、唯一の出力先とした）。
   // 日付ごとの恒久ファイルとして保存する。
   writeMarginArchive(sorted, dailyDisclosedCodes, {
     jpxWeeklyBaseDate,

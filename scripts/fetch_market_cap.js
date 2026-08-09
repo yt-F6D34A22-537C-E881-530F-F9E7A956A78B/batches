@@ -2,6 +2,15 @@ import fetch from "node-fetch";
 import fs from "fs";
 import xlsx from "xlsx";
 import { getCrumb, YAHOO_REQUEST_HEADERS } from "./lib/yahoo_finance_auth.js";
+import { backupFile, pruneKeepNewest } from "./lib/backup_utils.js";
+
+// バックアップ関連定数（2026-0X追加。理由は main() 内コメントを参照）
+const MARKET_CAP_BACKUP_DIR = "data/backup";
+const MARKET_CAP_BACKUP_KEEP = 8; // fetch.js/heuristics.jsと同じ「直近8件」方式。
+// market_cap.yml は週次実行のため、margin.js/download-jpx-xlsx.jsが使う
+// 日数ベース（pruneOlderThanDays）だと、次回実行（1週間後）には
+// 直前バックアップが保持期間を超えて消えてしまい実質機能しない。
+// 実行回数ベース（pruneKeepNewest）を採用する。
 
 // -----------------------------
 // 1. Excel から銘柄コードを読み込む（fetch.js と同一の手順・同一ファイルを再利用）
@@ -118,13 +127,24 @@ async function main() {
   }
 
   // -----------------------------
-  // 4. market_cap.json を洗い替え
-  //    data.json と異なり日次で大きく変動する値ではないため、
-  //    fetch.js のようなバックアップ・世代管理は行わない
-  //    （発行済株式数は変化が緩やかで、仮に1回分の取得に失敗しても
-  //    翌週の実行で自然に更新されるため、過去分を保持する必要性が薄い）。
+  // 4. market_cap.json を洗い替え（2026-0X、バックアップ方針を見直し）
+  //    従来「変化が緩やかだから不要」としていたが、これは論点が異なる。
+  //    本スクリプトはバッチ取得が一部失敗しても処理を中断せず（該当銘柄は
+  //    marketCapに含めないだけで）そのまま洗い替えを実行するため、
+  //    ネットワーク障害等で不完全な内容が書き込まれるリスクがある。
+  //    週次実行（market_cap.yml）のため、そうした不完全な上書きが起きると
+  //    次の正常な実行まで最大1週間、時価総額列が広範囲で欠損したままになる
+  //    （日次実行の data/ohlcv 等より「復旧までの周期」が長く、影響が
+  //    長引きやすい）。このリスクを踏まえ、fetch.js と同様に上書き前
+  //    バックアップ＋世代管理（直近8件保持）を追加した。
   // -----------------------------
+  if (fs.existsSync("data/market_cap.json")) {
+    backupFile("data/market_cap.json", MARKET_CAP_BACKUP_DIR);
+  }
+
   fs.writeFileSync("data/market_cap.json", JSON.stringify(marketCap));
+
+  pruneKeepNewest(MARKET_CAP_BACKUP_DIR, f => f.startsWith("market_cap.json."), MARKET_CAP_BACKUP_KEEP);
 
   console.log(`取得完了: ${Object.keys(marketCap).length}/${symbols.length} 銘柄 → data/market_cap.json`);
 }
