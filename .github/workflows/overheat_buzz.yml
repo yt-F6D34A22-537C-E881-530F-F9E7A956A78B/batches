@@ -46,6 +46,6 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git add data/overheat_buzz
-          git commit -m "chore: update overheat_buzz_$(date +%Y%m%d).json" || exit 0
+          git add data/overheat_buzz data/backup
+          git commit -m "chore: update overheat_buzz_$(date +%Y%m%d).json + backup" || exit 0
           git push || (git fetch origin && git rebase -X theirs origin/main && git push)

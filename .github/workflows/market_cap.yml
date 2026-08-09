@@ -50,9 +50,9 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
 
-          git add data/market_cap.json
+          git add data/market_cap.json data/backup/
 
-          git commit -m "Update market_cap.json" || exit 0
+          git commit -m "Update market_cap.json + backup" || exit 0
 
           git push origin main || (
             echo "Push rejected. Fetching latest main..."
