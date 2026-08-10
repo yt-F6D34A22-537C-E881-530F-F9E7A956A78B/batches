@@ -583,7 +583,13 @@ function isSakataSanpeiDown(daily) {
    元ネタ突き合わせにより、中間3本がc1の値幅内に収まっていること（withinC1Range）と、
    c5がc1の値幅を明確にブレイクしていること（c1.c超えではなくc1.h/c1.l超え）を追加。
    ※ 実体サイズ50%という閾値自体は元ネタに具体的記載がなく、既存の暫定値のまま維持した。
+   [2026-08、まっさらな視点での再確認により追加] c1の「もみ合い」判定が、c1自身の
+   実体サイズに対する相対値のみだったため、c1自体が小さい（大陽線/大陰線と呼べない）
+   ローソク足でも、中間3本がそれよりさらに小さければ通過し得た。c1の実体が
+   終値に対して一定以上（暫定2%）であることを絶対値でも要求するようにした。
 ========================================================================================== */
+
+const SAKATA_SANPO_MIN_C1_BODY_PCT = 0.02; // c1（1本目）の実体が「大陽線/大陰線」と呼べる最低限の大きさ（暫定・要確認）
 
 function isSakataSanpoUp(daily) {
   const arr = safeLast(daily, 5);
@@ -594,9 +600,12 @@ function isSakataSanpoUp(daily) {
   const small = c => Math.abs(c.c - c.o) < (c1.c - c1.o) * 0.5;
   // もみ合い：中間3本の値幅（高値・安値）がc1の値幅（高値・安値）の内側に収まっている
   const withinC1Range = c => c.h <= c1.h && c.l >= c1.l;
+  // c1自体が絶対値としても「大陽線」と呼べる大きさか
+  const isLargeC1 = (c1.c - c1.o) / c1.o >= SAKATA_SANPO_MIN_C1_BODY_PCT;
 
   return (
     bull(c1) &&
+    isLargeC1 &&
     small(c2) && withinC1Range(c2) &&
     small(c3) && withinC1Range(c3) &&
     small(c4) && withinC1Range(c4) &&
@@ -614,9 +623,12 @@ function isSakataSanpoDown(daily) {
   const small = c => Math.abs(c.c - c.o) < Math.abs(c1.c - c1.o) * 0.5;
   // もみ合い：中間3本の値幅（高値・安値）がc1の値幅（高値・安値）の内側に収まっている
   const withinC1Range = c => c.h <= c1.h && c.l >= c1.l;
+  // c1自体が絶対値としても「大陰線」と呼べる大きさか
+  const isLargeC1 = (c1.o - c1.c) / c1.o >= SAKATA_SANPO_MIN_C1_BODY_PCT;
 
   return (
     bear(c1) &&
+    isLargeC1 &&
     small(c2) && withinC1Range(c2) &&
     small(c3) && withinC1Range(c3) &&
     small(c4) && withinC1Range(c4) &&
@@ -1270,9 +1282,11 @@ function isMonowakareRedBlueCrossUp(daily, weekly, monthly) {
   if (hasSharpRecentMove(daily, dates)) return false;
 
   // 週足：5週線と20週線が同じ上昇方向（必須。データ不足の場合はfalse）
+  // 2026-08修正: 1日前比較（wDates.slice(0,-1)）のみのため、必要本数は21で足りる
+  // （従来は isRedBlueCross 等の2日前比較と同じ22を要求しており、やや過剰だった）
   if (!weekly) return false;
   const wDates = Object.keys(weekly).sort();
-  if (wDates.length < 22) return false;
+  if (wDates.length < 21) return false;
   {
     const wPrev = {};
     wDates.slice(0, -1).forEach(d => (wPrev[d] = weekly[d]));
@@ -1284,10 +1298,10 @@ function isMonowakareRedBlueCrossUp(daily, weekly, monthly) {
     if (!(wma5_curr - wma5_prev > 0 && wma20_curr - wma20_prev > 0)) return false;
   }
 
-  // 月足：5月線と20月線が同じ上昇方向（必須。データ不足の場合はfalse）
+  // 月足：5月線と20月線が同じ上昇方向（必須。データ不足の場合はfalse。理由は週足と同じ）
   if (!monthly) return false;
   const mDates = Object.keys(monthly).sort();
-  if (mDates.length < 22) return false;
+  if (mDates.length < 21) return false;
   {
     const mPrev = {};
     mDates.slice(0, -1).forEach(d => (mPrev[d] = monthly[d]));
@@ -1335,9 +1349,10 @@ function isMonowakareRedBlueCrossDown(daily, weekly, monthly) {
   if (hasSharpRecentMove(daily, dates)) return false;
 
   // 週足：5週線と20週線が同じ下降方向（必須。データ不足の場合はfalse）
+  // 2026-08修正: 1日前比較のみのため、必要本数は21で足りる
   if (!weekly) return false;
   const wDates = Object.keys(weekly).sort();
-  if (wDates.length < 22) return false;
+  if (wDates.length < 21) return false;
   {
     const wPrev = {};
     wDates.slice(0, -1).forEach(d => (wPrev[d] = weekly[d]));
@@ -1349,10 +1364,10 @@ function isMonowakareRedBlueCrossDown(daily, weekly, monthly) {
     if (!(wma5_curr - wma5_prev < 0 && wma20_curr - wma20_prev < 0)) return false;
   }
 
-  // 月足：5月線と20月線が同じ下降方向（必須。データ不足の場合はfalse）
+  // 月足：5月線と20月線が同じ下降方向（必須。データ不足の場合はfalse。理由は週足と同じ）
   if (!monthly) return false;
   const mDates = Object.keys(monthly).sort();
-  if (mDates.length < 22) return false;
+  if (mDates.length < 21) return false;
   {
     const mPrev = {};
     mDates.slice(0, -1).forEach(d => (mPrev[d] = monthly[d]));
