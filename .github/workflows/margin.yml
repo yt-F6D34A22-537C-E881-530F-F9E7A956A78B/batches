@@ -1,8 +1,26 @@
 name: 【margin.yml】Margin Info Fetch
 
+# 実行時刻について（2026-0X 見直し）：
+# 参照する信用取引データの公表時刻は JPX 公式ページに明記されている
+# （scripts/margin.js が実際に読みにいくページの本文より）。
+#   - JPX 日々公表銘柄（個別銘柄信用取引残高表）: 毎日16:00を目安に掲載
+#     https://www.jpx.co.jp/markets/statistics-equities/margin/index.html
+#   - JPX 週次（銘柄別信用取引週末残高。毎週第2営業日=火曜のみ）: 16:30を目安に掲載
+#     https://www.jpx.co.jp/markets/statistics-equities/margin/05.html
+#   - JSF（日本証券金融）貸借取引残高: 18時半過ぎに速報値を更新
+#     （参考。meigara.csv自体の公表時刻は不明）
+# これらを踏まえ、当日中に2回（ネットワークエラー等の一時的な失敗に備えた
+# 安全網）実行するよう変更した。
+#
+# 注意：2回とも「同じJST暦日」に収める必要がある。writeMarginArchive() の
+# 「当日分ファイルが既に存在すればスキップ」判定は scripts/lib/jst_time.js
+# 経由の実行時点JST暦日で行われるため、日付をまたぐ実行にしてしまうと
+# 「再試行」ではなく「別日付エントリの重複生成」になってしまう
+# （旧スケジュールの JST 3:07＝翌日未明は、この理由により廃止した）。
 on:
   schedule:
-    - cron: "7 18 * * *"   # JST 3:07（UTC 18:07）
+    - cron: "7 10 * * *"   # JST 19:07（公表完了後・1回目）
+    - cron: "7 13 * * *"   # JST 22:07（1回目失敗時の再試行・同日中）
   workflow_dispatch:
 
 permissions:
