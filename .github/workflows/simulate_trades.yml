@@ -71,6 +71,24 @@ jobs:
           set -o pipefail
           python -u analysis/rank_stocks_by_strategy.py | tee analysis/output/rank_stocks_log.txt
 
+      # [2026-08追加] heuristicsスコア（app/heuristics_scoring.py）ベースの売買シミュレーション。
+      # 「スコア上位N銘柄だけ売買」「スコアが一定以上の銘柄を売買」を、出来高・売買代金の
+      # しきい値フィルタや空売り（downスコア）も含めて総当たりで検証する。
+      # simulate_trades.py（TECH_*単体ルールのシミュレーション）とは対象銘柄の選定ロジックが
+      # 根本的に異なる（個別ルールではなく日次クロスセクション・ランキング/しきい値）ため、
+      # 独立したステップとして追加した（simulate_trades.py・rank_stocks_by_strategy.pyには
+      # 依存しないため、直前2ステップの成否に関わらず実行可能。ただし同じ分析結果を
+      # 参照する都合上、実行順序としてはこの位置に置く）。
+      # app/heuristics_scoring.py・app/heuristics_scoring_rules.py をそのままimportするため、
+      # リポジトリルート（このジョブのカレントディレクトリ）から実行する。
+      - name: Run score-based trade simulation (top-N / threshold / volume・trading-value filters)
+        env:
+          ANALYSIS_FROM_DATE: ${{ github.event.inputs.from_date }}
+          ANALYSIS_TO_DATE: ${{ github.event.inputs.to_date }}
+        run: |
+          set -o pipefail
+          python -u analysis/simulate_trades_by_score.py | tee analysis/output/simulate_trades_by_score_log.txt
+
       - name: Upload simulation results
         uses: actions/upload-artifact@v4
         with:
