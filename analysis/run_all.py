@@ -22,6 +22,11 @@ Apriori探索の組み合わせ数が爆発しCIジョブがタイムアウト�
 組み合わせ検定の対象に事前フィルタし、(2) build_long_df()の重複実行を解消し、
 (3) 各ステージの所要時間をログ出力するようにした（次回同様の事象が起きた際に
 どのステージで詰まったかをすぐ切り分けられるようにするため）。
+
+2026-08 追加: 出来高急増度（volume_bucket）でTECH_*シグナルを層別する検定
+（analyze_heuristics_signals_by_volume.py）も実行する。既存3検定への影響を
+避けるため、出来高付きohlcvデータは独立したキャッシュ名前空間で別途読み込む
+（詳細は common/repo_data.py の load_ohlc_series_with_volume() を参照）。
 """
 import os
 import re
@@ -32,11 +37,15 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common.repo_data import load_price_series, load_heuristics
+from common.repo_data import load_price_series, load_heuristics, load_ohlc_series_with_volume
 from common.plain_language import annotate_dataframe, build_plain_report
 from analyze_heuristics_signals import build_long_df, run_pooled_test
 from analyze_heuristics_signals_daywise import run_daywise_test, print_ttest_summary, summarize_daywise_ttest
 from analyze_heuristics_signal_combinations import run_combination_test, select_candidate_keys
+from analyze_heuristics_signals_by_volume import (
+    build_long_df_with_volume, run_stratified_test, summarize_volume_interaction,
+)
+from common.volume_features import compute_volume_buckets
 
 REPO_ROOT = "."
 DATE_RE = re.compile(r"^\d{8}$")
@@ -57,6 +66,8 @@ def guide():
     print("3. result_all.csv / result_combinations.csv ← 個別指標の詳しい数値")
     print("4. result_daywise_summary.csv     ← 上記の裏付け（日次ベースでも同じ傾向か）")
     print("5. result_daywise.csv             ← 生データ（通常は見なくてOK、13,033行）")
+    print("6. result_by_volume_summary.csv   ← 出来高急増でTECH_*の効果量がどう変わるか（2026-08追加）")
+    print("7. result_by_volume.csv           ← 上記の元になった、出来高区分ごとの検定結果の生データ")
     print("###########################################################################")
 
 def _read_date_env(name: str) -> str | None:
@@ -154,6 +165,32 @@ def main():
     combo_df = annotate_dataframe(combo_df, diff_column="diff", fdr_column="p_adj_fdr", fdr_corrected=True)
     combo_df.to_csv("analysis/output/result_combinations.csv", index=False)
     _elapsed("組み合わせ検定", t0)
+
+    # 2026-08追加: 出来高急増度（volume_bucket）でTECH_*シグナルを層別し、
+    # 「出来高が急増している状態でのシグナルは優位性が高まるか」を検証する。
+    # 出来高付きのohlcvロード（load_ohlc_series_with_volume）は、pooled/daywise/
+    # 組み合わせ検定が使う load_price_series とは独立したキャッシュ名前空間
+    # （cache_name="ohlc_v"）のため、ここで追加で読み込む（二重読み込みにはなるが、
+    # 既存3検定への影響を避けるため、あえて統合しない方針。詳細は
+    # common/repo_data.py の _build_ohlc_v() docstring を参照）。
+    print("\n########## 出来高急増度によるTECH_*層別検定 ##########")
+    t0 = time.time()
+    ohlc_v, ohlc_v_trading_dates = load_ohlc_series_with_volume(REPO_ROOT, from_date=from_date)
+    volume_buckets = compute_volume_buckets(ohlc_v)
+    volume_long_df = build_long_df_with_volume(ohlc_v, ohlc_v_trading_dates, heur, volume_buckets)
+    volume_result_df = run_stratified_test(volume_long_df)
+    if not volume_result_df.empty:
+        print("\n=== 出来高区分ごとの検定結果（上位20件、p_adj_fdr昇順） ===")
+        print(volume_result_df.sort_values("p_adj_fdr").head(20).to_string(index=False))
+        volume_summary_df = summarize_volume_interaction(volume_result_df)
+        print("\n=== 出来高急増(high)による効果量の変化（上位20件） ===")
+        print(volume_summary_df.head(20).to_string(index=False))
+    else:
+        volume_summary_df = pd.DataFrame()
+        print("出来高区分ごとの検定結果がありませんでした（最小サンプル数30件未満）")
+    volume_result_df.to_csv("analysis/output/result_by_volume.csv", index=False)
+    volume_summary_df.to_csv("analysis/output/result_by_volume_summary.csv", index=False)
+    _elapsed("出来高層別検定", t0)
 
     # 2026-07追加: 3種類の検定結果を統合した、統計知識不要の日本語サマリーレポートを生成する
     print("\n########## サマリーレポート（統計知識不要） ##########")
