@@ -178,6 +178,47 @@ def load_price_series(repo_root: str, from_date: str | None = None, use_cache: b
     return _load_with_cache("price", paths, _build_price, use_cache)
 
 
+def _build_ohlc_v(paths: list[str]):
+    """{code: {date: {"o","h","l","c","v"}}} を返す（出来高付き版）。
+
+    2026-08追加: 出来高（急増度）を既存TECH_*シグナルと掛け合わせて検証する
+    ための専用ローダー。既存の _build_ohlc() / load_ohlc_series()
+    （simulate_trades.py・rank_stocks_by_strategy.py が依存）の挙動・
+    キャッシュキー（cache_name="ohlc"）を変更するリスクを避けるため、
+    _build_price() に対して _build_ohlc() を独立追加したのと同じ方針で、
+    あえて統合（共通化）せず独立した関数・独立したキャッシュ名前空間
+    （cache_name="ohlc_v"）として追加した（二重パースにはなるが、
+    出来高分析は既存3スクリプトのように高頻度実行されるものではないため、
+    実行頻度に見合わないリスクは取らない方針とした）。
+    """
+    ohlc: dict[str, dict[str, dict]] = {}
+    trading_dates: list[str] = []
+    for path in paths:
+        date = _date_from_path(path)
+        trading_dates.append(date)
+        with open(path, encoding="utf-8") as f:
+            day = json.load(f)
+        for code, bar in day.items():
+            if not isinstance(bar, dict) or "c" not in bar or "v" not in bar:
+                continue  # error銘柄（取得失敗）は日付キーを持たないため自然に除外される
+            ohlc.setdefault(code, {})[date] = {
+                "o": bar.get("o"), "h": bar.get("h"), "l": bar.get("l"), "c": bar["c"], "v": bar["v"],
+            }
+    return ohlc, sorted(trading_dates)
+
+
+def load_ohlc_series_with_volume(repo_root: str, from_date: str | None = None, use_cache: bool = True):
+    """{code: {date: {"o","h","l","c","v"}}} と、取引日一覧を返す（出来高を含む版）。
+
+    2026-08追加。load_ohlc_series() と同じ仕組み（ファイル一覧のスキャン・
+    内容ハッシュによるキャッシュ）を踏襲しているが、出来高（v）も保持する点が異なる。
+    to_date（上限）を受け付けない理由も load_price_series() 等と同じ
+    （フォワードリターン算出にシグナル日より後の価格が必要なため）。
+    """
+    paths = _scan(repo_root, OHLCV_GLOB, from_date=from_date, to_date=None)
+    return _load_with_cache("ohlc_v", paths, _build_ohlc_v, use_cache)
+
+
 def load_heuristics(repo_root: str, from_date: str | None = None, to_date: str | None = None,
                      use_cache: bool = True) -> dict:
     """{date: {code: {TECH_*: 値, ...}}} を返す。既に日付別ファイルのため転置は不要。
