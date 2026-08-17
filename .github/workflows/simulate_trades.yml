@@ -28,6 +28,20 @@ jobs:
         with:
           fetch-depth: 1  # data/ohlcv・data/heuristics の現時点の内容が読めればよく、履歴は不要
 
+      # [2026-08追加] heuristicsスコア計算ロジック（app/heuristics_scoring.py・
+      # app/heuristics_scoring_rules.py）は別リポジトリ（webapp-backend）にあるため、
+      # simulate_trades_by_score.py がそのままimportできるよう、ここでcheckoutして
+      # webapp-backend/ 配下に配置する。webapp-backendは公開リポジトリのため、
+      # 追加のアクセストークンは不要（デフォルトのcheckout権限で取得できる）。
+      # ロジックを複製（vendoring）せず直接参照することで、webapp-backend側の
+      # スコア定義変更が自動的にバックテストへ反映される（同期忘れによる乖離を防ぐ）。
+      - name: Checkout webapp-backend (heuristics scoring source)
+        uses: actions/checkout@v4
+        with:
+          repository: yt-F6D34A22-537C-E881-530F-F9E7A956A78B/webapp-backend
+          path: webapp-backend
+          fetch-depth: 1
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -71,16 +85,12 @@ jobs:
           set -o pipefail
           python -u analysis/rank_stocks_by_strategy.py | tee analysis/output/rank_stocks_log.txt
 
-      # [2026-08追加] heuristicsスコア（app/heuristics_scoring.py）ベースの売買シミュレーション。
-      # 「スコア上位N銘柄だけ売買」「スコアが一定以上の銘柄を売買」を、出来高・売買代金の
-      # しきい値フィルタや空売り（downスコア）も含めて総当たりで検証する。
+      # [2026-08追加] heuristicsスコア（webapp-backendリポジトリの app/heuristics_scoring.py）
+      # ベースの売買シミュレーション。「スコア上位N銘柄だけ売買」「スコアが一定以上の銘柄を売買」を、
+      # 出来高・売買代金のしきい値フィルタや空売り（downスコア）も含めて総当たりで検証する。
       # simulate_trades.py（TECH_*単体ルールのシミュレーション）とは対象銘柄の選定ロジックが
       # 根本的に異なる（個別ルールではなく日次クロスセクション・ランキング/しきい値）ため、
-      # 独立したステップとして追加した（simulate_trades.py・rank_stocks_by_strategy.pyには
-      # 依存しないため、直前2ステップの成否に関わらず実行可能。ただし同じ分析結果を
-      # 参照する都合上、実行順序としてはこの位置に置く）。
-      # app/heuristics_scoring.py・app/heuristics_scoring_rules.py をそのままimportするため、
-      # リポジトリルート（このジョブのカレントディレクトリ）から実行する。
+      # 独立したステップとして追加した。
       - name: Run score-based trade simulation (top-N / threshold / volume・trading-value filters)
         env:
           ANALYSIS_FROM_DATE: ${{ github.event.inputs.from_date }}
