@@ -20,13 +20,11 @@ heuristicsスコア（calc_heuristics_score()）を使った売買シミュレ�
 クロスセクション・ランキングやしきい値によるもの）のみ。
 
 # app.heuristics_scoring への依存について
-本スクリプトは backend の app/heuristics_scoring.py・
-app/heuristics_scoring_rules.py をそのままimportして使う（スコアリング
-ロジックを二重実装してロジックが乖離することを避けるため）。そのため、
-リポジトリルートから `python analysis/simulate_trades_by_score.py` として
-実行する前提（sys.pathにリポジトリルートを追加してappパッケージを
-importできるようにしている）。もし app/ の配置が異なる場合、下記の
-sys.path.insert() 部分を実際の構成に合わせて調整すること。
+本スクリプトは backend の app/heuristics_scoring.py・app/heuristics_scoring_rules.py を
+そのままimportして使う（スコアリングロジックを複製・二重管理してロジックが
+乖離することを避けるため）。app/ は別リポジトリ（webapp-backend、公開リポジトリ）に
+あるため、.github/workflows/simulate_trades.yml 側で事前にcheckoutしたパスを
+sys.pathに追加している。詳細はこのファイル冒頭のimport部分を参照。
 
 # 計算コストへの注意（2026-08、analyze_heuristics_signal_combinations.py の
 # CIタイムアウトの教訓を踏まえた設計）
@@ -43,8 +41,10 @@ import pandas as pd
 
 _ANALYSIS_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _ANALYSIS_DIR.parent
+_WEBAPP_BACKEND_DIR = _REPO_ROOT / "webapp-backend"  # .github/workflows/simulate_trades.yml の checkout先と一致させること
+
 sys.path.insert(0, str(_ANALYSIS_DIR))
-sys.path.insert(0, str(_REPO_ROOT))  # app.heuristics_scoring を import するため
+sys.path.insert(0, str(_WEBAPP_BACKEND_DIR))
 
 from common.cli import parse_date_range
 from common.repo_data import load_ohlc_series, load_ohlc_series_with_volume, load_heuristics
@@ -55,11 +55,11 @@ try:
     from app.heuristics_scoring import calc_heuristics_score
 except ImportError as e:
     raise ImportError(
-        "app.heuristics_scoring のimportに失敗しました。本スクリプトはリポジトリ"
-        "ルートから `python analysis/simulate_trades_by_score.py` として実行する"
-        "前提です（backendの app/ パッケージをそのまま読み込むため）。実際の"
-        "ディレクトリ構成が異なる場合は、このファイル冒頭の sys.path.insert() を"
-        "調整してください。"
+        f"app.heuristics_scoring のimportに失敗しました（参照先: {_WEBAPP_BACKEND_DIR}）。"
+        "GitHub Actions実行時は .github/workflows/simulate_trades.yml の"
+        "「Checkout webapp-backend」ステップでこのパスにcheckoutされている前提です。"
+        "ローカル実行等でこのエラーが出る場合は、webapp-backendリポジトリを"
+        "本リポジトリ直下の webapp-backend/ に配置してください。"
     ) from e
 
 
