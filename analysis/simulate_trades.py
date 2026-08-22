@@ -237,6 +237,21 @@ def simulate_rule(ohlc: dict, trading_dates: list[str],
                     continue
 
                 s = pd.Series(returns)
+
+                # [2026-08追加] win_rateだけでなく期待値（プロフィットファクター等）も
+                # あわせて評価できるようにする。勝率が50%台でも、勝ったときのリターンが
+                # 負けたときより十分大きければ、トータルではプラスの期待値になり得るため
+                # （win_rateだけで戦略の良し悪しを判断すると見誤るケースがある）。
+                wins = s[s > 0]
+                losses = s[s < 0]
+                avg_win = wins.mean() if len(wins) > 0 else 0.0
+                avg_loss = losses.mean() if len(losses) > 0 else 0.0  # 負の値のまま保持
+                total_gain = wins.sum()
+                total_loss = abs(losses.sum())
+                # 損失が皆無の場合はNaN（プロフィットファクターが数学的に未定義のため、
+                # 便宜的に無限大や0を入れて誤解を招くより、非数として明示する）
+                profit_factor = (total_gain / total_loss) if total_loss > 0 else float("nan")
+
                 records.append({
                     "entry_type": entry_type,
                     "exit_type": exit_type,
@@ -245,6 +260,9 @@ def simulate_rule(ohlc: dict, trading_dates: list[str],
                     "mean_return": s.mean(),
                     "median_return": s.median(),
                     "win_rate": (s > 0).mean(),
+                    "avg_win": avg_win,
+                    "avg_loss": avg_loss,
+                    "profit_factor": profit_factor,
                     "worst_return": s.min(),
                     "best_return": s.max(),
                 })
