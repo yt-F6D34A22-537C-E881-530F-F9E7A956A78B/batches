@@ -88,9 +88,6 @@ jobs:
       # [2026-08追加] heuristicsスコア（webapp-backendリポジトリの app/heuristics_scoring.py）
       # ベースの売買シミュレーション。「スコア上位N銘柄だけ売買」「スコアが一定以上の銘柄を売買」を、
       # 出来高・売買代金のしきい値フィルタや空売り（downスコア）も含めて総当たりで検証する。
-      # simulate_trades.py（TECH_*単体ルールのシミュレーション）とは対象銘柄の選定ロジックが
-      # 根本的に異なる（個別ルールではなく日次クロスセクション・ランキング/しきい値）ため、
-      # 独立したステップとして追加した。
       - name: Run score-based trade simulation (top-N / threshold / volume・trading-value filters)
         env:
           ANALYSIS_FROM_DATE: ${{ github.event.inputs.from_date }}
@@ -98,6 +95,19 @@ jobs:
         run: |
           set -o pipefail
           python -u analysis/simulate_trades_by_score.py | tee analysis/output/simulate_trades_by_score_log.txt
+
+      # [2026-08追加] analyze_heuristics_signals_by_volume.py（出来高層別検定）で
+      # 「出来高急増時に限り一貫してプラス」だったTECH_*（TECH_HEAD_AND_SHOULDERS・
+      # TECH_MOMIAI等）について、勝率だけでなく期待値（プロフィットファクター等）も
+      # あわせて検証する。対象は analysis/simulate_trades_combo_volume.py 内の
+      # TARGET_COMBOS で管理する。
+      - name: Run targeted TECH_* x volume-bucket simulation (win_rate + profit_factor)
+        env:
+          ANALYSIS_FROM_DATE: ${{ github.event.inputs.from_date }}
+          ANALYSIS_TO_DATE: ${{ github.event.inputs.to_date }}
+        run: |
+          set -o pipefail
+          python -u analysis/simulate_trades_combo_volume.py | tee analysis/output/simulate_trades_combo_volume_log.txt
 
       - name: Upload simulation results
         uses: actions/upload-artifact@v4
