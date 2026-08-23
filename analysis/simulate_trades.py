@@ -167,7 +167,8 @@ def _price_at(ohlc: dict, code: str, date: str, price_type: str):
 
 
 def simulate_rule(ohlc: dict, trading_dates: list[str],
-                   instances: list[tuple[str, str]], direction: str = "long") -> tuple[pd.DataFrame, list[dict]]:
+                   instances: list[tuple[str, str]], direction: str = "long"
+                   ) -> tuple[pd.DataFrame, list[dict], dict[tuple[str, str, int], list[float]]]:
     """1つのルール（単独 or 組み合わせ）について、12通りの売買パターンごとに
     リターン分布を集計する。instances は _find_signal_instances() の戻り値。
 
@@ -181,13 +182,17 @@ def simulate_rule(ohlc: dict, trading_dates: list[str],
         2026-07追加。load_promising_rules() が判定したdiffの符号（"long"|"short"）を
         そのまま渡す想定。損益の符号だけが反転し、集計方法（win_rate等）は共通。
 
-    戻り値は (集計DataFrame, 異常値の疑いがある個別取引の一覧) のタプル
-    （2026-07追加。後者は OUTLIER_ABS_RETURN_THRESHOLD を超えたリターンを持つ
-    個別取引を、銘柄コード・日付・価格つきで記録したもの。原因調査に使う）。
+    戻り値は (集計DataFrame, 異常値の疑いがある個別取引の一覧, パターンごとの生リターン)
+    のタプル（2026-07追加の異常値一覧に加え、2026-08にraw_returns_by_patternを追加）。
+    raw_returns_by_pattern は {(entry_type, exit_type, days_after_signal): [リターン, ...]}
+    で、集計後のDataFrame（平均・勝率等）だけでは行えない検定（t検定・ブートストラップ信頼区間等）を
+    呼び出し側で行うために追加した。既存の呼び出し箇所（simulate_trades.py の run_simulation()）は
+    3つ目の戻り値を単に無視すればよく、後方互換の破壊は伴わない（タプルの要素数が増えるだけ）。
     """
     date_index = {d: i for i, d in enumerate(trading_dates)}
     records = []
     outliers = []
+    raw_returns_by_pattern: dict[tuple[str, str, int], list[float]] = {}
 
     for entry_type in ENTRY_TYPES:
         for exit_type in EXIT_TYPES:
@@ -237,6 +242,7 @@ def simulate_rule(ohlc: dict, trading_dates: list[str],
                     continue
 
                 s = pd.Series(returns)
+                raw_returns_by_pattern[(entry_type, exit_type, n)] = returns
 
                 # [2026-08追加] win_rateだけでなく期待値（プロフィットファクター等）も
                 # あわせて評価できるようにする。勝率が50%台でも、勝ったときのリターンが
@@ -267,7 +273,7 @@ def simulate_rule(ohlc: dict, trading_dates: list[str],
                     "best_return": s.max(),
                 })
 
-    return pd.DataFrame(records), outliers
+    return pd.DataFrame(records), outliers, raw_returns_by_pattern
 
 
 def run_simulation(repo_root: str = ".", from_date: str | None = None,
@@ -298,7 +304,7 @@ def run_simulation(repo_root: str = ".", from_date: str | None = None,
         print(f"{rule_label}: シグナル発生件数 {len(instances)}件")
         if not instances:
             continue
-        sim_df, outliers = simulate_rule(ohlc, trading_dates, instances, direction)
+        sim_df, outliers, _ = simulate_rule(ohlc, trading_dates, instances, direction)
         if outliers:
             print(f"  ⚠ 異常値の疑いがある取引を{len(outliers)}件検出"
                   f"（|リターン|>{OUTLIER_ABS_RETURN_THRESHOLD*100:.0f}%）")

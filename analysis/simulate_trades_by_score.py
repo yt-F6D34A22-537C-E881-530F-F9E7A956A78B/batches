@@ -160,7 +160,7 @@ def run_all_variants(ohlc: dict, trading_dates: list, daily_scores: dict,
                 instances = select_top_n_instances(daily_scores, score_key, n, filt)
                 if len(instances) < MIN_INSTANCES:
                     continue
-                sim_df, outliers = simulate_rule(ohlc, trading_dates, instances, direction=direction)
+                sim_df, outliers, _ = simulate_rule(ohlc, trading_dates, instances, direction=direction)
                 if sim_df.empty:
                     continue
                 sim_df.insert(0, "selection_type", "top_n")
@@ -180,7 +180,7 @@ def run_all_variants(ohlc: dict, trading_dates: list, daily_scores: dict,
                 instances = select_threshold_instances(daily_scores, score_key, th, filt)
                 if len(instances) < MIN_INSTANCES:
                     continue
-                sim_df, outliers = simulate_rule(ohlc, trading_dates, instances, direction=direction)
+                sim_df, outliers, _ = simulate_rule(ohlc, trading_dates, instances, direction=direction)
                 if sim_df.empty:
                     continue
                 sim_df.insert(0, "selection_type", "score_threshold")
