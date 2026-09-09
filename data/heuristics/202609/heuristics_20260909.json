@@ -4387,7 +4387,7 @@
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
     "TECH_BB_ZONE_BREAK_MONTHLY": false,
     "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
+    "TECH_OVERHEAT": true,
     "TECH_GRANVILLE": {
       "direction": "up",
       "count": 3
@@ -76134,7 +76134,7 @@
     "TECH_BB_ZONE_BREAK_WEEKLY": true,
     "TECH_BB_ZONE_BREAK_MONTHLY": false,
     "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": true,
+    "TECH_OVERHEAT": false,
     "TECH_GRANVILLE": {
       "direction": "up",
       "count": 3
