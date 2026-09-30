@@ -33,7 +33,8 @@ function todayDateStrJst() {
 //     （JPX側の資料形式変更等で壊れても、信用残データ本体の取得自体は止めない）。
 // ============================================================
 
-// syumatsu*.pdf の全文テキストから「YYYY/M/D 申込み現在」を抽出する
+// YYYYMMDD_mtall.pdf（2026-09-28以前は syumatsu*.pdf）の全文テキストから
+// 「YYYY/M/D 申込み現在」を抽出する
 function extractWeeklyBaseDate(fullText) {
   const m = fullText.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})\s*申込み現在/);
   if (!m) {
@@ -55,7 +56,10 @@ function extractKubunBaseDate(csv) {
   return cols[1];
 }
 
-// mtdailyk*.xls の生シートから「as of YYYY/M/D application based」を抽出する（B2セル想定）
+// YYYYMMDD_mtdaily.xlsx（2026-09-28以前は mtdailyk*.xls）の生シートから
+// 「as of YYYY/M/D application based」を抽出する（B2セル想定。セル位置は
+// JPX公表資料上「変更なし」とされているが、xls→xlsx変換に伴うレイアウト
+// 差異がないか、本番デプロイ後の初回実行ログ（warnログ）で必ず確認すること）
 function extractDailyBaseDate(sheet) {
   const cellAddr = xlsx.utils.encode_cell({ r: 1, c: 1 }); // "B2"
   const cell = sheet[cellAddr];
@@ -256,24 +260,40 @@ async function fetchRakutenRegulation() {
 }
 
 // ============================================================
-// 3. JPX 週次 PDF（281A0 対応）
+// 3. JPX 銘柄別信用取引残高 PDF（281A0 対応）
+//    2026-09-28 JPX集計システムリプレースにより、旧「銘柄別信用取引週末残高」
+//    （週次・火曜16:30公表）から「銘柄別信用取引残高」（毎営業日16:00公表）に
+//    変更された。掲載ページも 05.html → 01.html に移動している
+//    （05.html は別の帳票「信用取引現在高過去推移表」に差し替わっており、
+//    本関数が必要とするデータはもう存在しない）。
+//    関数名は変更前の実装を踏襲して fetchJpxWeekly のままとしているが、
+//    実体は日次データである点に注意。
+//    詳細: https://www.jpx.co.jp/news/1032/20260927-01.html
 // ============================================================
 async function fetchJpxWeekly() {
-  const page = "https://www.jpx.co.jp/markets/statistics-equities/margin/05.html";
+  const page = "https://www.jpx.co.jp/markets/statistics-equities/margin/01.html";
   const res = await fetch(page);
   const html = await res.text();
 
   const dom = new JSDOM(html);
   const document = dom.window.document;
 
-  const pdfLinks = [...document.querySelectorAll("a")]
+  // 新ファイル名は "YYYYMMDD_mtall.pdf"。01.html には移行前(9/18申込分以前)の
+  // syumatsu*.pdf も過去分アーカイブとして残置されているため、新パターン
+  // (_mtall.pdf)のみを対象とする。href文字列の辞書順ではなく、ファイル名
+  // 中のYYYYMMDDを数値として比較して最新を選ぶ（添付ファイルのディレクトリ
+  // ID(tvdivq...)は日付と無関係に採番されるため、href全体のsort()では
+  // 正しく最新を選べない）。
+  const MTALL_RE = /(\d{8})_mtall\.pdf$/;
+  const pdfCandidates = [...document.querySelectorAll("a")]
     .map(a => a.href)
-    .filter(href => href.endsWith(".pdf") && href.includes("syumatsu"))
-    .map(href => "https://www.jpx.co.jp" + href);
+    .map(href => ({ href, m: href.match(MTALL_RE) }))
+    .filter(({ m }) => m);
 
-  if (pdfLinks.length === 0) return { jpxMap: {}, baseDate: null };
+  if (pdfCandidates.length === 0) return { jpxMap: {}, baseDate: null };
 
-  const latestPdf = pdfLinks.sort().slice(-1)[0];
+  const latest = pdfCandidates.sort((a, b) => b.m[1].localeCompare(a.m[1]))[0];
+  const latestPdf = "https://www.jpx.co.jp" + latest.href;
   const pdfRes = await fetch(latestPdf);
   const pdfBuf = await pdfRes.arrayBuffer();
 
@@ -301,6 +321,18 @@ async function fetchJpxWeekly() {
 
   const jpxMap = {};
 
+  // 2026-09-28以降の新フォーマットでは、同一銘柄コード+ISINが
+  // 「株数 Shs.」行と「金額 Val.」行の2回出現する（金額＝円換算の別行であり、
+  // 本アプリのスキーマ（JPX信用買残/売残は単位=株）には不要なので使わない）。
+  // また「上場比」列（ETF/ETNは"*"表示）が売残高・買残高それぞれの直後に
+  // 増えたため、旧来の「ISIN直後から数値を先頭4つ拾う」位置決め抽出は
+  // 上場比の値と混ざって誤動作する。
+  // そこで「値, 前日比, (％数値 または *)」という3つ組の並びを持つ箇所だけを
+  // 拾う（上場比を伴わない内訳列＝一般信用/制度信用の売買別残高はこの並びに
+  // 一致しないため自然に除外される）。売残高グループ→買残高グループの順で
+  // 2組出現するので、それぞれ groups[0]・groups[1] として扱う。
+  const ROW_GROUP_RE = /(▲?\s*[\d,]+)\s+(▲?\s*[\d,]+)\s+(?:[\d.]+%|\*)/g;
+
   for (const block of blocks) {
     const m = block.match(/([0-9A-Z]{4}0)\s+JP\d{10}/);
     if (!m) continue;
@@ -309,14 +341,18 @@ async function fetchJpxWeekly() {
     const code4 = normalizeNFKC(rawCode5.slice(0, 4)); // 例: 281A, 7203
 
     const afterIsin = block.split(/JP\d{10}/)[1] || "";
-    const nums = (afterIsin.match(/[▲\-]?\s*[\d,]+/g) || []).map(parseNum);
 
-    if (nums.length < 4) continue;
+    // 「金額 Val.」行（円換算の別行）はスキップし、「株数 Shs.」行のみ処理する。
+    const rowLabel = afterIsin.slice(0, 40);
+    if (rowLabel.includes("金額") && !rowLabel.includes("株数")) continue;
 
-    const sell = nums[0];
-    const sellDiff = nums[1];
-    const buy = nums[2];
-    const buyDiff = nums[3];
+    const groups = [...afterIsin.matchAll(ROW_GROUP_RE)];
+    if (groups.length < 2) continue; // 売残高・買残高の組が両方取れない場合はスキップ
+
+    const sell = parseNum(groups[0][1]);
+    const sellDiff = parseNum(groups[0][2]);
+    const buy = parseNum(groups[1][1]);
+    const buyDiff = parseNum(groups[1][2]);
     const ratio = sell !== 0 ? Math.round((buy / sell) * 100) / 100 : null;
 
     jpxMap[code4] = {
@@ -342,9 +378,15 @@ async function fetchJpxDaily() {
   const dom = new JSDOM(html);
   const document = dom.window.document;
 
+  // 2026-09-28 JPX集計システムリプレースに伴い、ファイル名規則が
+  // mtdailykYYYYMMDD.xls → YYYYMMDD_mtdaily.xlsx へ変更された
+  // （"mtdailyk"の"k"が消え、拡張子がxls→xlsxへ）。列構成（コード/売残高/
+  // 買残高）はJPX公表資料上「変更なし」とされているため、xlsx.read()が
+  // xls/xlsxいずれも読めることも踏まえ、変更点はファイル名の正規表現のみ
+  // とする。移行直後の巻き戻り等に備え、旧パターンも後方互換で許容する。
   const links = [...document.querySelectorAll("a")]
     .map(a => a.href)
-    .filter(href => /mtdailyk.*\.xls$/.test(href));
+    .filter(href => /mtdaily.*\.(xlsx|xls)$/i.test(href));
 
   if (links.length === 0) return { dailyMap: {}, baseDate: null };
 
@@ -495,9 +537,9 @@ function buildArchiveRecord(entry, isDailyDisclosed) {
  * @param {object} margin - margin.json と同一内容（全項目）
  * @param {Set<string>} dailyDisclosedCodes - その実行でJPX日々公表(dailyMap)に含まれていた銘柄コード集合
  * @param {object} meta - 基準日情報
- * @param {string|null} meta.jpxWeeklyBaseDate - syumatsu*.pdf の基準日（YYYYMMDD）
+ * @param {string|null} meta.jpxWeeklyBaseDate - YYYYMMDD_mtall.pdf の基準日（YYYYMMDD。2026-09-28以前は syumatsu*.pdf）
  * @param {string|null} meta.kubunBaseDate - meigara.csv の基準日（YYYYMMDD）
- * @param {string|null} meta.jpxDailyBaseDate - mtdailyk*.xls の基準日（YYYYMMDD）
+ * @param {string|null} meta.jpxDailyBaseDate - YYYYMMDD_mtdaily.xlsx の基準日（YYYYMMDD。2026-09-28以前は mtdailyk*.xls）
  */
 function writeMarginArchive(margin, dailyDisclosedCodes, meta) {
   const dateStr = todayDateStrJst();
