@@ -1,16 +1,21 @@
 name: 【margin.yml】Margin Info Fetch
 
-# 実行時刻について（2026-0X 見直し）：
+# 実行時刻について（2026-0X 見直し／2026-09-28 JPX集計システムリプレース対応で更新）：
 # 参照する信用取引データの公表時刻は JPX 公式ページに明記されている
 # （scripts/margin.js が実際に読みにいくページの本文より）。
-#   - JPX 日々公表銘柄（個別銘柄信用取引残高表）: 毎日16:00を目安に掲載
+#   - JPX 日々公表銘柄等信用取引残高（旧称：個別銘柄信用取引残高表）:
+#     毎営業日16:00を目安に掲載
 #     https://www.jpx.co.jp/markets/statistics-equities/margin/index.html
-#   - JPX 週次（銘柄別信用取引週末残高。毎週第2営業日=火曜のみ）: 16:30を目安に掲載
-#     https://www.jpx.co.jp/markets/statistics-equities/margin/05.html
+#   - JPX 銘柄別信用取引残高（旧称：銘柄別信用取引週末残高。2026-09-28のJPX
+#     集計システムリプレースにより、週次(火曜16:30)から毎営業日16:00へ変更。
+#     掲載ページも 05.html → 01.html へ移動）
+#     https://www.jpx.co.jp/markets/statistics-equities/margin/01.html
+#     詳細: https://www.jpx.co.jp/news/1032/20260927-01.html
 #   - JSF（日本証券金融）貸借取引残高: 18時半過ぎに速報値を更新
 #     （参考。meigara.csv自体の公表時刻は不明）
-# これらを踏まえ、当日中に2回（ネットワークエラー等の一時的な失敗に備えた
-# 安全網）実行するよう変更した。
+# 上記の通り、リプレース後も全ソースの公表時刻は変わらず19:07 JSTより前で
+# あるため、本ワークフローの実行時刻自体は変更していない（当日中2回実行の
+# 安全網構成も踏襲）。
 #
 # 注意：2回とも「同じJST暦日」に収める必要がある。writeMarginArchive() の
 # 「当日分ファイルが既に存在すればスキップ」判定は scripts/lib/jst_time.js
