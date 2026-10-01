@@ -57,23 +57,28 @@ function extractKubunBaseDate(csv) {
 }
 
 // YYYYMMDD_mtdaily.xlsx（2026-09-28以前は mtdailyk*.xls）の生シートから
-// 「as of YYYY/M/D application based」を抽出する（B2セル想定。セル位置は
-// JPX公表資料上「変更なし」とされているが、xls→xlsx変換に伴うレイアウト
-// 差異がないか、本番デプロイ後の初回実行ログ（warnログ）で必ず確認すること）
+// 「as of YYYY/M/D application based」を抽出する。
+// 2026-09-28のJPX集計システムリプレースにより、シート冒頭に凡例（注記）
+// ブロックが追加され、基準日の記載位置が B2 からずれた（2026-09-29分の
+// 実ファイルで確認したところ B27 に位置していた）。凡例の行数が将来
+// 増減しても追随できるよう、固定セルを直接参照せず、先頭から一定範囲を
+// 走査してパターンに一致するセルを探す方式に変更する。
 function extractDailyBaseDate(sheet) {
-  const cellAddr = xlsx.utils.encode_cell({ r: 1, c: 1 }); // "B2"
-  const cell = sheet[cellAddr];
-  if (!cell || typeof cell.v !== "string") {
-    console.warn(`[margin_archive] daily base date cell not found or unexpected format: ${cellAddr}`);
-    return null;
+  const range = xlsx.utils.decode_range(sheet["!ref"]);
+  const maxRow = Math.min(range.e.r, 60); // 凡例ブロックが収まる想定範囲内で探索
+  for (let r = 0; r <= maxRow; r++) {
+    for (let c = 0; c <= 5; c++) {
+      const cell = sheet[xlsx.utils.encode_cell({ r, c })];
+      if (!cell || typeof cell.v !== "string") continue;
+      const m = cell.v.match(/as of (\d{4})\/(\d{1,2})\/(\d{1,2})/);
+      if (m) {
+        const [, y, mo, d] = m;
+        return `${y}${mo.padStart(2, "0")}${d.padStart(2, "0")}`;
+      }
+    }
   }
-  const m = cell.v.match(/as of (\d{4})\/(\d{1,2})\/(\d{1,2})/);
-  if (!m) {
-    console.warn(`[margin_archive] daily base date pattern mismatch: "${cell.v}"`);
-    return null;
-  }
-  const [, y, mo, d] = m;
-  return `${y}${mo.padStart(2, "0")}${d.padStart(2, "0")}`;
+  console.warn("[margin_archive] daily base date pattern not found within scan range");
+  return null;
 }
 
 // ============================================================
@@ -400,22 +405,52 @@ async function fetchJpxDaily() {
   // margin_archive のmeta用に基準日を抽出しておく（2026-08追加。margin.json 本体には影響しない）
   const baseDate = extractDailyBaseDate(sheet);
 
-  const rows = xlsx.utils.sheet_to_json(sheet, { header: 0, range: 5 });
+  // 2026-09-28のJPX集計システムリプレースにより、シート冒頭に凡例ブロックが
+  // 追加されたことに加え、ヘッダーが日本語・英語の2行構成かつ「売残高/買残高」
+  // の値・前日比・上場比が結合セルで構成されるようになり、
+  // xlsx.utils.sheet_to_json の header:0（列名ベース）方式では「売残高
+  // Outstanding Sales」列の前日比・上場比サブ列に列名が付与されず、固定の
+  // range:5 でも新しいヘッダー位置と合わない。そのため、「コード」ヘッダー
+  // セルを走査で見つけ、そこからの相対列位置（コード列を基準に 売残高=+2列、
+  // 買残高=+5列。2026-09-29分の実ファイルで実データ確認済み）で値を取得する
+  // 方式に変更する。
+  const range = xlsx.utils.decode_range(sheet["!ref"]);
+  let headerRow = null;
+  let codeCol = null;
+  for (let r = 0; r <= Math.min(range.e.r, 60); r++) {
+    for (let c = 0; c <= 15; c++) {
+      const cell = sheet[xlsx.utils.encode_cell({ r, c })];
+      if (cell && cell.v === "コード") {
+        headerRow = r;
+        codeCol = c;
+        break;
+      }
+    }
+    if (headerRow !== null) break;
+  }
 
-  const codeCol = "コード";
-  const sellCol = "売残高 Outstanding Sales";
-  const buyCol = "買残高 Outstanding Purchases";
+  if (headerRow === null) {
+    console.warn('[margin_archive] daily xlsx: header row ("コード") not found');
+    return { dailyMap: {}, baseDate };
+  }
+
+  const sellCol = codeCol + 2; // 売残高 Outstanding Sales
+  const buyCol = codeCol + 5; // 買残高 Outstanding Purchases
+  const dataStartRow = headerRow + 2; // 日本語ヘッダー行・英語ヘッダー行の2行分をスキップ
 
   const dailyMap = {};
 
-  for (const row of rows) {
-    const raw = String(row[codeCol] || "").trim();
+  for (let r = dataStartRow; r <= range.e.r; r++) {
+    const codeCell = sheet[xlsx.utils.encode_cell({ r, c: codeCol })];
+    const raw = codeCell && codeCell.v != null ? String(codeCell.v).trim() : "";
     if (!/^[0-9A-Z]{4}0$/.test(raw)) continue;
 
     const code4 = normalizeNFKC(raw.slice(0, 4));
 
-    const sell = parseInt(String(row[sellCol] || "0").replace(/,/g, ""));
-    const buy = parseInt(String(row[buyCol] || "0").replace(/,/g, ""));
+    const sellCell = sheet[xlsx.utils.encode_cell({ r, c: sellCol })];
+    const buyCell = sheet[xlsx.utils.encode_cell({ r, c: buyCol })];
+    const sell = parseInt(String(sellCell && sellCell.v != null ? sellCell.v : "0").replace(/,/g, ""));
+    const buy = parseInt(String(buyCell && buyCell.v != null ? buyCell.v : "0").replace(/,/g, ""));
 
     if (Number.isNaN(sell) || Number.isNaN(buy)) continue;
 
