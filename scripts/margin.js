@@ -271,11 +271,14 @@ async function fetchRakutenRegulation() {
 //    変更された。掲載ページも 05.html → 01.html に移動している
 //    （05.html は別の帳票「信用取引現在高過去推移表」に差し替わっており、
 //    本関数が必要とするデータはもう存在しない）。
-//    関数名は変更前の実装を踏襲して fetchJpxWeekly のままとしているが、
-//    実体は日次データである点に注意。
+//    2026-10、実体が日次データになったことに合わせ、関数名を
+//    fetchJpxWeekly() から fetchJpxIssueBalance() にリネームした
+//    （出力JSONのメタキー jpx_weekly_base_date 自体は /margin_info が
+//    参照する外部契約のため変更していない。backend.fastapi.endpoints
+//    ./margin_info を参照）。
 //    詳細: https://www.jpx.co.jp/news/1032/20260927-01.html
 // ============================================================
-async function fetchJpxWeekly() {
+async function fetchJpxIssueBalance() {
   const page = "https://www.jpx.co.jp/markets/statistics-equities/margin/01.html";
   const res = await fetch(page);
   const html = await res.text();
@@ -463,7 +466,7 @@ async function fetchJpxDaily() {
 // ============================================================
 // 5. 日々公表で週次を上書き
 // ============================================================
-function applyDailyToWeekly(jpxMap, dailyMap) {
+function applyDailyToIssueBalance(jpxMap, dailyMap) {
   for (const [code4, d] of Object.entries(dailyMap)) {
     const newBuy = d.buy;
     const newSell = d.sell;
@@ -572,7 +575,7 @@ function buildArchiveRecord(entry, isDailyDisclosed) {
  * @param {object} margin - margin.json と同一内容（全項目）
  * @param {Set<string>} dailyDisclosedCodes - その実行でJPX日々公表(dailyMap)に含まれていた銘柄コード集合
  * @param {object} meta - 基準日情報
- * @param {string|null} meta.jpxWeeklyBaseDate - YYYYMMDD_mtall.pdf の基準日（YYYYMMDD。2026-09-28以前は syumatsu*.pdf）
+ * @param {string|null} meta.jpxIssueBalanceBaseDate - YYYYMMDD_mtall.pdf の基準日（YYYYMMDD。2026-09-28以前は syumatsu*.pdf）
  * @param {string|null} meta.kubunBaseDate - meigara.csv の基準日（YYYYMMDD）
  * @param {string|null} meta.jpxDailyBaseDate - YYYYMMDD_mtdaily.xlsx の基準日（YYYYMMDD。2026-09-28以前は mtdailyk*.xls）
  */
@@ -594,7 +597,7 @@ function writeMarginArchive(margin, dailyDisclosedCodes, meta) {
 
   const archive = {
     meta: {
-      jpx_weekly_base_date: meta.jpxWeeklyBaseDate,
+      jpx_weekly_base_date: meta.jpxIssueBalanceBaseDate,
       kubun_base_date: meta.kubunBaseDate,
       jpx_daily_base_date: meta.jpxDailyBaseDate,
     },
@@ -615,7 +618,7 @@ async function main() {
   const { kubunMap, baseDate: kubunBaseDate } = await fetchKubunMap();
   const { regulationMap, BUY_BAN_KEYWORDS, SELL_BAN_KEYWORDS } =
     await fetchRakutenRegulation();
-  const { jpxMap, baseDate: jpxWeeklyBaseDate } = await fetchJpxWeekly();
+  const { jpxMap, baseDate: jpxIssueBalanceBaseDate } = await fetchJpxIssueBalance();
   const { dailyMap, baseDate: jpxDailyBaseDate } = await fetchJpxDaily();
 
   // この実行で日々公表XLSに実際に載っていた銘柄コード集合。
@@ -624,7 +627,7 @@ async function main() {
   // （2026-08追加。margin.json 本体のスキーマには影響させない）。
   const dailyDisclosedCodes = new Set(Object.keys(dailyMap));
 
-  applyDailyToWeekly(jpxMap, dailyMap);
+  applyDailyToIssueBalance(jpxMap, dailyMap);
 
   const margin = buildMarginJson(
     kubunMap,
@@ -643,7 +646,7 @@ async function main() {
   // 信用残アーカイブ化（2026-08追加。2026-0X、唯一の出力先とした）。
   // 日付ごとの恒久ファイルとして保存する。
   writeMarginArchive(sorted, dailyDisclosedCodes, {
-    jpxWeeklyBaseDate,
+    jpxIssueBalanceBaseDate,
     kubunBaseDate,
     jpxDailyBaseDate,
   });
