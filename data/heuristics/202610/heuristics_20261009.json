@@ -254688,7 +254688,80 @@
     }
   },
   "9564": {
-    "error": "Network or fetch error"
+    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "up",
+    "TECH_MA_SLOPE_MONTHLY": "down",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "up",
+    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_PERFECT_ORDER_DAILY": true,
+    "TECH_PERFECT_ORDER_WEEKLY": true,
+    "TECH_PERFECT_ORDER_MONTHLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": true,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_MA_CONGESTION": true,
+    "TECH_MA_SPREAD": "down",
+    "TECH_MA100_TREND": "up",
+    "TECH_KAHANSHIN": false,
+    "TECH_GYAKU_KAHANSHIN": false,
+    "TECH_5MA_UPDATE": "up",
+    "TECH_SAKATA_TRIPLE_TOP": null,
+    "TECH_SAKATA_TRIPLE_BOTTOM": null,
+    "TECH_SAKATA_SANKU_UP": null,
+    "TECH_SAKATA_SANKU_DOWN": null,
+    "TECH_SAKATA_SANPEI_UP": null,
+    "TECH_SAKATA_SANPEI_DOWN": null,
+    "TECH_SAKATA_SANPO_UP": null,
+    "TECH_SAKATA_SANPO_DOWN": null,
+    "TECH_HEAD_AND_SHOULDERS": false,
+    "TECH_DOUBLE_BOTTOM": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": false,
+    "TECH_IN_IN_HARAMI": false,
+    "TECH_RED_BLUE_CROSS": false,
+    "TECH_RETURN_SELL_END": false,
+    "TECH_DOWN_TREND_END": false,
+    "TECH_MOMIAI": false,
+    "TECH_MONOWAKARE": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
+    "TECH_RULE9_DAILY": {
+      "direction": "up",
+      "count": 67
+    },
+    "TECH_RULE9_WEEKLY": {
+      "direction": null,
+      "count": 0
+    },
+    "TECH_BB_ZONE_BREAK_DAILY": false,
+    "TECH_BB_ZONE_BREAK_WEEKLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BOX_RANGE": false,
+    "TECH_OVERHEAT": false,
+    "TECH_GRANVILLE": {
+      "direction": null,
+      "count": null
+    },
+    "TECH_CYCLE_PROGRESS": {
+      "direction": "down",
+      "count": 32,
+      "startDate": "20260821",
+      "lastDate": "20261009"
+    },
+    "TECH_FUSHIME_UP": {
+      "price": 614,
+      "tryCount": 2
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": 506,
+      "tryCount": 2
+    }
   },
   "9565": {
     "TECH_MA_SLOPE_DAILY": "down",
@@ -254767,48 +254840,30 @@
     }
   },
   "9601": {
-    "error": "Network or fetch error"
-  },
-  "9602": {
-    "error": "Network or fetch error"
-  },
-  "9603": {
-    "error": "Network or fetch error"
-  },
-  "9605": {
-    "error": "Network or fetch error"
-  },
-  "9610": {
-    "error": "Network or fetch error"
-  },
-  "9612": {
-    "error": "Network or fetch error"
-  },
-  "9616": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "up",
+    "TECH_MA_SLOPE_DAILY": "up",
+    "TECH_MA_SLOPE_WEEKLY": "down",
+    "TECH_MA_SLOPE_MONTHLY": "down",
+    "TECH_MA_POSITION_DAILY": "flat",
     "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": true,
+    "TECH_MA_POSITION_MONTHLY": "down",
+    "TECH_PERFECT_ORDER_DAILY": false,
     "TECH_PERFECT_ORDER_WEEKLY": false,
     "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
     "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": true,
     "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": true,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
+    "TECH_MA_CONGESTION": false,
     "TECH_MA_SPREAD": "up",
     "TECH_MA100_TREND": "up",
     "TECH_KAHANSHIN": false,
     "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "up",
+    "TECH_5MA_UPDATE": "down",
     "TECH_SAKATA_TRIPLE_TOP": null,
     "TECH_SAKATA_TRIPLE_BOTTOM": null,
     "TECH_SAKATA_SANKU_UP": null,
@@ -254824,17 +254879,17 @@
     "TECH_IN_IN_HARAMI": false,
     "TECH_RED_BLUE_CROSS": false,
     "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
+    "TECH_DOWN_TREND_END": true,
     "TECH_MOMIAI": false,
     "TECH_MONOWAKARE": "flat",
     "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
     "TECH_RULE9_DAILY": {
       "direction": "up",
-      "count": 82
+      "count": 3
     },
     "TECH_RULE9_WEEKLY": {
-      "direction": "up",
-      "count": 13
+      "direction": "down",
+      "count": 27
     },
     "TECH_BB_ZONE_BREAK_DAILY": false,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
@@ -254846,19 +254901,256 @@
       "count": null
     },
     "TECH_CYCLE_PROGRESS": {
-      "direction": "up",
-      "count": 17,
-      "startDate": "20260911",
+      "direction": "down",
+      "count": 48,
+      "startDate": "20260729",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": 3543,
-      "tryCount": 5
+      "price": 12010,
+      "tryCount": 2
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 2854,
+      "price": 10420,
+      "tryCount": 3
+    }
+  },
+  "9602": {
+    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "up",
+    "TECH_MA_SLOPE_MONTHLY": "down",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "flat",
+    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": true,
+    "TECH_PERFECT_ORDER_MONTHLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": true,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_MA_CONGESTION": false,
+    "TECH_MA_SPREAD": "up",
+    "TECH_MA100_TREND": "up",
+    "TECH_KAHANSHIN": false,
+    "TECH_GYAKU_KAHANSHIN": false,
+    "TECH_5MA_UPDATE": "down",
+    "TECH_SAKATA_TRIPLE_TOP": null,
+    "TECH_SAKATA_TRIPLE_BOTTOM": null,
+    "TECH_SAKATA_SANKU_UP": null,
+    "TECH_SAKATA_SANKU_DOWN": null,
+    "TECH_SAKATA_SANPEI_UP": null,
+    "TECH_SAKATA_SANPEI_DOWN": null,
+    "TECH_SAKATA_SANPO_UP": null,
+    "TECH_SAKATA_SANPO_DOWN": null,
+    "TECH_HEAD_AND_SHOULDERS": false,
+    "TECH_DOUBLE_BOTTOM": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": true,
+    "TECH_IN_IN_HARAMI": false,
+    "TECH_RED_BLUE_CROSS": false,
+    "TECH_RETURN_SELL_END": false,
+    "TECH_DOWN_TREND_END": false,
+    "TECH_MOMIAI": false,
+    "TECH_MONOWAKARE": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
+    "TECH_RULE9_DAILY": {
+      "direction": "up",
+      "count": 44
+    },
+    "TECH_RULE9_WEEKLY": {
+      "direction": "down",
+      "count": 1
+    },
+    "TECH_BB_ZONE_BREAK_DAILY": true,
+    "TECH_BB_ZONE_BREAK_WEEKLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BOX_RANGE": false,
+    "TECH_OVERHEAT": false,
+    "TECH_GRANVILLE": {
+      "direction": null,
+      "count": null
+    },
+    "TECH_CYCLE_PROGRESS": {
+      "direction": "down",
+      "count": 16,
+      "startDate": "20260914",
+      "lastDate": "20261009"
+    },
+    "TECH_FUSHIME_UP": {
+      "price": 1676,
+      "tryCount": 2
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": 1331,
+      "tryCount": 4
+    }
+  },
+  "9603": {
+    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "up",
+    "TECH_MA_SLOPE_MONTHLY": "down",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "flat",
+    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": true,
+    "TECH_PERFECT_ORDER_MONTHLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": true,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_MA_CONGESTION": false,
+    "TECH_MA_SPREAD": "down",
+    "TECH_MA100_TREND": "up",
+    "TECH_KAHANSHIN": false,
+    "TECH_GYAKU_KAHANSHIN": false,
+    "TECH_5MA_UPDATE": "down",
+    "TECH_SAKATA_TRIPLE_TOP": null,
+    "TECH_SAKATA_TRIPLE_BOTTOM": null,
+    "TECH_SAKATA_SANKU_UP": null,
+    "TECH_SAKATA_SANKU_DOWN": null,
+    "TECH_SAKATA_SANPEI_UP": null,
+    "TECH_SAKATA_SANPEI_DOWN": null,
+    "TECH_SAKATA_SANPO_UP": null,
+    "TECH_SAKATA_SANPO_DOWN": null,
+    "TECH_HEAD_AND_SHOULDERS": false,
+    "TECH_DOUBLE_BOTTOM": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": false,
+    "TECH_IN_IN_HARAMI": false,
+    "TECH_RED_BLUE_CROSS": false,
+    "TECH_RETURN_SELL_END": false,
+    "TECH_DOWN_TREND_END": true,
+    "TECH_MOMIAI": false,
+    "TECH_MONOWAKARE": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
+    "TECH_RULE9_DAILY": {
+      "direction": "up",
+      "count": 1
+    },
+    "TECH_RULE9_WEEKLY": {
+      "direction": "down",
+      "count": 110
+    },
+    "TECH_BB_ZONE_BREAK_DAILY": false,
+    "TECH_BB_ZONE_BREAK_WEEKLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BOX_RANGE": false,
+    "TECH_OVERHEAT": false,
+    "TECH_GRANVILLE": {
+      "direction": null,
+      "count": null
+    },
+    "TECH_CYCLE_PROGRESS": {
+      "direction": "down",
+      "count": 20,
+      "startDate": "20260908",
+      "lastDate": "20261009"
+    },
+    "TECH_FUSHIME_UP": {
+      "price": null,
+      "tryCount": null
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": 976,
+      "tryCount": 3
+    }
+  },
+  "9605": {
+    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "up",
+    "TECH_MA_SLOPE_MONTHLY": "up",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "flat",
+    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PERFECT_ORDER_MONTHLY": true,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_MA_CONGESTION": false,
+    "TECH_MA_SPREAD": "up",
+    "TECH_MA100_TREND": "down",
+    "TECH_KAHANSHIN": false,
+    "TECH_GYAKU_KAHANSHIN": false,
+    "TECH_5MA_UPDATE": "down",
+    "TECH_SAKATA_TRIPLE_TOP": null,
+    "TECH_SAKATA_TRIPLE_BOTTOM": null,
+    "TECH_SAKATA_SANKU_UP": null,
+    "TECH_SAKATA_SANKU_DOWN": null,
+    "TECH_SAKATA_SANPEI_UP": null,
+    "TECH_SAKATA_SANPEI_DOWN": null,
+    "TECH_SAKATA_SANPO_UP": null,
+    "TECH_SAKATA_SANPO_DOWN": null,
+    "TECH_HEAD_AND_SHOULDERS": false,
+    "TECH_DOUBLE_BOTTOM": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": true,
+    "TECH_IN_IN_HARAMI": false,
+    "TECH_RED_BLUE_CROSS": false,
+    "TECH_RETURN_SELL_END": false,
+    "TECH_DOWN_TREND_END": true,
+    "TECH_MOMIAI": false,
+    "TECH_MONOWAKARE": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
+    "TECH_RULE9_DAILY": {
+      "direction": null,
+      "count": 0
+    },
+    "TECH_RULE9_WEEKLY": {
+      "direction": "down",
+      "count": 98
+    },
+    "TECH_BB_ZONE_BREAK_DAILY": false,
+    "TECH_BB_ZONE_BREAK_WEEKLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": true,
+    "TECH_BOX_RANGE": false,
+    "TECH_OVERHEAT": false,
+    "TECH_GRANVILLE": {
+      "direction": null,
+      "count": null
+    },
+    "TECH_CYCLE_PROGRESS": {
+      "direction": "down",
+      "count": 29,
+      "startDate": "20260826",
+      "lastDate": "20261009"
+    },
+    "TECH_FUSHIME_UP": {
+      "price": 6500,
+      "tryCount": 2
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": 5600,
       "tryCount": 2
     }
+  },
+  "9610": {
+    "error": "Network or fetch error"
+  },
+  "9612": {
+    "error": "Network or fetch error"
+  },
+  "9616": {
+    "error": "Network or fetch error"
   },
   "9619": {
     "error": "Network or fetch error"
@@ -254958,80 +255250,7 @@
     "error": "Network or fetch error"
   },
   "9633": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": true,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": false,
-    "TECH_MA_SPREAD": "up",
-    "TECH_MA100_TREND": "up",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "down",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": true,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": "up",
-      "count": 3
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "down",
-      "count": 7
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": true,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": true,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 27,
-      "startDate": "20260828",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 2005,
-      "tryCount": 2
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 1630,
-      "tryCount": 19
-    }
+    "error": "Network or fetch error"
   },
   "9635": {
     "TECH_MA_SLOPE_DAILY": "down",
@@ -255110,159 +255329,13 @@
     }
   },
   "9636": {
-    "TECH_MA_SLOPE_DAILY": "up",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "up",
-    "TECH_MA_POSITION_WEEKLY": "up",
-    "TECH_MA_POSITION_MONTHLY": "up",
-    "TECH_PERFECT_ORDER_DAILY": true,
-    "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": true,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
-    "TECH_MA_SPREAD": "up",
-    "TECH_MA100_TREND": "up",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "up",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": true,
-    "TECH_GYAKU_NICHI_DAI": false,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": "up",
-      "count": 13
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "up",
-      "count": 241
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "up",
-      "count": 149,
-      "startDate": "20260302",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 4345,
-      "tryCount": 2
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 4140,
-      "tryCount": 23
-    }
+    "error": "Network or fetch error"
   },
   "9639": {
     "error": "Network or fetch error"
   },
   "9640": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "down",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "down",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": true,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
-    "TECH_MA_SPREAD": "up",
-    "TECH_MA100_TREND": "down",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "down",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": true,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": "up",
-      "count": 3
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "down",
-      "count": 2
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 58,
-      "startDate": "20260714",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 2240,
-      "tryCount": 4
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": null,
-      "tryCount": null
-    }
+    "error": "Network or fetch error"
   },
   "9644": {
     "error": "Network or fetch error"
@@ -255274,16 +255347,10 @@
     "error": "Network or fetch error"
   },
   "9656": {
-    "error": "Network or fetch error"
-  },
-  "9658": {
-    "error": "Network or fetch error"
-  },
-  "9661": {
     "TECH_MA_SLOPE_DAILY": "down",
     "TECH_MA_SLOPE_WEEKLY": "down",
     "TECH_MA_SLOPE_MONTHLY": "down",
-    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_DAILY": "down",
     "TECH_MA_POSITION_WEEKLY": "down",
     "TECH_MA_POSITION_MONTHLY": "down",
     "TECH_PERFECT_ORDER_DAILY": false,
@@ -255298,91 +255365,9 @@
     "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": false,
-    "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "down",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "flat",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": false,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": null,
-      "count": 0
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "down",
-      "count": 28
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": true,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": true,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": "down",
-      "count": 3
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 149,
-      "startDate": "20260302",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 4500,
-      "tryCount": 32
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 4035,
-      "tryCount": 4
-    }
-  },
-  "9663": {
-    "error": "Network or fetch error"
-  },
-  "9672": {
-    "error": "Network or fetch error"
-  },
-  "9678": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": true,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_MA_CONGESTION": true,
-    "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "up",
+    "TECH_MA_SPREAD": "up",
+    "TECH_MA100_TREND": "down",
     "TECH_KAHANSHIN": false,
     "TECH_GYAKU_KAHANSHIN": false,
     "TECH_5MA_UPDATE": "down",
@@ -255401,17 +255386,17 @@
     "TECH_IN_IN_HARAMI": false,
     "TECH_RED_BLUE_CROSS": false,
     "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": true,
+    "TECH_DOWN_TREND_END": false,
     "TECH_MOMIAI": false,
     "TECH_MONOWAKARE": "flat",
     "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
     "TECH_RULE9_DAILY": {
-      "direction": null,
-      "count": 0
+      "direction": "down",
+      "count": 26
     },
     "TECH_RULE9_WEEKLY": {
       "direction": "down",
-      "count": 6
+      "count": 70
     },
     "TECH_BB_ZONE_BREAK_DAILY": true,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
@@ -255424,18 +255409,33 @@
     },
     "TECH_CYCLE_PROGRESS": {
       "direction": "down",
-      "count": 25,
-      "startDate": "20260901",
+      "count": 149,
+      "startDate": "20260302",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": null,
-      "tryCount": null
+      "price": 613,
+      "tryCount": 2
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 5020,
-      "tryCount": 8
+      "price": null,
+      "tryCount": null
     }
+  },
+  "9658": {
+    "error": "Network or fetch error"
+  },
+  "9661": {
+    "error": "Network or fetch error"
+  },
+  "9663": {
+    "error": "Network or fetch error"
+  },
+  "9672": {
+    "error": "Network or fetch error"
+  },
+  "9678": {
+    "error": "Network or fetch error"
   },
   "9679": {
     "error": "Network or fetch error"
@@ -255474,209 +255474,30 @@
     "error": "Network or fetch error"
   },
   "9702": {
-    "error": "Network or fetch error"
-  },
-  "9704": {
-    "error": "Network or fetch error"
-  },
-  "9706": {
-    "error": "Network or fetch error"
-  },
-  "9708": {
-    "error": "Network or fetch error"
-  },
-  "9709": {
-    "error": "Network or fetch error"
-  },
-  "9713": {
-    "error": "Network or fetch error"
-  },
-  "9715": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "down",
-    "TECH_MA_SLOPE_MONTHLY": "down",
-    "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "down",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": true,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": false,
-    "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "down",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "down",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": true,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": null,
-      "count": 0
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "down",
-      "count": 3
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": "down",
-      "count": 3
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 13,
-      "startDate": "20260917",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 3970,
-      "tryCount": 2
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 3330,
-      "tryCount": 2
-    }
-  },
-  "9716": {
-    "error": "Network or fetch error"
-  },
-  "9720": {
-    "error": "Network or fetch error"
-  },
-  "9722": {
-    "error": "Network or fetch error"
-  },
-  "9723": {
-    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_DAILY": "up",
     "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "down",
+    "TECH_MA_SLOPE_MONTHLY": "up",
     "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "down",
-    "TECH_MA_POSITION_MONTHLY": "down",
+    "TECH_MA_POSITION_WEEKLY": "up",
+    "TECH_MA_POSITION_MONTHLY": "up",
     "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": true,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": true,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": true,
+    "TECH_PERFECT_ORDER_MONTHLY": true,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_PERFECT_ORDER_DAILY": true,
     "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_MA_CONGESTION": true,
-    "TECH_MA_SPREAD": "up",
-    "TECH_MA100_TREND": "flat",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "down",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": true,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": null,
-      "count": 0
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "down",
-      "count": 27
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": true,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 141,
-      "startDate": "20260312",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 641,
-      "tryCount": 46
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 629,
-      "tryCount": 51
-    }
-  },
-  "9726": {
-    "TECH_MA_SLOPE_DAILY": "up",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "up",
-    "TECH_MA_POSITION_WEEKLY": "up",
-    "TECH_MA_POSITION_MONTHLY": "up",
-    "TECH_PERFECT_ORDER_DAILY": true,
-    "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": true,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": false,
-    "TECH_MA_SPREAD": "up",
+    "TECH_MA_SPREAD": "down",
     "TECH_MA100_TREND": "up",
-    "TECH_KAHANSHIN": false,
+    "TECH_KAHANSHIN": true,
     "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "up",
+    "TECH_5MA_UPDATE": "flat",
     "TECH_SAKATA_TRIPLE_TOP": null,
     "TECH_SAKATA_TRIPLE_BOTTOM": null,
     "TECH_SAKATA_SANKU_UP": null,
@@ -255697,12 +255518,12 @@
     "TECH_MONOWAKARE": "flat",
     "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
     "TECH_RULE9_DAILY": {
-      "direction": "up",
-      "count": 16
+      "direction": null,
+      "count": 0
     },
     "TECH_RULE9_WEEKLY": {
       "direction": "up",
-      "count": 49
+      "count": 65
     },
     "TECH_BB_ZONE_BREAK_DAILY": false,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
@@ -255710,28 +255531,122 @@
     "TECH_BOX_RANGE": false,
     "TECH_OVERHEAT": false,
     "TECH_GRANVILLE": {
-      "direction": "up",
-      "count": 3
+      "direction": null,
+      "count": null
     },
     "TECH_CYCLE_PROGRESS": {
       "direction": "up",
-      "count": 17,
-      "startDate": "20260911",
+      "count": 19,
+      "startDate": "20260909",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": 2043,
-      "tryCount": 9
-    },
-    "TECH_FUSHIME_DOWN": {
       "price": null,
       "tryCount": null
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": 2156,
+      "tryCount": 4
     }
   },
-  "9729": {
+  "9704": {
+    "error": "Network or fetch error"
+  },
+  "9706": {
+    "error": "Network or fetch error"
+  },
+  "9708": {
+    "error": "Network or fetch error"
+  },
+  "9709": {
+    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "down",
+    "TECH_MA_SLOPE_MONTHLY": "down",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "flat",
+    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PERFECT_ORDER_MONTHLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": true,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_MA_CONGESTION": true,
+    "TECH_MA_SPREAD": "down",
+    "TECH_MA100_TREND": "down",
+    "TECH_KAHANSHIN": false,
+    "TECH_GYAKU_KAHANSHIN": false,
+    "TECH_5MA_UPDATE": "flat",
+    "TECH_SAKATA_TRIPLE_TOP": null,
+    "TECH_SAKATA_TRIPLE_BOTTOM": null,
+    "TECH_SAKATA_SANKU_UP": null,
+    "TECH_SAKATA_SANKU_DOWN": null,
+    "TECH_SAKATA_SANPEI_UP": null,
+    "TECH_SAKATA_SANPEI_DOWN": null,
+    "TECH_SAKATA_SANPO_UP": null,
+    "TECH_SAKATA_SANPO_DOWN": null,
+    "TECH_HEAD_AND_SHOULDERS": false,
+    "TECH_DOUBLE_BOTTOM": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": false,
+    "TECH_IN_IN_HARAMI": false,
+    "TECH_RED_BLUE_CROSS": false,
+    "TECH_RETURN_SELL_END": true,
+    "TECH_DOWN_TREND_END": false,
+    "TECH_MOMIAI": false,
+    "TECH_MONOWAKARE": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
+    "TECH_RULE9_DAILY": {
+      "direction": "up",
+      "count": 20
+    },
+    "TECH_RULE9_WEEKLY": {
+      "direction": "up",
+      "count": 5
+    },
+    "TECH_BB_ZONE_BREAK_DAILY": false,
+    "TECH_BB_ZONE_BREAK_WEEKLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BOX_RANGE": false,
+    "TECH_OVERHEAT": false,
+    "TECH_GRANVILLE": {
+      "direction": null,
+      "count": null
+    },
+    "TECH_CYCLE_PROGRESS": {
+      "direction": "down",
+      "count": 10,
+      "startDate": "20260925",
+      "lastDate": "20261009"
+    },
+    "TECH_FUSHIME_UP": {
+      "price": null,
+      "tryCount": null
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": 1180,
+      "tryCount": 2
+    }
+  },
+  "9713": {
+    "error": "Network or fetch error"
+  },
+  "9715": {
+    "error": "Network or fetch error"
+  },
+  "9716": {
+    "error": "Network or fetch error"
+  },
+  "9720": {
     "TECH_MA_SLOPE_DAILY": "up",
     "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
+    "TECH_MA_SLOPE_MONTHLY": "down",
     "TECH_MA_POSITION_DAILY": "up",
     "TECH_MA_POSITION_WEEKLY": "up",
     "TECH_MA_POSITION_MONTHLY": "flat",
@@ -255743,11 +255658,11 @@
     "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_PRE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": true,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
+    "TECH_MA_CONGESTION": false,
     "TECH_MA_SPREAD": "up",
     "TECH_MA100_TREND": "up",
     "TECH_KAHANSHIN": false,
@@ -255773,36 +255688,48 @@
     "TECH_MONOWAKARE": "flat",
     "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
     "TECH_RULE9_DAILY": {
-      "direction": null,
-      "count": 0
+      "direction": "up",
+      "count": 58
     },
     "TECH_RULE9_WEEKLY": {
       "direction": "up",
-      "count": 48
+      "count": 10
     },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
+    "TECH_BB_ZONE_BREAK_DAILY": true,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
     "TECH_BB_ZONE_BREAK_MONTHLY": false,
     "TECH_BOX_RANGE": false,
     "TECH_OVERHEAT": false,
     "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
+      "direction": "up",
+      "count": 3
     },
     "TECH_CYCLE_PROGRESS": {
       "direction": "up",
-      "count": 43,
-      "startDate": "20260805",
+      "count": 59,
+      "startDate": "20260713",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": null,
-      "tryCount": null
+      "price": 6590,
+      "tryCount": 3
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 2345,
-      "tryCount": 4
+      "price": null,
+      "tryCount": null
     }
+  },
+  "9722": {
+    "error": "Network or fetch error"
+  },
+  "9723": {
+    "error": "Network or fetch error"
+  },
+  "9726": {
+    "error": "Network or fetch error"
+  },
+  "9729": {
+    "error": "Network or fetch error"
   },
   "9731": {
     "error": "Network or fetch error"
@@ -255829,15 +255756,18 @@
     "error": "Network or fetch error"
   },
   "9746": {
-    "TECH_MA_SLOPE_DAILY": "down",
+    "error": "Network or fetch error"
+  },
+  "9753": {
+    "TECH_MA_SLOPE_DAILY": "up",
     "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_SLOPE_MONTHLY": "down",
+    "TECH_MA_POSITION_DAILY": "up",
     "TECH_MA_POSITION_WEEKLY": "up",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_MA_POSITION_MONTHLY": "up",
+    "TECH_PERFECT_ORDER_DAILY": true,
     "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PERFECT_ORDER_MONTHLY": true,
     "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
     "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
@@ -255848,11 +255778,11 @@
     "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_MA_CONGESTION": true,
-    "TECH_MA_SPREAD": "down",
+    "TECH_MA_SPREAD": "up",
     "TECH_MA100_TREND": "up",
     "TECH_KAHANSHIN": false,
     "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "flat",
+    "TECH_5MA_UPDATE": "up",
     "TECH_SAKATA_TRIPLE_TOP": null,
     "TECH_SAKATA_TRIPLE_BOTTOM": null,
     "TECH_SAKATA_SANKU_UP": null,
@@ -255863,7 +255793,7 @@
     "TECH_SAKATA_SANPO_DOWN": null,
     "TECH_HEAD_AND_SHOULDERS": false,
     "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
+    "TECH_NICHI_DAI": true,
     "TECH_GYAKU_NICHI_DAI": false,
     "TECH_IN_IN_HARAMI": false,
     "TECH_RED_BLUE_CROSS": false,
@@ -255873,16 +255803,16 @@
     "TECH_MONOWAKARE": "flat",
     "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
     "TECH_RULE9_DAILY": {
-      "direction": "up",
-      "count": 53
-    },
-    "TECH_RULE9_WEEKLY": {
       "direction": null,
       "count": 0
     },
+    "TECH_RULE9_WEEKLY": {
+      "direction": "up",
+      "count": 72
+    },
     "TECH_BB_ZONE_BREAK_DAILY": false,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": true,
     "TECH_BOX_RANGE": false,
     "TECH_OVERHEAT": false,
     "TECH_GRANVILLE": {
@@ -255891,21 +255821,18 @@
     },
     "TECH_CYCLE_PROGRESS": {
       "direction": "up",
-      "count": 43,
-      "startDate": "20260805",
+      "count": 84,
+      "startDate": "20260608",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": 4185,
-      "tryCount": 15
+      "price": 1455,
+      "tryCount": 5
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 3555,
-      "tryCount": 5
+      "price": 1249,
+      "tryCount": 3
     }
-  },
-  "9753": {
-    "error": "Network or fetch error"
   },
   "9755": {
     "error": "Network or fetch error"
@@ -255923,180 +255850,19 @@
     "error": "Network or fetch error"
   },
   "9763": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "down",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": false,
-    "TECH_MA_SPREAD": "up",
-    "TECH_MA100_TREND": "down",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "down",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": true,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": "down",
-      "count": 7
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "down",
-      "count": 33
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": true,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 27,
-      "startDate": "20260828",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 1338,
-      "tryCount": 7
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 1203,
-      "tryCount": 2
-    }
+    "error": "Network or fetch error"
   },
   "9765": {
     "error": "Network or fetch error"
   },
   "9766": {
-    "error": "Network or fetch error"
-  },
-  "9767": {
     "TECH_MA_SLOPE_DAILY": "up",
     "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": true,
-    "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": true,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": false,
-    "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "up",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "down",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": false,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": "down",
-      "count": 5
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "down",
-      "count": 3
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": true,
-    "TECH_BB_ZONE_BREAK_MONTHLY": true,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 4,
-      "startDate": "20261005",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 1840,
-      "tryCount": 2
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 1434,
-      "tryCount": 3
-    }
-  },
-  "9768": {
-    "error": "Network or fetch error"
-  },
-  "9769": {
-    "error": "Network or fetch error"
-  },
-  "9778": {
-    "error": "Network or fetch error"
-  },
-  "9780": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "flat",
+    "TECH_MA_SLOPE_MONTHLY": "down",
+    "TECH_MA_POSITION_DAILY": "up",
+    "TECH_MA_POSITION_WEEKLY": "up",
     "TECH_MA_POSITION_MONTHLY": "up",
-    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_DAILY": true,
     "TECH_PERFECT_ORDER_WEEKLY": true,
     "TECH_PERFECT_ORDER_MONTHLY": true,
     "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
@@ -256108,12 +255874,12 @@
     "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
+    "TECH_MA_CONGESTION": false,
     "TECH_MA_SPREAD": "up",
     "TECH_MA100_TREND": "up",
     "TECH_KAHANSHIN": false,
     "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "down",
+    "TECH_5MA_UPDATE": "up",
     "TECH_SAKATA_TRIPLE_TOP": null,
     "TECH_SAKATA_TRIPLE_BOTTOM": null,
     "TECH_SAKATA_SANKU_UP": null,
@@ -256124,8 +255890,8 @@
     "TECH_SAKATA_SANPO_DOWN": null,
     "TECH_HEAD_AND_SHOULDERS": false,
     "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": true,
+    "TECH_NICHI_DAI": true,
+    "TECH_GYAKU_NICHI_DAI": false,
     "TECH_IN_IN_HARAMI": false,
     "TECH_RED_BLUE_CROSS": false,
     "TECH_RETURN_SELL_END": false,
@@ -256134,12 +255900,12 @@
     "TECH_MONOWAKARE": "flat",
     "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
     "TECH_RULE9_DAILY": {
-      "direction": null,
-      "count": 0
+      "direction": "up",
+      "count": 51
     },
     "TECH_RULE9_WEEKLY": {
-      "direction": "down",
-      "count": 3
+      "direction": "up",
+      "count": 11
     },
     "TECH_BB_ZONE_BREAK_DAILY": false,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
@@ -256152,35 +255918,38 @@
     },
     "TECH_CYCLE_PROGRESS": {
       "direction": "up",
-      "count": 72,
-      "startDate": "20260624",
+      "count": 18,
+      "startDate": "20260910",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": 1175,
-      "tryCount": 3
+      "price": null,
+      "tryCount": null
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 901,
-      "tryCount": 3
+      "price": 17830,
+      "tryCount": 4
     }
   },
-  "9782": {
+  "9767": {
     "error": "Network or fetch error"
   },
-  "9788": {
+  "9768": {
+    "error": "Network or fetch error"
+  },
+  "9769": {
     "TECH_MA_SLOPE_DAILY": "down",
     "TECH_MA_SLOPE_WEEKLY": "down",
-    "TECH_MA_SLOPE_MONTHLY": "down",
-    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_SLOPE_MONTHLY": "up",
+    "TECH_MA_POSITION_DAILY": "down",
     "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "down",
+    "TECH_MA_POSITION_MONTHLY": "flat",
     "TECH_PERFECT_ORDER_DAILY": false,
     "TECH_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PERFECT_ORDER_MONTHLY": true,
     "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
     "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": true,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_PRE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
@@ -256189,7 +255958,7 @@
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_MA_CONGESTION": false,
     "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "down",
+    "TECH_MA100_TREND": "flat",
     "TECH_KAHANSHIN": false,
     "TECH_GYAKU_KAHANSHIN": false,
     "TECH_5MA_UPDATE": "down",
@@ -256218,11 +255987,11 @@
     },
     "TECH_RULE9_WEEKLY": {
       "direction": "down",
-      "count": 38
+      "count": 11
     },
-    "TECH_BB_ZONE_BREAK_DAILY": true,
+    "TECH_BB_ZONE_BREAK_DAILY": false,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": true,
     "TECH_BOX_RANGE": false,
     "TECH_OVERHEAT": false,
     "TECH_GRANVILLE": {
@@ -256236,13 +256005,25 @@
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": 545,
-      "tryCount": 4
+      "price": 2778,
+      "tryCount": 2
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 497,
+      "price": 2473,
       "tryCount": 5
     }
+  },
+  "9778": {
+    "error": "Network or fetch error"
+  },
+  "9780": {
+    "error": "Network or fetch error"
+  },
+  "9782": {
+    "error": "Network or fetch error"
+  },
+  "9788": {
+    "error": "Network or fetch error"
   },
   "9790": {
     "error": "Network or fetch error"
@@ -256254,80 +256035,7 @@
     "error": "Network or fetch error"
   },
   "9795": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "down",
-    "TECH_MA_SLOPE_MONTHLY": "down",
-    "TECH_MA_POSITION_DAILY": "down",
-    "TECH_MA_POSITION_WEEKLY": "down",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": true,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": false,
-    "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "down",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "flat",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": false,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": null,
-      "count": 0
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": null,
-      "count": 0
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": true,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 26,
-      "startDate": "20260831",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 2338,
-      "tryCount": 5
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 2135,
-      "tryCount": 5
-    }
+    "error": "Network or fetch error"
   },
   "9799": {
     "error": "Network or fetch error"
@@ -256339,23 +256047,17 @@
     "error": "Network or fetch error"
   },
   "9818": {
-    "error": "Network or fetch error"
-  },
-  "9820": {
-    "error": "Network or fetch error"
-  },
-  "9823": {
     "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "down",
-    "TECH_MA_SLOPE_MONTHLY": "down",
-    "TECH_MA_POSITION_DAILY": "down",
-    "TECH_MA_POSITION_WEEKLY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "up",
+    "TECH_MA_SLOPE_MONTHLY": "up",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "flat",
     "TECH_MA_POSITION_MONTHLY": "flat",
     "TECH_PERFECT_ORDER_DAILY": false,
     "TECH_PERFECT_ORDER_WEEKLY": false,
     "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": true,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_PRE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
@@ -256363,7 +256065,7 @@
     "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": false,
+    "TECH_MA_CONGESTION": true,
     "TECH_MA_SPREAD": "down",
     "TECH_MA100_TREND": "down",
     "TECH_KAHANSHIN": false,
@@ -256380,188 +256082,21 @@
     "TECH_HEAD_AND_SHOULDERS": false,
     "TECH_DOUBLE_BOTTOM": false,
     "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": true,
     "TECH_IN_IN_HARAMI": false,
     "TECH_RED_BLUE_CROSS": false,
     "TECH_RETURN_SELL_END": false,
     "TECH_DOWN_TREND_END": false,
     "TECH_MOMIAI": false,
     "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "down",
     "TECH_RULE9_DAILY": {
-      "direction": null,
-      "count": 0
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "up",
-      "count": 2
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": true,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
-    },
-    "TECH_CYCLE_PROGRESS": {
       "direction": "down",
-      "count": 47,
-      "startDate": "20260730",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 1100,
-      "tryCount": 3
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 959,
-      "tryCount": 5
-    }
-  },
-  "9824": {
-    "error": "Network or fetch error"
-  },
-  "9827": {
-    "error": "Network or fetch error"
-  },
-  "9828": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "up",
-    "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": true,
-    "TECH_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
-    "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "up",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "up",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": false,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "up",
-    "TECH_RULE9_DAILY": {
-      "direction": "up",
-      "count": 74
+      "count": 90
     },
     "TECH_RULE9_WEEKLY": {
-      "direction": "up",
-      "count": 1
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": "up",
-      "count": 1
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "up",
-      "count": 5,
-      "startDate": "20261002",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": null,
-      "tryCount": null
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": null,
-      "tryCount": null
-    }
-  },
-  "9830": {
-    "error": "Network or fetch error"
-  },
-  "9831": {
-    "error": "Network or fetch error"
-  },
-  "9832": {
-    "error": "Network or fetch error"
-  },
-  "9835": {
-    "TECH_MA_SLOPE_DAILY": "up",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "up",
-    "TECH_MA_POSITION_WEEKLY": "up",
-    "TECH_MA_POSITION_MONTHLY": "up",
-    "TECH_PERFECT_ORDER_DAILY": true,
-    "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": true,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
-    "TECH_MA_SPREAD": "up",
-    "TECH_MA100_TREND": "up",
-    "TECH_KAHANSHIN": true,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "up",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": true,
-    "TECH_GYAKU_NICHI_DAI": false,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": "up",
-      "count": 12
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "up",
-      "count": 5
+      "direction": "down",
+      "count": 17
     },
     "TECH_BB_ZONE_BREAK_DAILY": false,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
@@ -256574,108 +256109,29 @@
     },
     "TECH_CYCLE_PROGRESS": {
       "direction": "up",
-      "count": 149,
-      "startDate": "20260302",
+      "count": 54,
+      "startDate": "20260721",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": null,
-      "tryCount": null
+      "price": 1600,
+      "tryCount": 7
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 501,
-      "tryCount": 14
+      "price": null,
+      "tryCount": null
     }
   },
-  "9837": {
-    "error": "Network or fetch error"
-  },
-  "9842": {
+  "9820": {
     "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "up",
     "TECH_MA_SLOPE_MONTHLY": "up",
     "TECH_MA_POSITION_DAILY": "flat",
     "TECH_MA_POSITION_WEEKLY": "flat",
     "TECH_MA_POSITION_MONTHLY": "flat",
     "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
-    "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "flat",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "flat",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": false,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": "up",
-      "count": 5
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": null,
-      "count": 0
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 47,
-      "startDate": "20260730",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 2011,
-      "tryCount": 2
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": null,
-      "tryCount": null
-    }
-  },
-  "9843": {
-    "TECH_MA_SLOPE_DAILY": "up",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "up",
-    "TECH_MA_POSITION_WEEKLY": "up",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": true,
     "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PERFECT_ORDER_MONTHLY": true,
     "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
     "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
@@ -256690,7 +256146,7 @@
     "TECH_MA100_TREND": "up",
     "TECH_KAHANSHIN": false,
     "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "up",
+    "TECH_5MA_UPDATE": "down",
     "TECH_SAKATA_TRIPLE_TOP": null,
     "TECH_SAKATA_TRIPLE_BOTTOM": null,
     "TECH_SAKATA_SANKU_UP": null,
@@ -256701,46 +256157,79 @@
     "TECH_SAKATA_SANPO_DOWN": null,
     "TECH_HEAD_AND_SHOULDERS": false,
     "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": true,
-    "TECH_GYAKU_NICHI_DAI": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": true,
     "TECH_IN_IN_HARAMI": false,
     "TECH_RED_BLUE_CROSS": false,
     "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
+    "TECH_DOWN_TREND_END": true,
     "TECH_MOMIAI": false,
     "TECH_MONOWAKARE": "flat",
     "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
     "TECH_RULE9_DAILY": {
-      "direction": null,
-      "count": 0
+      "direction": "down",
+      "count": 9
     },
     "TECH_RULE9_WEEKLY": {
       "direction": null,
       "count": 0
     },
     "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BB_ZONE_BREAK_WEEKLY": true,
+    "TECH_BB_ZONE_BREAK_MONTHLY": true,
     "TECH_BOX_RANGE": false,
     "TECH_OVERHEAT": false,
     "TECH_GRANVILLE": {
-      "direction": "up",
-      "count": 3
+      "direction": null,
+      "count": null
     },
     "TECH_CYCLE_PROGRESS": {
-      "direction": "up",
+      "direction": "down",
       "count": 8,
       "startDate": "20260929",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": null,
-      "tryCount": null
+      "price": 3950,
+      "tryCount": 7
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 2332.5,
+      "price": 3565,
       "tryCount": 2
     }
+  },
+  "9823": {
+    "error": "Network or fetch error"
+  },
+  "9824": {
+    "error": "Network or fetch error"
+  },
+  "9827": {
+    "error": "Network or fetch error"
+  },
+  "9828": {
+    "error": "Network or fetch error"
+  },
+  "9830": {
+    "error": "Network or fetch error"
+  },
+  "9831": {
+    "error": "Network or fetch error"
+  },
+  "9832": {
+    "error": "Network or fetch error"
+  },
+  "9835": {
+    "error": "Network or fetch error"
+  },
+  "9837": {
+    "error": "Network or fetch error"
+  },
+  "9842": {
+    "error": "Network or fetch error"
+  },
+  "9843": {
+    "error": "Network or fetch error"
   },
   "9845": {
     "error": "Network or fetch error"
@@ -256825,173 +256314,18 @@
     "error": "Network or fetch error"
   },
   "9850": {
-    "error": "Network or fetch error"
-  },
-  "9853": {
     "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "up",
+    "TECH_MA_SLOPE_WEEKLY": "down",
     "TECH_MA_SLOPE_MONTHLY": "down",
     "TECH_MA_POSITION_DAILY": "flat",
     "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
-    "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "flat",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "flat",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": false,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": "up",
-      "count": 1
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "down",
-      "count": 23
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": true,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 149,
-      "startDate": "20260302",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": 920,
-      "tryCount": 21
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 902,
-      "tryCount": 60
-    }
-  },
-  "9854": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "down",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "down",
-    "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_MA_POSITION_MONTHLY": "down",
     "TECH_PERFECT_ORDER_DAILY": false,
     "TECH_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PERFECT_ORDER_MONTHLY": true,
+    "TECH_PERFECT_ORDER_MONTHLY": false,
     "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
     "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": false,
-    "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "up",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "flat",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": false,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": "down",
-      "count": 2
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": null,
-      "count": 0
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": "down",
-      "count": 3
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 21,
-      "startDate": "20260907",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": null,
-      "tryCount": null
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": null,
-      "tryCount": null
-    }
-  },
-  "9856": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "down",
-    "TECH_MA_SLOPE_MONTHLY": "down",
-    "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": true,
     "TECH_PRE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
@@ -257000,7 +256334,7 @@
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_MA_CONGESTION": false,
     "TECH_MA_SPREAD": "up",
-    "TECH_MA100_TREND": "flat",
+    "TECH_MA100_TREND": "down",
     "TECH_KAHANSHIN": false,
     "TECH_GYAKU_KAHANSHIN": false,
     "TECH_5MA_UPDATE": "down",
@@ -257024,14 +256358,14 @@
     "TECH_MONOWAKARE": "flat",
     "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
     "TECH_RULE9_DAILY": {
-      "direction": "down",
-      "count": 6
+      "direction": null,
+      "count": 0
     },
     "TECH_RULE9_WEEKLY": {
       "direction": "down",
-      "count": 1
+      "count": 82
     },
-    "TECH_BB_ZONE_BREAK_DAILY": true,
+    "TECH_BB_ZONE_BREAK_DAILY": false,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
     "TECH_BB_ZONE_BREAK_MONTHLY": false,
     "TECH_BOX_RANGE": false,
@@ -257042,21 +256376,103 @@
     },
     "TECH_CYCLE_PROGRESS": {
       "direction": "down",
-      "count": 26,
-      "startDate": "20260831",
+      "count": 48,
+      "startDate": "20260729",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": 1283,
-      "tryCount": 3
+      "price": 1000,
+      "tryCount": 23
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 1151,
-      "tryCount": 6
+      "price": 911,
+      "tryCount": 3
     }
   },
-  "9857": {
+  "9853": {
     "error": "Network or fetch error"
+  },
+  "9854": {
+    "error": "Network or fetch error"
+  },
+  "9856": {
+    "error": "Network or fetch error"
+  },
+  "9857": {
+    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "up",
+    "TECH_MA_SLOPE_MONTHLY": "up",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "flat",
+    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": true,
+    "TECH_PERFECT_ORDER_MONTHLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": true,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_MA_CONGESTION": true,
+    "TECH_MA_SPREAD": "up",
+    "TECH_MA100_TREND": "up",
+    "TECH_KAHANSHIN": false,
+    "TECH_GYAKU_KAHANSHIN": false,
+    "TECH_5MA_UPDATE": "down",
+    "TECH_SAKATA_TRIPLE_TOP": null,
+    "TECH_SAKATA_TRIPLE_BOTTOM": null,
+    "TECH_SAKATA_SANKU_UP": null,
+    "TECH_SAKATA_SANKU_DOWN": null,
+    "TECH_SAKATA_SANPEI_UP": null,
+    "TECH_SAKATA_SANPEI_DOWN": null,
+    "TECH_SAKATA_SANPO_UP": null,
+    "TECH_SAKATA_SANPO_DOWN": null,
+    "TECH_HEAD_AND_SHOULDERS": false,
+    "TECH_DOUBLE_BOTTOM": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": true,
+    "TECH_IN_IN_HARAMI": false,
+    "TECH_RED_BLUE_CROSS": false,
+    "TECH_RETURN_SELL_END": false,
+    "TECH_DOWN_TREND_END": true,
+    "TECH_MOMIAI": false,
+    "TECH_MONOWAKARE": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
+    "TECH_RULE9_DAILY": {
+      "direction": "down",
+      "count": 36
+    },
+    "TECH_RULE9_WEEKLY": {
+      "direction": "down",
+      "count": 42
+    },
+    "TECH_BB_ZONE_BREAK_DAILY": false,
+    "TECH_BB_ZONE_BREAK_WEEKLY": true,
+    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BOX_RANGE": false,
+    "TECH_OVERHEAT": false,
+    "TECH_GRANVILLE": {
+      "direction": null,
+      "count": null
+    },
+    "TECH_CYCLE_PROGRESS": {
+      "direction": "up",
+      "count": 79,
+      "startDate": "20260615",
+      "lastDate": "20261009"
+    },
+    "TECH_FUSHIME_UP": {
+      "price": 2686,
+      "tryCount": 6
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": 2409,
+      "tryCount": 8
+    }
   },
   "9861": {
     "TECH_MA_SLOPE_DAILY": "up",
@@ -257135,80 +256551,7 @@
     }
   },
   "9867": {
-    "TECH_MA_SLOPE_DAILY": "down",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
-    "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": true,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
-    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
-    "TECH_MA_SPREAD": "up",
-    "TECH_MA100_TREND": "up",
-    "TECH_KAHANSHIN": false,
-    "TECH_GYAKU_KAHANSHIN": false,
-    "TECH_5MA_UPDATE": "down",
-    "TECH_SAKATA_TRIPLE_TOP": null,
-    "TECH_SAKATA_TRIPLE_BOTTOM": null,
-    "TECH_SAKATA_SANKU_UP": null,
-    "TECH_SAKATA_SANKU_DOWN": null,
-    "TECH_SAKATA_SANPEI_UP": null,
-    "TECH_SAKATA_SANPEI_DOWN": null,
-    "TECH_SAKATA_SANPO_UP": null,
-    "TECH_SAKATA_SANPO_DOWN": null,
-    "TECH_HEAD_AND_SHOULDERS": false,
-    "TECH_DOUBLE_BOTTOM": false,
-    "TECH_NICHI_DAI": false,
-    "TECH_GYAKU_NICHI_DAI": true,
-    "TECH_IN_IN_HARAMI": false,
-    "TECH_RED_BLUE_CROSS": false,
-    "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": false,
-    "TECH_MOMIAI": false,
-    "TECH_MONOWAKARE": "flat",
-    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
-    "TECH_RULE9_DAILY": {
-      "direction": "down",
-      "count": 1
-    },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "down",
-      "count": 37
-    },
-    "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
-    "TECH_BB_ZONE_BREAK_MONTHLY": false,
-    "TECH_BOX_RANGE": false,
-    "TECH_OVERHEAT": false,
-    "TECH_GRANVILLE": {
-      "direction": "up",
-      "count": 4
-    },
-    "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 23,
-      "startDate": "20260903",
-      "lastDate": "20261009"
-    },
-    "TECH_FUSHIME_UP": {
-      "price": null,
-      "tryCount": null
-    },
-    "TECH_FUSHIME_DOWN": {
-      "price": 10000,
-      "tryCount": 13
-    }
+    "error": "Network or fetch error"
   },
   "9869": {
     "error": "Network or fetch error"
@@ -257217,38 +256560,17 @@
     "error": "Network or fetch error"
   },
   "9876": {
-    "error": "Network or fetch error"
-  },
-  "9878": {
-    "error": "Network or fetch error"
-  },
-  "9880": {
-    "error": "Network or fetch error"
-  },
-  "9882": {
-    "error": "Network or fetch error"
-  },
-  "9885": {
-    "error": "Network or fetch error"
-  },
-  "9887": {
-    "error": "Network or fetch error"
-  },
-  "9888": {
-    "error": "Network or fetch error"
-  },
-  "9889": {
     "TECH_MA_SLOPE_DAILY": "up",
-    "TECH_MA_SLOPE_WEEKLY": "up",
-    "TECH_MA_SLOPE_MONTHLY": "up",
-    "TECH_MA_POSITION_DAILY": "up",
-    "TECH_MA_POSITION_WEEKLY": "up",
-    "TECH_MA_POSITION_MONTHLY": "up",
-    "TECH_PERFECT_ORDER_DAILY": true,
-    "TECH_PERFECT_ORDER_WEEKLY": true,
-    "TECH_PERFECT_ORDER_MONTHLY": true,
+    "TECH_MA_SLOPE_WEEKLY": "down",
+    "TECH_MA_SLOPE_MONTHLY": "down",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "flat",
+    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PERFECT_ORDER_MONTHLY": false,
     "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": true,
     "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_PRE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
@@ -257258,8 +256580,8 @@
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_MA_CONGESTION": false,
     "TECH_MA_SPREAD": "up",
-    "TECH_MA100_TREND": "up",
-    "TECH_KAHANSHIN": false,
+    "TECH_MA100_TREND": "flat",
+    "TECH_KAHANSHIN": true,
     "TECH_GYAKU_KAHANSHIN": false,
     "TECH_5MA_UPDATE": "up",
     "TECH_SAKATA_TRIPLE_TOP": null,
@@ -257283,11 +256605,11 @@
     "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
     "TECH_RULE9_DAILY": {
       "direction": "up",
-      "count": 67
+      "count": 1
     },
     "TECH_RULE9_WEEKLY": {
       "direction": "up",
-      "count": 15
+      "count": 3
     },
     "TECH_BB_ZONE_BREAK_DAILY": false,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
@@ -257296,33 +256618,39 @@
     "TECH_OVERHEAT": false,
     "TECH_GRANVILLE": {
       "direction": "up",
-      "count": 3
+      "count": 1
     },
     "TECH_CYCLE_PROGRESS": {
       "direction": "up",
-      "count": 19,
-      "startDate": "20260909",
+      "count": 16,
+      "startDate": "20260914",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": null,
-      "tryCount": null
+      "price": 237,
+      "tryCount": 2
     },
     "TECH_FUSHIME_DOWN": {
-      "price": null,
-      "tryCount": null
+      "price": 213,
+      "tryCount": 4
     }
   },
-  "9890": {
+  "9878": {
     "error": "Network or fetch error"
   },
-  "9895": {
+  "9880": {
     "error": "Network or fetch error"
   },
-  "9896": {
+  "9882": {
     "error": "Network or fetch error"
   },
-  "9900": {
+  "9885": {
+    "error": "Network or fetch error"
+  },
+  "9887": {
+    "error": "Network or fetch error"
+  },
+  "9888": {
     "TECH_MA_SLOPE_DAILY": "down",
     "TECH_MA_SLOPE_WEEKLY": "up",
     "TECH_MA_SLOPE_MONTHLY": "up",
@@ -257342,7 +256670,7 @@
     "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
     "TECH_MA_CONGESTION": false,
-    "TECH_MA_SPREAD": "down",
+    "TECH_MA_SPREAD": "up",
     "TECH_MA100_TREND": "up",
     "TECH_KAHANSHIN": false,
     "TECH_GYAKU_KAHANSHIN": false,
@@ -257372,7 +256700,174 @@
     },
     "TECH_RULE9_WEEKLY": {
       "direction": "down",
-      "count": 5
+      "count": 6
+    },
+    "TECH_BB_ZONE_BREAK_DAILY": true,
+    "TECH_BB_ZONE_BREAK_WEEKLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": true,
+    "TECH_BOX_RANGE": false,
+    "TECH_OVERHEAT": false,
+    "TECH_GRANVILLE": {
+      "direction": null,
+      "count": null
+    },
+    "TECH_CYCLE_PROGRESS": {
+      "direction": "down",
+      "count": 11,
+      "startDate": "20260924",
+      "lastDate": "20261009"
+    },
+    "TECH_FUSHIME_UP": {
+      "price": 1331,
+      "tryCount": 2
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": 977,
+      "tryCount": 6
+    }
+  },
+  "9889": {
+    "error": "Network or fetch error"
+  },
+  "9890": {
+    "error": "Network or fetch error"
+  },
+  "9895": {
+    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "down",
+    "TECH_MA_SLOPE_MONTHLY": "up",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "flat",
+    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": true,
+    "TECH_PERFECT_ORDER_MONTHLY": true,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_MA_CONGESTION": true,
+    "TECH_MA_SPREAD": "up",
+    "TECH_MA100_TREND": "flat",
+    "TECH_KAHANSHIN": false,
+    "TECH_GYAKU_KAHANSHIN": false,
+    "TECH_5MA_UPDATE": "down",
+    "TECH_SAKATA_TRIPLE_TOP": null,
+    "TECH_SAKATA_TRIPLE_BOTTOM": null,
+    "TECH_SAKATA_SANKU_UP": null,
+    "TECH_SAKATA_SANKU_DOWN": null,
+    "TECH_SAKATA_SANPEI_UP": null,
+    "TECH_SAKATA_SANPEI_DOWN": null,
+    "TECH_SAKATA_SANPO_UP": null,
+    "TECH_SAKATA_SANPO_DOWN": null,
+    "TECH_HEAD_AND_SHOULDERS": false,
+    "TECH_DOUBLE_BOTTOM": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": true,
+    "TECH_IN_IN_HARAMI": false,
+    "TECH_RED_BLUE_CROSS": false,
+    "TECH_RETURN_SELL_END": false,
+    "TECH_DOWN_TREND_END": true,
+    "TECH_MOMIAI": false,
+    "TECH_MONOWAKARE": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
+    "TECH_RULE9_DAILY": {
+      "direction": "down",
+      "count": 7
+    },
+    "TECH_RULE9_WEEKLY": {
+      "direction": "down",
+      "count": 33
+    },
+    "TECH_BB_ZONE_BREAK_DAILY": false,
+    "TECH_BB_ZONE_BREAK_WEEKLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BOX_RANGE": false,
+    "TECH_OVERHEAT": false,
+    "TECH_GRANVILLE": {
+      "direction": null,
+      "count": null
+    },
+    "TECH_CYCLE_PROGRESS": {
+      "direction": "down",
+      "count": 149,
+      "startDate": "20260302",
+      "lastDate": "20261009"
+    },
+    "TECH_FUSHIME_UP": {
+      "price": 1294,
+      "tryCount": 10
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": 1250,
+      "tryCount": 22
+    }
+  },
+  "9896": {
+    "error": "Network or fetch error"
+  },
+  "9900": {
+    "error": "Network or fetch error"
+  },
+  "9902": {
+    "error": "Network or fetch error"
+  },
+  "9903": {
+    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "down",
+    "TECH_MA_SLOPE_MONTHLY": "up",
+    "TECH_MA_POSITION_DAILY": "down",
+    "TECH_MA_POSITION_WEEKLY": "down",
+    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PERFECT_ORDER_MONTHLY": true,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": true,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_MA_CONGESTION": true,
+    "TECH_MA_SPREAD": "up",
+    "TECH_MA100_TREND": "down",
+    "TECH_KAHANSHIN": false,
+    "TECH_GYAKU_KAHANSHIN": false,
+    "TECH_5MA_UPDATE": "down",
+    "TECH_SAKATA_TRIPLE_TOP": null,
+    "TECH_SAKATA_TRIPLE_BOTTOM": null,
+    "TECH_SAKATA_SANKU_UP": null,
+    "TECH_SAKATA_SANKU_DOWN": null,
+    "TECH_SAKATA_SANPEI_UP": null,
+    "TECH_SAKATA_SANPEI_DOWN": null,
+    "TECH_SAKATA_SANPO_UP": null,
+    "TECH_SAKATA_SANPO_DOWN": null,
+    "TECH_HEAD_AND_SHOULDERS": false,
+    "TECH_DOUBLE_BOTTOM": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": true,
+    "TECH_IN_IN_HARAMI": false,
+    "TECH_RED_BLUE_CROSS": true,
+    "TECH_RETURN_SELL_END": false,
+    "TECH_DOWN_TREND_END": false,
+    "TECH_MOMIAI": false,
+    "TECH_MONOWAKARE": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "down",
+    "TECH_RULE9_DAILY": {
+      "direction": "up",
+      "count": 57
+    },
+    "TECH_RULE9_WEEKLY": {
+      "direction": "down",
+      "count": 1
     },
     "TECH_BB_ZONE_BREAK_DAILY": true,
     "TECH_BB_ZONE_BREAK_WEEKLY": false,
@@ -257384,25 +256879,19 @@
       "count": null
     },
     "TECH_CYCLE_PROGRESS": {
-      "direction": "down",
-      "count": 16,
-      "startDate": "20260914",
+      "direction": "up",
+      "count": 56,
+      "startDate": "20260716",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": 1186,
-      "tryCount": 3
+      "price": 927,
+      "tryCount": 2
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 878,
-      "tryCount": 4
+      "price": 841,
+      "tryCount": 3
     }
-  },
-  "9902": {
-    "error": "Network or fetch error"
-  },
-  "9903": {
-    "error": "Network or fetch error"
   },
   "9904": {
     "error": "Network or fetch error"
@@ -257462,27 +256951,45 @@
     "error": "Network or fetch error"
   },
   "9969": {
-    "TECH_MA_SLOPE_DAILY": "up",
+    "error": "Network or fetch error"
+  },
+  "9972": {
+    "error": "Network or fetch error"
+  },
+  "9973": {
+    "error": "Network or fetch error"
+  },
+  "9974": {
+    "error": "Network or fetch error"
+  },
+  "9976": {
+    "error": "Network or fetch error"
+  },
+  "9978": {
+    "error": "Network or fetch error"
+  },
+  "9979": {
+    "TECH_MA_SLOPE_DAILY": "down",
     "TECH_MA_SLOPE_WEEKLY": "down",
     "TECH_MA_SLOPE_MONTHLY": "down",
     "TECH_MA_POSITION_DAILY": "flat",
-    "TECH_MA_POSITION_WEEKLY": "flat",
-    "TECH_MA_POSITION_MONTHLY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "down",
+    "TECH_MA_POSITION_MONTHLY": "down",
     "TECH_PERFECT_ORDER_DAILY": false,
-    "TECH_PERFECT_ORDER_WEEKLY": true,
+    "TECH_PERFECT_ORDER_WEEKLY": false,
     "TECH_PERFECT_ORDER_MONTHLY": false,
-    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
-    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": true,
     "TECH_REVERSE_PERFECT_ORDER_MONTHLY": true,
-    "TECH_PRE_PERFECT_ORDER_DAILY": true,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
     "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
-    "TECH_MA_CONGESTION": true,
+    "TECH_MA_CONGESTION": false,
     "TECH_MA_SPREAD": "down",
-    "TECH_MA100_TREND": "up",
+    "TECH_MA100_TREND": "down",
     "TECH_KAHANSHIN": false,
     "TECH_GYAKU_KAHANSHIN": false,
     "TECH_5MA_UPDATE": "flat",
@@ -257501,59 +257008,41 @@
     "TECH_IN_IN_HARAMI": false,
     "TECH_RED_BLUE_CROSS": false,
     "TECH_RETURN_SELL_END": false,
-    "TECH_DOWN_TREND_END": true,
+    "TECH_DOWN_TREND_END": false,
     "TECH_MOMIAI": false,
     "TECH_MONOWAKARE": "flat",
     "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
     "TECH_RULE9_DAILY": {
+      "direction": "up",
+      "count": 13
+    },
+    "TECH_RULE9_WEEKLY": {
       "direction": null,
       "count": 0
     },
-    "TECH_RULE9_WEEKLY": {
-      "direction": "up",
-      "count": 19
-    },
     "TECH_BB_ZONE_BREAK_DAILY": false,
-    "TECH_BB_ZONE_BREAK_WEEKLY": false,
+    "TECH_BB_ZONE_BREAK_WEEKLY": true,
     "TECH_BB_ZONE_BREAK_MONTHLY": false,
     "TECH_BOX_RANGE": false,
     "TECH_OVERHEAT": false,
     "TECH_GRANVILLE": {
-      "direction": null,
-      "count": null
+      "direction": "down",
+      "count": 3
     },
     "TECH_CYCLE_PROGRESS": {
-      "direction": "up",
-      "count": 86,
-      "startDate": "20260604",
+      "direction": "down",
+      "count": 47,
+      "startDate": "20260730",
       "lastDate": "20261009"
     },
     "TECH_FUSHIME_UP": {
-      "price": 239,
-      "tryCount": 36
+      "price": 1140,
+      "tryCount": 3
     },
     "TECH_FUSHIME_DOWN": {
-      "price": 232,
-      "tryCount": 29
+      "price": 995,
+      "tryCount": 8
     }
-  },
-  "9972": {
-    "error": "Network or fetch error"
-  },
-  "9973": {
-    "error": "Network or fetch error"
-  },
-  "9974": {
-    "error": "Network or fetch error"
-  },
-  "9976": {
-    "error": "Network or fetch error"
-  },
-  "9978": {
-    "error": "Network or fetch error"
-  },
-  "9979": {
-    "error": "Network or fetch error"
   },
   "9980": {
     "error": "Network or fetch error"
@@ -257577,10 +257066,156 @@
     "error": "Network or fetch error"
   },
   "9990": {
-    "error": "Network or fetch error"
+    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "down",
+    "TECH_MA_SLOPE_MONTHLY": "down",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "flat",
+    "TECH_MA_POSITION_MONTHLY": "down",
+    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PERFECT_ORDER_MONTHLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": true,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": true,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_MA_CONGESTION": true,
+    "TECH_MA_SPREAD": "down",
+    "TECH_MA100_TREND": "up",
+    "TECH_KAHANSHIN": true,
+    "TECH_GYAKU_KAHANSHIN": false,
+    "TECH_5MA_UPDATE": "flat",
+    "TECH_SAKATA_TRIPLE_TOP": null,
+    "TECH_SAKATA_TRIPLE_BOTTOM": null,
+    "TECH_SAKATA_SANKU_UP": null,
+    "TECH_SAKATA_SANKU_DOWN": null,
+    "TECH_SAKATA_SANPEI_UP": null,
+    "TECH_SAKATA_SANPEI_DOWN": null,
+    "TECH_SAKATA_SANPO_UP": null,
+    "TECH_SAKATA_SANPO_DOWN": null,
+    "TECH_HEAD_AND_SHOULDERS": false,
+    "TECH_DOUBLE_BOTTOM": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": false,
+    "TECH_IN_IN_HARAMI": false,
+    "TECH_RED_BLUE_CROSS": false,
+    "TECH_RETURN_SELL_END": false,
+    "TECH_DOWN_TREND_END": false,
+    "TECH_MOMIAI": false,
+    "TECH_MONOWAKARE": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
+    "TECH_RULE9_DAILY": {
+      "direction": "up",
+      "count": 1
+    },
+    "TECH_RULE9_WEEKLY": {
+      "direction": "up",
+      "count": 20
+    },
+    "TECH_BB_ZONE_BREAK_DAILY": true,
+    "TECH_BB_ZONE_BREAK_WEEKLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BOX_RANGE": false,
+    "TECH_OVERHEAT": false,
+    "TECH_GRANVILLE": {
+      "direction": null,
+      "count": null
+    },
+    "TECH_CYCLE_PROGRESS": {
+      "direction": "down",
+      "count": 48,
+      "startDate": "20260729",
+      "lastDate": "20261009"
+    },
+    "TECH_FUSHIME_UP": {
+      "price": 791,
+      "tryCount": 3
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": null,
+      "tryCount": null
+    }
   },
   "9991": {
-    "error": "Network or fetch error"
+    "TECH_MA_SLOPE_DAILY": "down",
+    "TECH_MA_SLOPE_WEEKLY": "up",
+    "TECH_MA_SLOPE_MONTHLY": "up",
+    "TECH_MA_POSITION_DAILY": "flat",
+    "TECH_MA_POSITION_WEEKLY": "flat",
+    "TECH_MA_POSITION_MONTHLY": "up",
+    "TECH_PERFECT_ORDER_DAILY": false,
+    "TECH_PERFECT_ORDER_WEEKLY": true,
+    "TECH_PERFECT_ORDER_MONTHLY": true,
+    "TECH_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_DAILY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_WEEKLY": false,
+    "TECH_PRE_REVERSE_PERFECT_ORDER_MONTHLY": false,
+    "TECH_MA_CONGESTION": false,
+    "TECH_MA_SPREAD": "down",
+    "TECH_MA100_TREND": "up",
+    "TECH_KAHANSHIN": false,
+    "TECH_GYAKU_KAHANSHIN": false,
+    "TECH_5MA_UPDATE": "down",
+    "TECH_SAKATA_TRIPLE_TOP": null,
+    "TECH_SAKATA_TRIPLE_BOTTOM": null,
+    "TECH_SAKATA_SANKU_UP": null,
+    "TECH_SAKATA_SANKU_DOWN": null,
+    "TECH_SAKATA_SANPEI_UP": null,
+    "TECH_SAKATA_SANPEI_DOWN": null,
+    "TECH_SAKATA_SANPO_UP": null,
+    "TECH_SAKATA_SANPO_DOWN": null,
+    "TECH_HEAD_AND_SHOULDERS": false,
+    "TECH_DOUBLE_BOTTOM": false,
+    "TECH_NICHI_DAI": false,
+    "TECH_GYAKU_NICHI_DAI": true,
+    "TECH_IN_IN_HARAMI": false,
+    "TECH_RED_BLUE_CROSS": false,
+    "TECH_RETURN_SELL_END": false,
+    "TECH_DOWN_TREND_END": false,
+    "TECH_MOMIAI": false,
+    "TECH_MONOWAKARE": "flat",
+    "TECH_MONOWAKARE_RED_BLUE_CROSS": "flat",
+    "TECH_RULE9_DAILY": {
+      "direction": null,
+      "count": 0
+    },
+    "TECH_RULE9_WEEKLY": {
+      "direction": "down",
+      "count": 33
+    },
+    "TECH_BB_ZONE_BREAK_DAILY": true,
+    "TECH_BB_ZONE_BREAK_WEEKLY": false,
+    "TECH_BB_ZONE_BREAK_MONTHLY": false,
+    "TECH_BOX_RANGE": false,
+    "TECH_OVERHEAT": false,
+    "TECH_GRANVILLE": {
+      "direction": null,
+      "count": null
+    },
+    "TECH_CYCLE_PROGRESS": {
+      "direction": "down",
+      "count": 10,
+      "startDate": "20260925",
+      "lastDate": "20261009"
+    },
+    "TECH_FUSHIME_UP": {
+      "price": 1840,
+      "tryCount": 4
+    },
+    "TECH_FUSHIME_DOWN": {
+      "price": 1569,
+      "tryCount": 3
+    }
   },
   "9993": {
     "error": "Network or fetch error"
