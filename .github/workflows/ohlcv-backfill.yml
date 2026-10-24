@@ -1,0 +1,101 @@
+name: 【ohlcv-backfill.yml】Backfill past ohlcv_YYYYMMDD.json (過去OHLCVの遡及取得)
+
+# 責務: 2023-06-07 以前の日足OHLCVを、取得できる限り、新しい日付から古い日付の順に、
+#       1回の実行につき1ウィンドウ（既定90暦日）ずつ遡及取得し、
+#       data/ohlcv/YYYYMM/ohlcv_YYYYMMDD.json として日付ごとに恒久保存する。
+#       再開点は data/ohlcv/ の既存ファイルから自動判定する（scripts/fetch_ohlcv_backfill.js）。
+#       日次更新（fetch.yml / scripts/fetch.js）の責務・挙動は変更しない。
+
+on:
+  schedule:
+    # 既存ワークフロー（UTC）: margin.yml 13:07 の後〜download-jpx-xlsx.yml 18:07 の前の空き時間帯。
+    # 1ウィンドウの所要は約1時間（全銘柄×500ms）のため、前後のジョブと十分な余裕を持たせる。
+    - cron: "37 14 * * *"  # JST 23:37
+  workflow_dispatch:
+    inputs:
+      window_days:
+        description: '1回の実行で遡及取得する暦日数（1〜366）。省略時は90。'
+        required: false
+        default: '90'
+        type: string
+
+permissions:
+  contents: write
+
+# 複数のworkflowの同時実行を禁止
+concurrency:
+  group: auto-update
+  cancel-in-progress: false
+
+jobs:
+  backfill_ohlcv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      # この日付「以前」を対象とする（2023-06-08 以降は fetch.yml で収集済み）
+      BACKFILL_CEILING: '20230607'
+      # この日付より古い側は取得しない。取得できる限り遡るため実質的に無制限とする
+      # （代表銘柄にデータが無いウィンドウに到達した時点で、スクリプトが自動的に終了する）。
+      BACKFILL_FLOOR: '19710101'
+      BACKFILL_WINDOW_DAYS: ${{ inputs.window_days || '90' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # ← stale info（古い main）を防ぐため必須
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: npm install --no-save node-fetch@3 xlsx
+
+      - name: Validate window_days parameter
+        run: |
+          if ! [[ "$BACKFILL_WINDOW_DAYS" =~ ^[0-9]+$ ]]; then
+            echo "::error::window_days must be a positive integer. Got: '$BACKFILL_WINDOW_DAYS'"
+            exit 1
+          fi
+          if [ "$BACKFILL_WINDOW_DAYS" -lt 1 ] || [ "$BACKFILL_WINDOW_DAYS" -gt 366 ]; then
+            echo "::error::window_days must be between 1 and 366. Got: $BACKFILL_WINDOW_DAYS"
+            exit 1
+          fi
+
+      - name: Ensure data directory exists
+        run: |
+          mkdir -p data/ohlcv
+
+      - name: Run backfill script
+        run: node scripts/fetch_ohlcv_backfill.js
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+          git add data/ohlcv/
+
+          git commit -m "Backfill ohlcv daily archive (window_days=$BACKFILL_WINDOW_DAYS)" || exit 0
+
+          git push origin main || (
+            echo "Push rejected. Fetching latest main..."
+
+            echo "=== Git status ==="
+            git status
+
+            echo "=== HEAD ==="
+            git rev-parse HEAD
+
+            echo "=== origin/main ==="
+            git ls-remote origin refs/heads/main
+
+            echo "=== Recent commits ==="
+            git log --oneline --decorate -5
+
+            git fetch origin
+            git rebase -X theirs origin/main
+            git push origin main
+          )
