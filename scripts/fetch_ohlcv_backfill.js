@@ -147,9 +147,13 @@ function findOldestPlausibleArchiveDate() {
 // -----------------------------
 // 4. Yahoo Finance（v8/finance/chart・期間指定）
 // -----------------------------
-// 戻り値: { kind: "ok", bars } | { kind: "nodata" } | { kind: "transient", reason }
-//   nodata    … その期間に株価が存在しない（未上場期間等）。失敗ではない
-//   transient … 通信エラー・429・5xx 等の一時的な失敗。失敗割合の判定対象
+// 戻り値: { kind: "ok", bars } | { kind: "nodata", reason } | { kind: "transient", reason }
+//   nodata    … その期間に株価が存在しない（その期間はまだ未上場の銘柄など）。失敗ではない。
+//               Yahoo は「期間内にデータが無い」場合、HTTP 200 で timestamp なしを返すほか、
+//               HTTP 400/404 と chart.error（code は "Not Found" に限らない）を返すことがあるため、
+//               どちらも nodata として扱う（再試行しない）。
+//   transient … 通信エラー・429・5xx・JSON として解釈できない応答など、再試行で改善しうる失敗。
+//               失敗割合の判定対象
 async function fetchSymbolRange(code, windowStart, windowEnd) {
   // 取りこぼし防止のため前後1日の余白を取り、後段で日付キーにより厳密に絞り込む
   const period1 = Math.floor(ymdToUtcMs(addDays(windowStart, -1)) / 1000);
@@ -162,15 +166,27 @@ async function fetchSymbolRange(code, windowStart, windowEnd) {
       const res = await fetch(url);
       if (res.status === 429 || res.status >= 500) throw new Error(`HTTP ${res.status}`);
 
-      const json = await res.json();
+      let json;
+      try {
+        json = await res.json();
+      } catch {
+        throw new Error(`HTTP ${res.status} (non-JSON response)`);
+      }
+
       const result = json.chart?.result?.[0];
       if (!result) {
-        if (json.chart?.error?.code === "Not Found") return { kind: "nodata" };
-        throw new Error(json.chart?.error?.description || "Unknown error from Yahoo Finance");
+        const err = json.chart?.error;
+        // 期間内にデータが無い銘柄（その期間はまだ未上場など）への応答。2026-10 修正：
+        // 従来は code === "Not Found" のみを nodata とし、それ以外の chart.error を一時的な失敗として
+        // 3回再試行していたため、未上場期間の銘柄が大量に transient 扱いになり失敗率判定で異常終了した。
+        if (err && (err.code === "Not Found" || res.status === 400 || res.status === 404)) {
+          return { kind: "nodata", reason: `HTTP ${res.status} ${err.code ?? ""}: ${err.description ?? ""}`.trim() };
+        }
+        throw new Error(err?.description || `HTTP ${res.status}: no chart result`);
       }
 
       const timestamps = result.timestamp;
-      if (!timestamps || timestamps.length === 0) return { kind: "nodata" };
+      if (!timestamps || timestamps.length === 0) return { kind: "nodata", reason: "empty timestamp" };
 
       const q = result.indicators.quote[0];
       const bars = {};
@@ -225,38 +241,56 @@ async function main() {
     await sleep(REQUEST_INTERVAL_MS);
   }
   if (probeResults.every((r) => r.kind === "nodata" || (r.kind === "ok" && Object.keys(r.bars).length === 0))) {
-    console.log("No data for probe symbols in this window. Treating as the end of available history.");
+    // nodata の判定を広げたため、リクエスト形式の不備などで「全て nodata」になっても
+    // 正常終了（＝完了）と誤認しないよう、直近期間で同じ銘柄が取得できることを対照として確認する
+    const controlEnd = utcMsToYmd(Date.now());
+    const control = await fetchSymbolRange(PROBE_CODES[0], addDays(controlEnd, -30), controlEnd);
+    if (control.kind !== "ok" || Object.keys(control.bars).length === 0) {
+      console.error(`ERROR: control request (${PROBE_CODES[0]}, last 30 days) returned ${control.kind}: ${control.reason ?? ""}. The API call itself may be failing.`);
+      process.exit(1);
+    }
+    console.log(`No data for probe symbols in this window (${probeResults.map((r) => r.reason ?? r.kind).join(" | ")}). Treating as the end of available history.`);
     return;
   }
 
   // 5-2. 全銘柄を順次取得（1銘柄＝ウィンドウ全体を1リクエスト）
   const symbols = readSymbols();
   const dataByCode = {};
-  let transientFailed = [];
+  const nodataReasons = new Map();   // nodata の理由別件数（診断ログ用）
+  let transientFailed = new Map();   // code → 失敗理由
 
   for (const code of symbols) {
     const r = await fetchSymbolRange(code, windowStart, windowEnd);
     if (r.kind === "ok") dataByCode[code] = r.bars;
-    else if (r.kind === "transient") transientFailed.push(code);
+    else if (r.kind === "nodata") nodataReasons.set(r.reason, (nodataReasons.get(r.reason) ?? 0) + 1);
+    else transientFailed.set(code, r.reason);
     await sleep(REQUEST_INTERVAL_MS);
   }
 
   // 一時的な失敗のみ、少し待ってからもう1周だけ再試行する
-  if (transientFailed.length > 0) {
-    console.log(`Retrying ${transientFailed.length} transient failures after 30s...`);
+  if (transientFailed.size > 0) {
+    console.log(`Retrying ${transientFailed.size} transient failures after 30s...`);
     await sleep(30000);
-    const stillFailed = [];
-    for (const code of transientFailed) {
+    const stillFailed = new Map();
+    for (const code of transientFailed.keys()) {
       const r = await fetchSymbolRange(code, windowStart, windowEnd);
       if (r.kind === "ok") dataByCode[code] = r.bars;
-      else if (r.kind === "transient") stillFailed.push(code);
+      else if (r.kind === "nodata") nodataReasons.set(r.reason, (nodataReasons.get(r.reason) ?? 0) + 1);
+      else stillFailed.set(code, r.reason);
       await sleep(REQUEST_INTERVAL_MS);
     }
     transientFailed = stillFailed;
   }
 
-  const failedRatio = transientFailed.length / symbols.length;
-  console.log(`Fetched: ${Object.keys(dataByCode).length}/${symbols.length} symbols, transient failures: ${transientFailed.length} (${(failedRatio * 100).toFixed(2)}%)`);
+  const nodataCount = [...nodataReasons.values()].reduce((a, b) => a + b, 0);
+  const failedRatio = transientFailed.size / symbols.length;
+  console.log(`Fetched: ok=${Object.keys(dataByCode).length}, nodata=${nodataCount}, transient failures=${transientFailed.size} (${(failedRatio * 100).toFixed(2)}%) of ${symbols.length} symbols`);
+  // 原因調査用：理由別件数と失敗銘柄のサンプルを出力する
+  for (const [reason, n] of nodataReasons) console.log(`  nodata   x${n}: ${reason}`);
+  const transientReasons = new Map();
+  for (const reason of transientFailed.values()) transientReasons.set(reason, (transientReasons.get(reason) ?? 0) + 1);
+  for (const [reason, n] of transientReasons) console.log(`  transient x${n}: ${reason}`);
+  if (transientFailed.size > 0) console.log(`  transient sample codes: ${[...transientFailed.keys()].slice(0, 20).join(", ")}`);
   if (failedRatio > MAX_FAILED_RATIO) {
     console.error(`ERROR: transient failure ratio exceeds ${MAX_FAILED_RATIO * 100}%. Nothing was written.`);
     process.exit(1);
