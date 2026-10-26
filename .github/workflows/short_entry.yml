@@ -1,0 +1,106 @@
+name: 【short_entry.yml】Generate short_entry_YYYYMMDD.json (空売りエントリー検出)
+
+on:
+  schedule:
+    - cron: "37 7 * * *"   # JST 16:37（fetch の 30 分後）
+    - cron: "37 9 * * *"   # JST 18:37（fetch の 30 分後）
+    - cron: "37 11 * * *"  # JST 20:37（fetch の 30 分後）
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "単一日指定（YYYYMMDD）。from_date / to_date と同時使用不可。省略時は通常処理。"
+        required: false
+        default: ""
+      from_date:
+        description: "期間指定・開始日（YYYYMMDD）。to_date と必ずペアで指定。履歴不足の日付は自動でスキップされる。"
+        required: false
+        default: ""
+      to_date:
+        description: "期間指定・終了日（YYYYMMDD）。from_date と必ずペアで指定。"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+# 複数のworkflowの同時実行を禁止
+concurrency:
+  group: auto-update
+  cancel-in-progress: false
+
+jobs:
+  generate_short_entry:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # ← stale info（古い main）を防ぐため必須
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # npm install は不要（Node 標準モジュール fs のみを使用。外部ライブラリなし）
+
+      - name: Ensure data directory exists
+        run: |
+          mkdir -p data
+          mkdir -p data/short_entry
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Run short_entry script
+        env:
+          # 入力値は env 経由で渡す（${{ }} を run: の本文へ直接展開しない）
+          INPUT_DATE: ${{ github.event.inputs.date }}
+          INPUT_FROM_DATE: ${{ github.event.inputs.from_date }}
+          INPUT_TO_DATE: ${{ github.event.inputs.to_date }}
+        run: |
+          # 実行引数を組み立てる
+          ARGS=""
+          if [ -n "${INPUT_DATE}" ]; then
+            ARGS="--date ${INPUT_DATE}"
+          elif [ -n "${INPUT_FROM_DATE}" ] && [ -n "${INPUT_TO_DATE}" ]; then
+            ARGS="--from ${INPUT_FROM_DATE} --to ${INPUT_TO_DATE}"
+          fi
+          echo "short_entry.js 実行引数: ${ARGS:-（なし: 通常モード）}"
+          if [ -n "${ARGS}" ]; then
+            node scripts/short_entry.js ${ARGS}
+          else
+            node scripts/short_entry.js
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+          git add -A -- data/short_entry
+
+          git commit -m "Update short_entry_YYYYMMDD.json" || exit 0
+
+          git push origin main || (
+            echo "Push rejected. Fetching latest main..."
+
+            echo "=== Git status ==="
+            git status
+
+            echo "=== HEAD ==="
+            git rev-parse HEAD
+
+            echo "=== origin/main ==="
+            git ls-remote origin refs/heads/main
+
+            echo "=== Recent commits ==="
+            git log --oneline --decorate -5
+
+            git fetch origin
+            git rebase -X theirs origin/main
+            git push origin main
+          )
