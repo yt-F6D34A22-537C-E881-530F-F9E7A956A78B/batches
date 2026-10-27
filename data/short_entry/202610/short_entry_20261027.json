@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "target_date": "20261027",
+    "params": {
+      "version": 1,
+      "maPeriod": 50,
+      "headLookbackBars": 120,
+      "minBarsAfterHead": 10,
+      "baseBars": 20,
+      "spikeBars": 5,
+      "minHeadRise": 0.15,
+      "dropMaxBars": 15,
+      "minDropFromHead": 0.2,
+      "volumeSpikeMult": 2,
+      "minGapBars": 2,
+      "entryMinRebounds": 3,
+      "entryMaxRebounds": 4,
+      "maxOvershoot": 0.1,
+      "maxAboveBars": 15,
+      "approachPct": 0.05,
+      "minBouncePct": 0.03,
+      "splitGuardAbsChange": 0.4
+    },
+    "scanned": 4469,
+    "counts": {
+      "entry": 0,
+      "watch": 5
+    }
+  },
+  "data": {
+    "3135": {
+      "stage": "watch",
+      "phase": "rebound",
+      "reboundCount": 3,
+      "close": 1156,
+      "ma50": 1153.84,
+      "maGapPct": 0.19,
+      "neckline": 1015,
+      "necklineGapPct": 13.89,
+      "headPrice": 1475,
+      "supportPrice": 1099,
+      "dropPct": -31.19,
+      "dropVolRatio": 3.58,
+      "headDate": "20260623",
+      "lowDate": "20260630"
+    },
+    "3836": {
+      "stage": "watch",
+      "phase": "rebound",
+      "reboundCount": 3,
+      "close": 1269,
+      "ma50": 1214.16,
+      "maGapPct": 4.52,
+      "neckline": 1051,
+      "necklineGapPct": 20.74,
+      "headPrice": 1329,
+      "supportPrice": 1067,
+      "dropPct": -20.92,
+      "dropVolRatio": 2.47,
+      "headDate": "20260730",
+      "lowDate": "20260806"
+    },
+    "5248": {
+      "stage": "watch",
+      "phase": "approach",
+      "reboundCount": 2,
+      "close": 496,
+      "ma50": 504.4,
+      "maGapPct": -1.67,
+      "neckline": 451,
+      "necklineGapPct": 9.98,
+      "headPrice": 628,
+      "supportPrice": 466,
+      "dropPct": -28.18,
+      "dropVolRatio": 4.13,
+      "headDate": "20260729",
+      "lowDate": "20260804"
+    },
+    "9502": {
+      "stage": "watch",
+      "phase": "approach",
+      "reboundCount": 3,
+      "close": 2690,
+      "ma50": 2801.61,
+      "maGapPct": -3.98,
+      "neckline": 2563,
+      "necklineGapPct": 4.96,
+      "headPrice": 3286,
+      "supportPrice": 2658,
+      "dropPct": -22,
+      "dropVolRatio": 2.5,
+      "headDate": "20260709",
+      "lowDate": "20260730"
+    },
+    "9742": {
+      "stage": "watch",
+      "phase": "rebound",
+      "reboundCount": 3,
+      "close": 2350,
+      "ma50": 2275.86,
+      "maGapPct": 3.26,
+      "neckline": 2001,
+      "necklineGapPct": 17.44,
+      "headPrice": 2527,
+      "supportPrice": 2070,
+      "dropPct": -20.82,
+      "dropVolRatio": 2.01,
+      "headDate": "20260825",
+      "lowDate": "20260910"
+    }
+  }
+}
