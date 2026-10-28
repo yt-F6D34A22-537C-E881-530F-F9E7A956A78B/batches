@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "target_date": "20261028",
+    "params": {
+      "version": 1,
+      "maPeriod": 50,
+      "headLookbackBars": 120,
+      "minBarsAfterHead": 10,
+      "baseBars": 20,
+      "spikeBars": 5,
+      "minHeadRise": 0.15,
+      "dropMaxBars": 15,
+      "minDropFromHead": 0.2,
+      "volumeSpikeMult": 2,
+      "minGapBars": 2,
+      "entryMinRebounds": 3,
+      "entryMaxRebounds": 4,
+      "maxOvershoot": 0.1,
+      "maxAboveBars": 15,
+      "approachPct": 0.05,
+      "minBouncePct": 0.03,
+      "splitGuardAbsChange": 0.4
+    },
+    "scanned": 4469,
+    "counts": {
+      "entry": 0,
+      "watch": 4
+    }
+  },
+  "data": {
+    "3135": {
+      "stage": "watch",
+      "phase": "rebound",
+      "reboundCount": 3,
+      "close": 1170,
+      "ma50": 1154.96,
+      "maGapPct": 1.3,
+      "neckline": 1015,
+      "necklineGapPct": 15.27,
+      "headPrice": 1475,
+      "supportPrice": 1099,
+      "dropPct": -31.19,
+      "dropVolRatio": 3.58,
+      "headDate": "20260623",
+      "lowDate": "20260630"
+    },
+    "3836": {
+      "stage": "watch",
+      "phase": "rebound",
+      "reboundCount": 3,
+      "close": 1262,
+      "ma50": 1216.18,
+      "maGapPct": 3.77,
+      "neckline": 1051,
+      "necklineGapPct": 20.08,
+      "headPrice": 1329,
+      "supportPrice": 1067,
+      "dropPct": -20.92,
+      "dropVolRatio": 2.47,
+      "headDate": "20260730",
+      "lowDate": "20260806"
+    },
+    "5248": {
+      "stage": "watch",
+      "phase": "approach",
+      "reboundCount": 2,
+      "close": 502,
+      "ma50": 504.82,
+      "maGapPct": -0.56,
+      "neckline": 451,
+      "necklineGapPct": 11.31,
+      "headPrice": 628,
+      "supportPrice": 466,
+      "dropPct": -28.18,
+      "dropVolRatio": 4.13,
+      "headDate": "20260729",
+      "lowDate": "20260804"
+    },
+    "9742": {
+      "stage": "watch",
+      "phase": "rebound",
+      "reboundCount": 3,
+      "close": 2300,
+      "ma50": 2275.66,
+      "maGapPct": 1.07,
+      "neckline": 2001,
+      "necklineGapPct": 14.94,
+      "headPrice": 2527,
+      "supportPrice": 2070,
+      "dropPct": -20.82,
+      "dropVolRatio": 2.01,
+      "headDate": "20260825",
+      "lowDate": "20260910"
+    }
+  }
+}
