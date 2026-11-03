@@ -13,6 +13,12 @@ name: 【heuristics-backfill.yml】Trigger heuristics.yml range backfill (経験
 #       同グループに追加したことに伴い、同様にガード対象へ追加した。
 #       2026-10、過去OHLCVの遡及取得用 ohlcv-backfill.yml を同グループに
 #       追加したことに伴い、同様にガード対象へ追加した。
+#       2026-10、空売りエントリー検出用 short_entry.yml・下げ止まり検出用
+#       bottom_entry.yml を同グループに追加したことに伴い、同様にガード対象へ
+#       追加した（仕様書.md には追加済みと記載されていたが、実ファイルに未反映だった
+#       ため、2026-11 に仕様書の記述に合わせた）。
+#       2026-11、売り抜け検出用 distribution.yml を同グループに追加したことに
+#       伴い、同様にガード対象へ追加した。
 
 on:
   schedule:
@@ -39,7 +45,9 @@ jobs:
       # 2026-07、market_cap.yml を追加（auto-update グループへの参加に伴う）
       # 2026-08、overheat_buzz.yml を追加（同上）
       # 2026-10、ohlcv-backfill.yml を追加（同上）
-      GUARD_TARGET_WORKFLOWS: 'fetch.yml margin.yml download-jpx-xlsx.yml heuristics.yml market_cap.yml overheat_buzz.yml ohlcv-backfill.yml'
+      # 2026-10、short_entry.yml・bottom_entry.yml を追加（同上。2026-11、実ファイルへ反映）
+      # 2026-11、distribution.yml を追加（同上）
+      GUARD_TARGET_WORKFLOWS: 'fetch.yml margin.yml download-jpx-xlsx.yml heuristics.yml market_cap.yml overheat_buzz.yml ohlcv-backfill.yml short_entry.yml bottom_entry.yml distribution.yml'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -1,0 +1,77 @@
+name: 【distribution.yml】Generate distribution_YYYYMMDD.json (売り抜け検出)
+
+on:
+  schedule:
+    # fetch.yml（7:07 / 9:07 / 11:07 UTC）の70分後、bottom_entry.yml（7:57 / 9:57 / 11:57 UTC）の20分後。
+    # short_entry.yml・bottom_entry.yml と同じ ohlcv アーカイブを読むため、auto-update グループでの待機が重ならないようずらす
+    - cron: "17 8 * * *"    # JST 17:17
+    - cron: "17 10 * * *"   # JST 19:17
+    - cron: "17 12 * * *"   # JST 21:17
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "単一日指定（YYYYMMDD）。from_date / to_date と同時使用不可。省略時は通常処理"
+        required: false
+        default: ""
+      from_date:
+        description: "期間指定の開始日（YYYYMMDD）。to_date とペアで指定"
+        required: false
+        default: ""
+      to_date:
+        description: "期間指定の終了日（YYYYMMDD）。from_date とペアで指定"
+        required: false
+        default: ""
+
+concurrency:
+  group: auto-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  distribution:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Ensure data directory exists
+        run: mkdir -p data data/distribution
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run distribution script
+        env:
+          INPUT_DATE: ${{ github.event.inputs.date }}
+          INPUT_FROM_DATE: ${{ github.event.inputs.from_date }}
+          INPUT_TO_DATE: ${{ github.event.inputs.to_date }}
+        run: |
+          ARGS=()
+          if [ -n "$INPUT_DATE" ]; then
+            ARGS+=(--date "$INPUT_DATE")
+          elif [ -n "$INPUT_FROM_DATE" ] || [ -n "$INPUT_TO_DATE" ]; then
+            ARGS+=(--from "$INPUT_FROM_DATE" --to "$INPUT_TO_DATE")
+          fi
+          node scripts/distribution.js "${ARGS[@]}"
+
+      - name: Commit and push changes
+        run: |
+          git add -A -- data/distribution
+          git commit -m "Update distribution archive" || exit 0
+          for i in 1 2 3; do
+            git push && exit 0
+            git fetch origin main
+            git rebase -X theirs origin/main
+          done
+          exit 1
