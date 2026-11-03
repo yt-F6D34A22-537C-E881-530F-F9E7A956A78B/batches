@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "target_date": "20240418",
+    "params": {
+      "version": 1,
+      "volAvgPeriod": 50,
+      "trendLookbackBars": 60,
+      "minVolumeMult": 1.5,
+      "minBodyPct": 0.02,
+      "minBodyRatio": 0.5,
+      "nearHighTol": 0.2,
+      "minRise": 0.1,
+      "splitGuardAbsChange": 0.4
+    },
+    "scanned": 4469,
+    "counts": {
+      "detected": 13
+    }
+  },
+  "data": {
+    "1691": {
+      "open": 9398,
+      "close": 9142,
+      "bodyPct": 2.724,
+      "dropPct": -2.43,
+      "volRatio": 2.0876,
+      "turnover": 2806594,
+      "highPrice": 10925,
+      "highGapPct": -14.2334,
+      "risePct": 47.6351,
+      "highDate": "20240408"
+    },
+    "1942": {
+      "open": 1843,
+      "close": 1800,
+      "bodyPct": 2.3332,
+      "dropPct": -2.54,
+      "volRatio": 1.8218,
+      "turnover": 1790280000,
+      "highPrice": 1960,
+      "highGapPct": -5.7653,
+      "risePct": 39.4026,
+      "highDate": "20240412"
+    },
+    "2338": {
+      "open": 521,
+      "close": 485,
+      "bodyPct": 6.9098,
+      "dropPct": -5.83,
+      "volRatio": 2.1315,
+      "turnover": 296044000,
+      "highPrice": 599.33,
+      "highGapPct": -14.0712,
+      "risePct": 14.2312,
+      "highDate": "20240122"
+    },
+    "2349": {
+      "open": 2475,
+      "close": 2267,
+      "bodyPct": 8.404,
+      "dropPct": -10.22,
+      "volRatio": 2.5555,
+      "turnover": 29244300,
+      "highPrice": 2661,
+      "highGapPct": -5.1109,
+      "risePct": 45.4893,
+      "highDate": "20240416"
+    },
+    "2351": {
+      "open": 541,
+      "close": 496,
+      "bodyPct": 8.3179,
+      "dropPct": -7.81,
+      "volRatio": 3.7158,
+      "turnover": 227763200,
+      "highPrice": 593,
+      "highGapPct": -9.2749,
+      "risePct": 51.6624,
+      "highDate": "20240412"
+    },
+    "2656": {
+      "open": 150,
+      "close": 130,
+      "bodyPct": 13.3333,
+      "dropPct": -7.14,
+      "volRatio": 4.9029,
+      "turnover": 279162000,
+      "highPrice": 163,
+      "highGapPct": -14.1104,
+      "risePct": 41.7391,
+      "highDate": "20240417"
+    },
+    "2722": {
+      "open": 386,
+      "close": 362,
+      "bodyPct": 6.2176,
+      "dropPct": -4.74,
+      "volRatio": 3.0042,
+      "turnover": 21213200,
+      "highPrice": 416,
+      "highGapPct": -8.6538,
+      "risePct": 26.4438,
+      "highDate": "20240404"
+    },
+    "4179": {
+      "open": 420,
+      "close": 388,
+      "bodyPct": 7.619,
+      "dropPct": -17.09,
+      "volRatio": 19.0368,
+      "turnover": 791675200,
+      "highPrice": 468,
+      "highGapPct": 0,
+      "risePct": 59.1837,
+      "highDate": "20240417"
+    },
+    "5026": {
+      "open": 1160,
+      "close": 975,
+      "bodyPct": 15.9483,
+      "dropPct": -14.62,
+      "volRatio": 9.6057,
+      "turnover": 529620000,
+      "highPrice": 1142,
+      "highGapPct": 0,
+      "risePct": 73.5562,
+      "highDate": "20240417"
+    },
+    "6380": {
+      "open": 2099,
+      "close": 2011,
+      "bodyPct": 4.1925,
+      "dropPct": -4.6,
+      "volRatio": 4.1228,
+      "turnover": 18903400,
+      "highPrice": 2146,
+      "highGapPct": -1.7707,
+      "risePct": 24.118,
+      "highDate": "20240411"
+    },
+    "8115": {
+      "open": 853,
+      "close": 819,
+      "bodyPct": 3.9859,
+      "dropPct": -2.27,
+      "volRatio": 2.1799,
+      "turnover": 10401300,
+      "highPrice": 853,
+      "highGapPct": -1.7585,
+      "risePct": 33.2812,
+      "highDate": "20240417"
+    },
+    "8836": {
+      "open": 19,
+      "close": 17,
+      "bodyPct": 10.5263,
+      "dropPct": -10.53,
+      "volRatio": 2.3365,
+      "turnover": 13754700,
+      "highPrice": 23,
+      "highGapPct": -17.3913,
+      "risePct": 43.75,
+      "highDate": "20240305"
+    },
+    "9250": {
+      "open": 2290,
+      "close": 2185,
+      "bodyPct": 4.5852,
+      "dropPct": -10.45,
+      "volRatio": 4.9725,
+      "turnover": 63146500,
+      "highPrice": 2700,
+      "highGapPct": -9.6296,
+      "risePct": 66.6667,
+      "highDate": "20240416"
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "target_date": "20230922",
+    "params": {
+      "version": 1,
+      "volAvgPeriod": 50,
+      "trendLookbackBars": 60,
+      "minVolumeMult": 1.5,
+      "minBodyPct": 0.02,
+      "minBodyRatio": 0.5,
+      "nearHighTol": 0.2,
+      "minRise": 0.1,
+      "splitGuardAbsChange": 0.4
+    },
+    "scanned": 4469,
+    "counts": {
+      "detected": 7
+    }
+  },
+  "data": {
+    "1438": {
+      "open": 1735,
+      "close": 1700,
+      "bodyPct": 2.0173,
+      "dropPct": -2.24,
+      "volRatio": 1.7606,
+      "turnover": 5100000,
+      "highPrice": 1870,
+      "highGapPct": -7.0053,
+      "risePct": 50.0803,
+      "highDate": "20230921"
+    },
+    "1694": {
+      "open": 2700.5,
+      "close": 2631,
+      "bodyPct": 2.5736,
+      "dropPct": -3.2,
+      "volRatio": 3.2718,
+      "turnover": 11944740,
+      "highPrice": 2955.5,
+      "highGapPct": -8.0359,
+      "risePct": 10.2182,
+      "highDate": "20230801"
+    },
+    "3280": {
+      "open": 677,
+      "close": 661,
+      "bodyPct": 2.3634,
+      "dropPct": -3.78,
+      "volRatio": 2.2157,
+      "turnover": 14475900,
+      "highPrice": 725,
+      "highGapPct": -5.2414,
+      "risePct": 12.9283,
+      "highDate": "20230710"
+    },
+    "6537": {
+      "open": 283,
+      "close": 274,
+      "bodyPct": 3.1802,
+      "dropPct": -3.18,
+      "volRatio": 2.799,
+      "turnover": 28550800,
+      "highPrice": 340,
+      "highGapPct": -16.7647,
+      "risePct": 16.4384,
+      "highDate": "20230808"
+    },
+    "7030": {
+      "open": 864,
+      "close": 842,
+      "bodyPct": 2.5463,
+      "dropPct": -2.77,
+      "volRatio": 1.5554,
+      "turnover": 32164400,
+      "highPrice": 868,
+      "highGapPct": -0.2304,
+      "risePct": 13.7615,
+      "highDate": "20230921"
+    },
+    "9119": {
+      "open": 1145,
+      "close": 1119,
+      "bodyPct": 2.2707,
+      "dropPct": -3.45,
+      "volRatio": 1.6254,
+      "turnover": 989643600,
+      "highPrice": 1177,
+      "highGapPct": -1.5293,
+      "risePct": 41.2965,
+      "highDate": "20230920"
+    },
+    "9404": {
+      "open": 1675,
+      "close": 1561,
+      "bodyPct": 6.806,
+      "dropPct": 13.53,
+      "volRatio": 17.6588,
+      "turnover": 15382250100,
+      "highPrice": 1446.5,
+      "highGapPct": -4.943,
+      "risePct": 11.141,
+      "highDate": "20230915"
+    }
+  }
+}

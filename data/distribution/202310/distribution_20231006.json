@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "target_date": "20231006",
+    "params": {
+      "version": 1,
+      "volAvgPeriod": 50,
+      "trendLookbackBars": 60,
+      "minVolumeMult": 1.5,
+      "minBodyPct": 0.02,
+      "minBodyRatio": 0.5,
+      "nearHighTol": 0.2,
+      "minRise": 0.1,
+      "splitGuardAbsChange": 0.4
+    },
+    "scanned": 4469,
+    "counts": {
+      "detected": 20
+    }
+  },
+  "data": {
+    "2789": {
+      "open": 518,
+      "close": 479,
+      "bodyPct": 7.529,
+      "dropPct": -7.53,
+      "volRatio": 15.7978,
+      "turnover": 190737800,
+      "highPrice": 530,
+      "highGapPct": -2.2642,
+      "risePct": 32.1696,
+      "highDate": "20231005"
+    },
+    "2982": {
+      "open": 264,
+      "close": 257,
+      "bodyPct": 2.6515,
+      "dropPct": -1.91,
+      "volRatio": 1.5413,
+      "turnover": 383572500,
+      "highPrice": 284,
+      "highGapPct": -7.7465,
+      "risePct": 53.5135,
+      "highDate": "20231002"
+    },
+    "3321": {
+      "open": 1083,
+      "close": 1044,
+      "bodyPct": 3.6011,
+      "dropPct": -2.7,
+      "volRatio": 2.8197,
+      "turnover": 185518800,
+      "highPrice": 1200,
+      "highGapPct": -10.5833,
+      "risePct": 17.0732,
+      "highDate": "20230907"
+    },
+    "3399": {
+      "open": 1125,
+      "close": 1053.75,
+      "bodyPct": 6.3333,
+      "dropPct": -7.57,
+      "volRatio": 1.9369,
+      "turnover": 577876500,
+      "highPrice": 1160,
+      "highGapPct": -1.7241,
+      "risePct": 98.5027,
+      "highDate": "20231002"
+    },
+    "3409": {
+      "open": 113,
+      "close": 109,
+      "bodyPct": 3.5398,
+      "dropPct": -2.68,
+      "volRatio": 2.4049,
+      "turnover": 13363400,
+      "highPrice": 134,
+      "highGapPct": -16.4179,
+      "risePct": 20.7207,
+      "highDate": "20231004"
+    },
+    "3561": {
+      "open": 2155,
+      "close": 1944,
+      "bodyPct": 9.7912,
+      "dropPct": -9.58,
+      "volRatio": 1.5953,
+      "turnover": 2843877600,
+      "highPrice": 2480,
+      "highGapPct": -13.3065,
+      "risePct": 29.4363,
+      "highDate": "20230913"
+    },
+    "3907": {
+      "open": 1730,
+      "close": 1680,
+      "bodyPct": 2.8902,
+      "dropPct": -1.75,
+      "volRatio": 1.6568,
+      "turnover": 74256000,
+      "highPrice": 1940,
+      "highGapPct": -11.8557,
+      "risePct": 26.6319,
+      "highDate": "20230712"
+    },
+    "3974": {
+      "open": 546,
+      "close": 531,
+      "bodyPct": 2.7473,
+      "dropPct": -1.12,
+      "volRatio": 2.0641,
+      "turnover": 12319200,
+      "highPrice": 560,
+      "highGapPct": -4.1071,
+      "risePct": 18.896,
+      "highDate": "20231002"
+    },
+    "4015": {
+      "open": 920,
+      "close": 762,
+      "bodyPct": 17.1739,
+      "dropPct": -16.45,
+      "volRatio": 3.7213,
+      "turnover": 1573225200,
+      "highPrice": 967,
+      "highGapPct": -5.6877,
+      "risePct": 98.1557,
+      "highDate": "20230928"
+    },
+    "4430": {
+      "open": 1128,
+      "close": 1103,
+      "bodyPct": 2.2163,
+      "dropPct": -2.22,
+      "volRatio": 5.6877,
+      "turnover": 116587100,
+      "highPrice": 1149,
+      "highGapPct": -1.8277,
+      "risePct": 11.6618,
+      "highDate": "20231002"
+    },
+    "4920": {
+      "open": 2500,
+      "close": 2299,
+      "bodyPct": 8.04,
+      "dropPct": -11.3,
+      "volRatio": 7.9652,
+      "turnover": 233808300,
+      "highPrice": 2631,
+      "highGapPct": -1.4823,
+      "risePct": 45.0386,
+      "highDate": "20231002"
+    },
+    "6264": {
+      "open": 850,
+      "close": 821,
+      "bodyPct": 3.4118,
+      "dropPct": -3.18,
+      "volRatio": 2.2534,
+      "turnover": 225446600,
+      "highPrice": 934.5,
+      "highGapPct": -9.2563,
+      "risePct": 14.5221,
+      "highDate": "20230906"
+    },
+    "6919": {
+      "open": 1900,
+      "close": 1672,
+      "bodyPct": 12,
+      "dropPct": -11.53,
+      "volRatio": 10.8451,
+      "turnover": 273372000,
+      "highPrice": 2034,
+      "highGapPct": -7.0796,
+      "risePct": 11.5743,
+      "highDate": "20230913"
+    },
+    "7679": {
+      "open": 2980,
+      "close": 2897,
+      "bodyPct": 2.7852,
+      "dropPct": 4.21,
+      "volRatio": 18.0333,
+      "turnover": 1218188500,
+      "highPrice": 2803,
+      "highGapPct": -0.8205,
+      "risePct": 15.8264,
+      "highDate": "20230915"
+    },
+    "7936": {
+      "open": 1189.5,
+      "close": 1143,
+      "bodyPct": 3.9092,
+      "dropPct": -4.19,
+      "volRatio": 1.686,
+      "turnover": 10793577600,
+      "highPrice": 1437.5,
+      "highGapPct": -17.0087,
+      "risePct": 45.1287,
+      "highDate": "20230920"
+    },
+    "9171": {
+      "open": 843,
+      "close": 810,
+      "bodyPct": 3.9146,
+      "dropPct": -2.17,
+      "volRatio": 3.1014,
+      "turnover": 101169000,
+      "highPrice": 840,
+      "highGapPct": -1.4286,
+      "risePct": 24.4444,
+      "highDate": "20230809"
+    },
+    "9252": {
+      "open": 4026,
+      "close": 3876,
+      "bodyPct": 3.7258,
+      "dropPct": -5.69,
+      "volRatio": 2.4687,
+      "turnover": 388565124,
+      "highPrice": 4872,
+      "highGapPct": -15.6404,
+      "risePct": 47.315,
+      "highDate": "20231002"
+    },
+    "9558": {
+      "open": 2840,
+      "close": 2743,
+      "bodyPct": 3.4155,
+      "dropPct": -3.14,
+      "volRatio": 2.337,
+      "turnover": 246595700,
+      "highPrice": 3540,
+      "highGapPct": -20,
+      "risePct": 23.1304,
+      "highDate": "20230802"
+    },
+    "9849": {
+      "open": 4485,
+      "close": 4370,
+      "bodyPct": 2.5641,
+      "dropPct": -2.89,
+      "volRatio": 2.7027,
+      "turnover": 2622000,
+      "highPrice": 5000,
+      "highGapPct": -10,
+      "risePct": 10.9878,
+      "highDate": "20230914"
+    },
+    "208A": {
+      "open": 1800,
+      "close": 1755,
+      "bodyPct": 2.5,
+      "dropPct": -2.23,
+      "volRatio": 2.4895,
+      "turnover": 66339000,
+      "highPrice": 1915,
+      "highGapPct": -6.2663,
+      "risePct": 18.9441,
+      "highDate": "20230912"
+    }
+  }
+}

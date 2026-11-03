@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "target_date": "20230825",
+    "params": {
+      "version": 1,
+      "volAvgPeriod": 50,
+      "trendLookbackBars": 60,
+      "minVolumeMult": 1.5,
+      "minBodyPct": 0.02,
+      "minBodyRatio": 0.5,
+      "nearHighTol": 0.2,
+      "minRise": 0.1,
+      "splitGuardAbsChange": 0.4
+    },
+    "scanned": 4469,
+    "counts": {
+      "detected": 13
+    }
+  },
+  "data": {
+    "2588": {
+      "open": 2924,
+      "close": 2779,
+      "bodyPct": 4.959,
+      "dropPct": -2.08,
+      "volRatio": 5.8477,
+      "turnover": 157013500,
+      "highPrice": 2846,
+      "highGapPct": -0.2811,
+      "risePct": 16.4961,
+      "highDate": "20230824"
+    },
+    "3858": {
+      "open": 424,
+      "close": 408,
+      "bodyPct": 3.7736,
+      "dropPct": -3.55,
+      "volRatio": 2.1854,
+      "turnover": 41983200,
+      "highPrice": 500,
+      "highGapPct": -15.4,
+      "risePct": 34.4086,
+      "highDate": "20230619"
+    },
+    "4040": {
+      "open": 3675,
+      "close": 3490,
+      "bodyPct": 5.034,
+      "dropPct": -8.52,
+      "volRatio": 2.8075,
+      "turnover": 566776000,
+      "highPrice": 3925,
+      "highGapPct": -2.8025,
+      "risePct": 84.8799,
+      "highDate": "20230824"
+    },
+    "5280": {
+      "open": 1172,
+      "close": 1146,
+      "bodyPct": 2.2184,
+      "dropPct": -2.05,
+      "volRatio": 4.0647,
+      "turnover": 25899600,
+      "highPrice": 1288,
+      "highGapPct": -9.1615,
+      "risePct": 14.1844,
+      "highDate": "20230703"
+    },
+    "6647": {
+      "open": 1741,
+      "close": 1669,
+      "bodyPct": 4.1356,
+      "dropPct": 0.48,
+      "volRatio": 2.5281,
+      "turnover": 1502100,
+      "highPrice": 1830,
+      "highGapPct": -9.235,
+      "risePct": 12.963,
+      "highDate": "20230725"
+    },
+    "6658": {
+      "open": 583,
+      "close": 568,
+      "bodyPct": 2.5729,
+      "dropPct": -3.4,
+      "volRatio": 2.4158,
+      "turnover": 291270400,
+      "highPrice": 619,
+      "highGapPct": -5.0081,
+      "risePct": 17.2348,
+      "highDate": "20230706"
+    },
+    "6857": {
+      "open": 4615,
+      "close": 4423.75,
+      "bodyPct": 4.1441,
+      "dropPct": -9.99,
+      "volRatio": 1.6205,
+      "turnover": 156287548500,
+      "highPrice": 5593.75,
+      "highGapPct": -12.1341,
+      "risePct": 31.463,
+      "highDate": "20230718"
+    },
+    "6871": {
+      "open": 2178,
+      "close": 2060,
+      "bodyPct": 5.4178,
+      "dropPct": -8.65,
+      "volRatio": 1.6668,
+      "turnover": 1518220000,
+      "highPrice": 2333,
+      "highGapPct": -3.3433,
+      "risePct": 37.2353,
+      "highDate": "20230824"
+    },
+    "6961": {
+      "open": 10520,
+      "close": 10160,
+      "bodyPct": 3.4221,
+      "dropPct": -5.84,
+      "volRatio": 1.7116,
+      "turnover": 5601208000,
+      "highPrice": 11500,
+      "highGapPct": -6.1739,
+      "risePct": 134.2159,
+      "highDate": "20230824"
+    },
+    "8143": {
+      "open": 321,
+      "close": 305,
+      "bodyPct": 4.9844,
+      "dropPct": 0,
+      "volRatio": 10.08,
+      "turnover": 21533000,
+      "highPrice": 361,
+      "highGapPct": -15.5125,
+      "risePct": 21.5488,
+      "highDate": "20230824"
+    },
+    "8202": {
+      "open": 297,
+      "close": 282,
+      "bodyPct": 5.0505,
+      "dropPct": -7.24,
+      "volRatio": 2.2826,
+      "turnover": 872141400,
+      "highPrice": 372,
+      "highGapPct": -18.2796,
+      "risePct": 62.4454,
+      "highDate": "20230817"
+    },
+    "8938": {
+      "open": 1399,
+      "close": 1316,
+      "bodyPct": 5.9328,
+      "dropPct": -7.45,
+      "volRatio": 1.7287,
+      "turnover": 433885200,
+      "highPrice": 1527,
+      "highGapPct": -6.8762,
+      "risePct": 51.0386,
+      "highDate": "20230728"
+    },
+    "9270": {
+      "open": 2543,
+      "close": 2490,
+      "bodyPct": 2.0842,
+      "dropPct": -4.89,
+      "volRatio": 2.3896,
+      "turnover": 554523000,
+      "highPrice": 3130,
+      "highGapPct": -16.3578,
+      "risePct": 46.6729,
+      "highDate": "20230817"
+    }
+  }
+}
