@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "target_date": "20261110",
+    "params": {
+      "version": 1,
+      "volAvgPeriod": 50,
+      "trendLookbackBars": 60,
+      "minVolumeMult": 1.5,
+      "minBodyPct": 0.02,
+      "minBodyRatio": 0.5,
+      "nearHighTol": 0.2,
+      "minRise": 0.1,
+      "splitGuardAbsChange": 0.4
+    },
+    "scanned": 4295,
+    "counts": {
+      "detected": 11
+    }
+  },
+  "data": {
+    "1622": {
+      "open": 38390,
+      "close": 37560,
+      "bodyPct": 2.162,
+      "dropPct": -0.74,
+      "volRatio": 1.6431,
+      "turnover": 36320520,
+      "highPrice": 37980,
+      "highGapPct": -0.3686,
+      "risePct": 14.9516,
+      "highDate": "20261106"
+    },
+    "1994": {
+      "open": 593,
+      "close": 568,
+      "bodyPct": 4.2159,
+      "dropPct": -0.53,
+      "volRatio": 4.4981,
+      "turnover": 31410400,
+      "highPrice": 639,
+      "highGapPct": -10.6416,
+      "risePct": 14.7217,
+      "highDate": "20260831"
+    },
+    "2626": {
+      "open": 3571,
+      "close": 3405,
+      "bodyPct": 4.6486,
+      "dropPct": -0.06,
+      "volRatio": 3.7219,
+      "turnover": 33137460,
+      "highPrice": 3571,
+      "highGapPct": -4.5926,
+      "risePct": 11.2461,
+      "highDate": "20260901"
+    },
+    "3261": {
+      "open": 428,
+      "close": 416,
+      "bodyPct": 2.8037,
+      "dropPct": -0.95,
+      "volRatio": 2.8817,
+      "turnover": 6281600,
+      "highPrice": 456,
+      "highGapPct": -7.8947,
+      "risePct": 15.736,
+      "highDate": "20261007"
+    },
+    "5244": {
+      "open": 179,
+      "close": 169,
+      "bodyPct": 5.5866,
+      "dropPct": 1.81,
+      "volRatio": 2.3729,
+      "turnover": 77469600,
+      "highPrice": 187,
+      "highGapPct": -11.2299,
+      "risePct": 14.7239,
+      "highDate": "20261028"
+    },
+    "5363": {
+      "open": 649,
+      "close": 633,
+      "bodyPct": 2.4653,
+      "dropPct": -3.65,
+      "volRatio": 4.5028,
+      "turnover": 140462700,
+      "highPrice": 734,
+      "highGapPct": -10.4905,
+      "risePct": 10.3759,
+      "highDate": "20260928"
+    },
+    "6484": {
+      "open": 2190,
+      "close": 2124,
+      "bodyPct": 3.0137,
+      "dropPct": -0.7,
+      "volRatio": 2.8244,
+      "turnover": 7858800,
+      "highPrice": 2550,
+      "highGapPct": -16.1176,
+      "risePct": 15.9091,
+      "highDate": "20260810"
+    },
+    "6926": {
+      "open": 187,
+      "close": 182,
+      "bodyPct": 2.6738,
+      "dropPct": -0.55,
+      "volRatio": 1.9346,
+      "turnover": 4349800,
+      "highPrice": 203,
+      "highGapPct": -9.8522,
+      "risePct": 10.3261,
+      "highDate": "20260930"
+    },
+    "7460": {
+      "open": 1610,
+      "close": 1558,
+      "bodyPct": 3.2298,
+      "dropPct": -5,
+      "volRatio": 3.2956,
+      "turnover": 82574000,
+      "highPrice": 1798,
+      "highGapPct": -8.7875,
+      "risePct": 13.2242,
+      "highDate": "20261030"
+    },
+    "8698": {
+      "open": 611,
+      "close": 582,
+      "bodyPct": 4.7463,
+      "dropPct": -7.03,
+      "volRatio": 3.1874,
+      "turnover": 2770552800,
+      "highPrice": 774,
+      "highGapPct": -19.1214,
+      "risePct": 13.9912,
+      "highDate": "20260828"
+    },
+    "9090": {
+      "open": 860,
+      "close": 834,
+      "bodyPct": 3.0233,
+      "dropPct": -9.45,
+      "volRatio": 5.8389,
+      "turnover": 1912195200,
+      "highPrice": 938,
+      "highGapPct": -1.8124,
+      "risePct": 14.2509,
+      "highDate": "20261105"
+    }
+  }
+}
