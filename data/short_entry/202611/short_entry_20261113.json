@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "target_date": "20261113",
+    "params": {
+      "version": 1,
+      "maPeriod": 50,
+      "headLookbackBars": 120,
+      "minBarsAfterHead": 10,
+      "baseBars": 20,
+      "spikeBars": 5,
+      "minHeadRise": 0.15,
+      "dropMaxBars": 15,
+      "minDropFromHead": 0.2,
+      "volumeSpikeMult": 2,
+      "minGapBars": 2,
+      "entryMinRebounds": 3,
+      "entryMaxRebounds": 4,
+      "maxOvershoot": 0.1,
+      "maxAboveBars": 15,
+      "approachPct": 0.05,
+      "minBouncePct": 0.03,
+      "splitGuardAbsChange": 0.4
+    },
+    "scanned": 4477,
+    "counts": {
+      "entry": 0,
+      "watch": 2
+    }
+  },
+  "data": {
+    "3135": {
+      "stage": "watch",
+      "phase": "rebound",
+      "reboundCount": 4,
+      "close": 1175,
+      "ma50": 1156.5,
+      "maGapPct": 1.6,
+      "neckline": 1015,
+      "necklineGapPct": 15.76,
+      "headPrice": 1475,
+      "supportPrice": 1099,
+      "dropPct": -31.19,
+      "dropVolRatio": 3.58,
+      "headDate": "20260623",
+      "lowDate": "20260630"
+    },
+    "5248": {
+      "stage": "watch",
+      "phase": "rebound",
+      "reboundCount": 4,
+      "close": 509,
+      "ma50": 503.66,
+      "maGapPct": 1.06,
+      "neckline": 451,
+      "necklineGapPct": 12.86,
+      "headPrice": 628,
+      "supportPrice": 466,
+      "dropPct": -28.18,
+      "dropVolRatio": 4.13,
+      "headDate": "20260729",
+      "lowDate": "20260804"
+    }
+  }
+}
